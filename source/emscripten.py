@@ -1,6 +1,7 @@
 import ply.lex as lex
 from ply.lex import TOKEN
 import re
+from generate import Gen
 
 
 class Class:
@@ -22,7 +23,7 @@ class Class:
     
     class Function:
         __policies_re = r',\s*(?P<cxxpolicies>[^,]*)'
-        RE = r'\.function\(\"(?P<jsmethod>.*)\",\s*(?P<cxxmethod>[^,]*)(?P<cxxpolicies>.*)?\)'
+        RE = r'\.function\(\"(?P<jsmethod>.*)\",\s*(?P<cxxmethod>.*)(?P<cxxpolicies>.*)?\)'
         def __init__(self, jsmethod, cxxmethod, cxxpolicies=None):
             self.jsmethod = jsmethod
             self.cxxmethod = cxxmethod
@@ -312,12 +313,19 @@ class Lexer:
     def lexing(self, data, **kwargs):
         self.lexer = lex.lex(module=self, **kwargs)
         self.lexer.input(data)
-        print data
         while True:
             tok = self.lexer.token()
             if not tok:
                 break
-            print tok
+            # print tok
     
-    def napi_compile(self):
+    def napi_compile(self, path):
+
+        print '\n-----------------napi compile-------------'
+        generator = Gen(path)
+        generator.parse_class(self.classes[0])
+        generator.genfile_start()
+        generator.genfile_end()
+
+
         return ""

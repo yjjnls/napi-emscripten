@@ -1,3 +1,4 @@
+import os
 import re
 import emscripten
 
@@ -7,10 +8,14 @@ class Preprocessor:
     MACRO_DEFINE_RE = r'#define[ \t]+((?P<macro>\w+)\((?P<macro_arglist>[^\\]*)\))(?P<macro_def>[ \t]+((\\[ \t]*\n[ \t]*)([^\n\\]*))*)'
     def __init__(self):
         self.output = ''
+        self.target = ''
 
     def input(self, file):
+        self.target = file
         with open(file, 'r') as f:
-            self.data = f.read()
+            file_obj = f
+            self.data = file_obj.read()
+            file_obj.close()
     
     def compile(self):
         pattern = re.compile(Preprocessor.RE, flags=re.DOTALL)
@@ -27,7 +32,7 @@ class Preprocessor:
         cxx_bind = self.cxx_preprocess(data)
         lexer = emscripten.Lexer()
         lexer.lexing(cxx_bind)
-        return lexer.napi_compile()
+        return lexer.napi_compile(self.target)
     
     def cxx_preprocess(self, data):
         pattern = re.compile(Preprocessor.MACRO_DEFINE_RE, flags=re.DOTALL)

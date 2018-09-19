@@ -326,12 +326,12 @@ namespace binding_utils
 
 EMSCRIPTEN_BINDINGS(binding_utils)
 {
-    register_vector<int>("IntVector");
-    register_vector<float>("FloatVector");
-    register_vector<double>("DoubleVector");
-    register_vector<cv::Point>("PointVector");
-    register_vector<cv::Mat>("MatVector");
-    register_vector<cv::Rect>("RectVector");
+    // register_vector<int>("IntVector");
+    // register_vector<float>("FloatVector");
+    // register_vector<double>("DoubleVector");
+    // register_vector<cv::Point>("PointVector");
+    // register_vector<cv::Mat>("MatVector");
+    // register_vector<cv::Rect>("RectVector");
 
     emscripten::class_<cv::Mat>("Mat")
         .constructor<>()
@@ -433,32 +433,32 @@ EMSCRIPTEN_BINDINGS(binding_utils)
         .function("doubleAt", select_overload<double&(int)>(&cv::Mat::at<double>))
         .function("doubleAt", select_overload<double&(int, int)>(&cv::Mat::at<double>));
 
-    emscripten::value_object<cv::Range>("Range")
-        .field("start", &cv::Range::start)
-        .field("end", &cv::Range::end);
+//     emscripten::value_object<cv::Range>("Range")
+//         .field("start", &cv::Range::start)
+//         .field("end", &cv::Range::end);
 
-    emscripten::value_object<cv::TermCriteria>("TermCriteria")
-        .field("type", &cv::TermCriteria::type)
-        .field("maxCount", &cv::TermCriteria::maxCount)
-        .field("epsilon", &cv::TermCriteria::epsilon);
+//     emscripten::value_object<cv::TermCriteria>("TermCriteria")
+//         .field("type", &cv::TermCriteria::type)
+//         .field("maxCount", &cv::TermCriteria::maxCount)
+//         .field("epsilon", &cv::TermCriteria::epsilon);
 
-#define EMSCRIPTEN_CV_SIZE(type) \
-    emscripten::value_object<type>("#type") \
-        .field("width", &type::width) \
-        .field("height", &type::height);
+// #define EMSCRIPTEN_CV_SIZE(type) \
+//     emscripten::value_object<type>("#type") \
+//         .field("width", &type::width) \
+//         .field("height", &type::height);
 
-    EMSCRIPTEN_CV_SIZE(Size)
-    EMSCRIPTEN_CV_SIZE(Size2f)
+//     EMSCRIPTEN_CV_SIZE(Size)
+//     EMSCRIPTEN_CV_SIZE(Size2f)
 
-#define EMSCRIPTEN_CV_POINT(type) \
-    emscripten::value_object<type>("#type") \
-        .field("x", &type::x) \
-        .field("y", &type::y); \
+// #define EMSCRIPTEN_CV_POINT(type) \
+//     emscripten::value_object<type>("#type") \
+//         .field("x", &type::x) \
+//         .field("y", &type::y); \
 
-    EMSCRIPTEN_CV_POINT(Point)
-    EMSCRIPTEN_CV_POINT(Point2f)
+//     EMSCRIPTEN_CV_POINT(Point)
+//     EMSCRIPTEN_CV_POINT(Point2f)
 
-#define EMSCRIPTEN_CV_RECT(type, name) \
+// #define EMSCRIPTEN_CV_RECT(type, name) \
     emscripten::value_object<cv::Rect_<type>> (name) \
         .field("x", &cv::Rect_<type>::x) \
         .field("y", &cv::Rect_<type>::y) \
