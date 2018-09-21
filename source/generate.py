@@ -11,6 +11,7 @@ class Gen:
         self.constructors = {}
         self.functions = {}
         self.properties = {}
+        self.property_function = {}
         self.class_functions = {}
 
     def genfile_start(self):
@@ -41,6 +42,21 @@ class Gen:
                 fun_name)
             self.output_cxx_fp.write(
                 '    static napi_value %s(napi_env env, napi_callback_info info);\n' % fun_name)
+        napi_property = ''
+        for prop in self.properties.items():
+            prop_name = prop[0]
+            getter = 'get%s' % prop_name
+            self.output_cxx_fp.write('    static napi_value %s(napi_env env, napi_callback_info info);\n'%getter)
+            if ',' in prop[1][0][0]:
+                setter = 'set%s' % prop_name
+                self.output_cxx_fp.write('    static napi_value %s(napi_env env, napi_callback_info info);\n'%setter)
+                self.property_function[getter]=prop[1][0][0].split(',')[0]
+                self.property_function[setter]=prop[1][0][0].split(',')[1]
+            else:
+                self.property_function[getter]=prop[1][0][0]
+                setter = 'nullptr'
+            napi_property += '        {"%s", nullptr, nullptr, %s, %s, 0, napi_default, 0},\n' % (
+                prop_name, getter, setter)
         self.output_cxx_fp.write(template.class_end % self.cxxtype)
         # namespace
         self.output_cxx_fp.write('namespace %s {\n' % self.namespace)
@@ -56,11 +72,12 @@ class Gen:
         self.generate_constructor()
         # function implementation
         self.generate_function()
-
+        # property implementation
+        self.generate_prop()
         # napi declaration
         self.output_cxx_fp.write(template.fixed_class_function % self.cxxtype)
         self.output_cxx_fp.write(template.napi_init %
-                                 ('', napi_fun, self.cxxtype, self.cxxtype, ''))
+                                 (napi_property, napi_fun, self.cxxtype, self.cxxtype, ''))
 
     def genfile_end(self):
         self.output_cxx_fp.close()
@@ -78,6 +95,7 @@ class Gen:
 
         self.parse_constructor(obj.constructors)
         self.parse_function(obj.functions)
+        self.parse_property(obj.properties)
 
     def parse_constructor(self, constructors):
         for constructor in constructors:
@@ -125,8 +143,12 @@ class Gen:
 
                     self.functions[js_method].append(
                         {len(args): (return_type, args, fun, res.group(2))})
-        print json.dumps(self.functions, sort_keys=True,
-                         indent=4, separators=(',', ': '))
+        # print json.dumps(self.functions, sort_keys=True,
+        #                  indent=4, separators=(',', ': '))
+
+    def parse_property(self, properties):
+        # print properties
+        self.properties = properties
 
     def parse_arg_type(self, arg):
         if arg == 'int':
@@ -214,3 +236,10 @@ class Gen:
             return_val = self.parse_return_type(return_type)
             self.output_cxx_fp.write(template.func_template % (
                 overload_fun[0], self.cxxtype, return_res, overload_fun[0], return_val))
+
+    def generate_prop(self):
+        for prop_fun in self.property_function.items():
+            if 'get' in prop_fun[0]:
+                self.output_cxx_fp.write(template.prop_getter%(prop_fun[0],self.cxxtype, prop_fun[1].split('&')[1]))
+            else:
+                self.output_cxx_fp.write(template.prop_setter%(prop_fun[0],self.cxxtype, prop_fun[1].split('&')[1]))

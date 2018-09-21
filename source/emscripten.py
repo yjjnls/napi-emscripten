@@ -3,7 +3,15 @@ from ply.lex import TOKEN
 import re
 from generate import Gen
 
+class Include:
+    RE = r'\#include(.*)'
 
+    def __init__(self):
+        self.include_file = []
+
+    def make(self,data):
+        print data
+    
 class Class:
     __type_re = r'(emscripten::)?class_<(?P<cxxtype>.*)>\(\"(?P<jstype>.*)\"\)'
     RE = __type_re + r'(' + r'\s+' + r'\.(constructor|property|function|class_property|class_function)(<(.*)>)?\((.*)\)' + r')*'
@@ -220,13 +228,15 @@ class Lexer:
         'VALUE_ARRAY',
         'VALUE_OBJECT',
         'FUNCTION',
-        'MACRO_DEFINE'
+        'MACRO_DEFINE',
+        'INCLUDE'
     )
 
     t_ignore = ' \t;'
     t_ignore_NEWLINE = r'\n+'
 
     def __init__(self):
+        self.inlcudes = []
         self.classes = []
         self.vectors = []
         self.maps = []
@@ -239,6 +249,14 @@ class Lexer:
     #def t_NEWLINE(self, t):
     #    r'\n+'
     #    t.lexer.lineno += len(t.value)
+
+    @TOKEN(Include.RE)
+    def t_INCLUDE(self, t):
+        # print t.value
+        obj = Include()
+        obj.make(t.value)
+        self.inlcudes.append(obj)
+        return t
 
     @TOKEN(Class.RE)
     def t_CLASS(self,t):

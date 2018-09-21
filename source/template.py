@@ -204,11 +204,11 @@ napi_init = """
 void Addon::Init(napi_env env, napi_value exports)
 {
     napi_property_descriptor properties[] = {
-        NAPI_DECLARE_METHOD("delete", Release),
         //property
 %s
         //function(return type, arguments, function name)
 %s
+        NAPI_DECLARE_METHOD("delete", Release)
     };
 
     napi_value cons;
@@ -231,6 +231,7 @@ napi_value Init(napi_env env, napi_value exports)
 
     napi_property_descriptor desc[] = {
 %s
+        NAPI_DECLARE_METHOD("createObject", Addon::CreateObject)
     };
 
     napi_define_properties(env,
@@ -305,5 +306,47 @@ napi_value Addon::%s(napi_env env, napi_callback_info info)
     %sfun_%s_factory(target, env, argc, args);
     ////////////////////////////////////////////////////////////////////////
     %s
+}
+"""
+
+
+prop_getter="""
+napi_value Addon::%s(napi_env env, napi_callback_info info)
+{
+    napi_value _this;
+    env, napi_get_cb_info(env, info, nullptr, nullptr, &_this, nullptr);
+
+    Addon *obj;
+    napi_unwrap(env, _this, reinterpret_cast<void **>(&obj));
+
+    ////////////////////////////////////////////////////////////////////////
+    %s *target = obj->target_;
+    napi_value res;
+    napi_create_int32(env, target->%s(), &res);
+    ////////////////////////////////////////////////////////////////////////
+
+    return res;
+}
+"""
+
+prop_setter="""
+napi_value Addon::%s(napi_env env, napi_callback_info info)
+{
+    size_t argc = 1;
+    napi_value args[1];
+    napi_value _this;
+    napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
+
+    Addon *obj;
+    napi_unwrap(env, _this, reinterpret_cast<void **>(&obj));
+
+    ////////////////////////////////////////////////////////////////////////
+    %s *target = obj->target_;
+    int32_t value;
+    napi_get_value_int32(env, args[0], &value);
+    target->%s(value);
+    ////////////////////////////////////////////////////////////////////////
+
+    return nullptr;
 }
 """
