@@ -140,6 +140,8 @@ class_end = """
 """
 
 fixed_class_function = """
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 napi_ref Addon::constructor_;
 void Addon::Destructor(napi_env env, void *nativeObject, void *finalize_hint)
 {
@@ -269,15 +271,25 @@ args_string = """
 """
 args_cxxtype = """
             Addon *p;
-            env, napi_unwrap(env, args[{0}], reinterpret_cast<void **>(&p));
+            napi_unwrap(env, args[{0}], reinterpret_cast<void **>(&p));
             %s &arg{0} = *(p->target());
 """
 return_void = """
     return nullptr;
 """
-return_external="""
+return_external = """
     napi_value result;
     napi_create_external(env, &res, nullptr, nullptr, &result);
+    return result;
+"""
+return_int = """
+    napi_value result;
+    napi_create_int32(env, res, &result);
+    return result;
+"""
+return_string="""
+    napi_value result;
+    napi_create_string_utf8(env, res.c_str(), res.size(), &result);
     return result;
 """
 function_datail_start = """
@@ -309,8 +321,11 @@ napi_value Addon::%s(napi_env env, napi_callback_info info)
 }
 """
 
+getter_int = """
+    napi_create_int32(env, %s, &res);
+"""
 
-prop_getter="""
+prop_getter = """
 napi_value Addon::%s(napi_env env, napi_callback_info info)
 {
     napi_value _this;
@@ -322,14 +337,18 @@ napi_value Addon::%s(napi_env env, napi_callback_info info)
     ////////////////////////////////////////////////////////////////////////
     %s *target = obj->target_;
     napi_value res;
-    napi_create_int32(env, target->%s(), &res);
+    %s
     ////////////////////////////////////////////////////////////////////////
 
     return res;
 }
 """
 
-prop_setter="""
+setter_int = """
+    int32_t value;
+    napi_get_value_int32(env, args[0], &value);
+"""
+prop_setter = """
 napi_value Addon::%s(napi_env env, napi_callback_info info)
 {
     size_t argc = 1;
@@ -342,11 +361,25 @@ napi_value Addon::%s(napi_env env, napi_callback_info info)
 
     ////////////////////////////////////////////////////////////////////////
     %s *target = obj->target_;
-    int32_t value;
-    napi_get_value_int32(env, args[0], &value);
-    target->%s(value);
+%s
+%s
     ////////////////////////////////////////////////////////////////////////
 
     return nullptr;
+}
+"""
+
+class_function_template_start = """
+napi_value %s(napi_env env, napi_callback_info info)
+{
+    size_t argc = 0;
+    napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr);
+    napi_value args[argc];
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    switch (argc) {
+"""
+class_function_template_end = """
+%s
 }
 """

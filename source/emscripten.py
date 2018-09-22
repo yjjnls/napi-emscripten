@@ -3,13 +3,14 @@ from ply.lex import TOKEN
 import re
 from generate import Gen
 
+
 class Include:
     RE = r'\#include(.*)'
 
     def __init__(self):
         self.include_file = []
 
-    def make(self,data):
+    def make(self, data):
         print data
     
 class Class:
@@ -39,7 +40,7 @@ class Class:
     
     class ClassFunction:
         __policies_re = r',\s*(?P<cxxpolicies>[^,]*)'
-        RE = r'\.class_function\(\"(?P<jsmethod>.*)\",\s*(?P<cxxmethod>[^,]*)(?P<cxxpolicies>.*)?\)'
+        RE = r'\.class_function\(\"(?P<jsmethod>.*)\",\s*(?P<cxxmethod>.*)(?P<cxxpolicies>.*)?\)'
         def __init__(self, jsmethod, cxxmethod, cxxpolicies=None):
             self.jsmethod = jsmethod
             self.cxxmethod = cxxmethod
@@ -229,11 +230,13 @@ class Lexer:
         'VALUE_OBJECT',
         'FUNCTION',
         'MACRO_DEFINE',
-        'INCLUDE'
+        'INCLUDE',
+        'COMMENT'
     )
 
     t_ignore = ' \t;'
     t_ignore_NEWLINE = r'\n+'
+    t_ignore_COMMENT = r'(/\*(.|\n)*?\*/)|(//.*)'
 
     def __init__(self):
         self.inlcudes = []
@@ -250,6 +253,15 @@ class Lexer:
     #    r'\n+'
     #    t.lexer.lineno += len(t.value)
 
+    # def t_COMMENT(self,t):
+    #     r'(/\*(.|\n)*?\*/)|(//.*)'
+    #     print '~~~~~~~~~~~~~~~~~~~~~~~~'
+    #     print t.value
+    #     print '~~~~~~~~~~~~~~~~~~~~~~~~'
+    #     # t.lexer.skip(len(t.value))
+    #     return t
+
+        
     @TOKEN(Include.RE)
     def t_INCLUDE(self, t):
         # print t.value
