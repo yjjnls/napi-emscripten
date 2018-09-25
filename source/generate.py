@@ -30,15 +30,18 @@ class Gen:
 
         #########################################################################
         # node-gyp
-        self.generate_gyp()
+        # self.generate_gyp()
         # fixed function and macro
         self.output_cxx_fp.write(template.bind_cxx_fixed)
         # Addon class declaration
         self.output_cxx_fp.write(template.class_start % self.cxxtype)
+        self.output_cxx_fp.write('    // function\n')
         napi_fun = ''
         for fun_name in self.functions.keys():
             napi_fun += '        NAPI_DECLARE_METHOD("{0}", {0}),\n'.format(fun_name)
             self.output_cxx_fp.write('    static napi_value %s(napi_env env, napi_callback_info info);\n' % fun_name)
+
+        self.output_cxx_fp.write('    // property\n')
         napi_property = ''
         for prop in self.properties.items():
             prop_name = prop[0]
@@ -52,12 +55,15 @@ class Gen:
             napi_property += '        {"%s", nullptr, nullptr, %s, %s, 0, napi_default, 0},\n' % (prop_name,
                                                                                                   getter,
                                                                                                   setter)
+
+        self.output_cxx_fp.write('    // class function\n')
         napi_class_function = ''
         for fun_name in self.class_functions.keys():
-            napi_class_function += '        NAPI_DECLARE_METHOD("{0}", {0}),\n'.format(fun_name)
+            self.output_cxx_fp.write('    static napi_value %s(napi_env env, napi_callback_info info);\n' % fun_name)
+            napi_class_function += '        NAPI_DECLARE_METHOD("{0}", Addon::{0}),\n'.format(fun_name)
         self.output_cxx_fp.write(template.class_end % self.cxxtype)
         # namespace
-        self.output_cxx_fp.write('namespace %s {\n' % self.namespace)
+        self.output_cxx_fp.write('namespace %s {\n\n' % self.namespace)
         for item in [self.constructors, self.functions, self.properties, self.class_functions]:
             for overload_fun in item.values():
                 for spec_fun in overload_fun:
@@ -66,7 +72,7 @@ class Gen:
                             spec_fun[0],
                             spec_fun[2].split('::')[1],
                             spec_fun[3]))
-        self.output_cxx_fp.write('}  // namespace binding_utils\nusing namespace binding_utils;\n')
+        self.output_cxx_fp.write('\n}  // namespace binding_utils\nusing namespace binding_utils;\n')
         # constructor implementation
         self.generate_constructor()
         # function implementation
@@ -239,7 +245,18 @@ class Gen:
         self.output_cxx_fp.write(template.constructor_func_end)
 
     def generate_function(self):
-        for overload_fun in self.functions.items():
+        def detail(fun_name, args):
+            if 'operator()' in fun_name:
+                self.output_cxx_fp.write('\n            return (*obj)({0});\n'.format(args))
+            elif not self.cxxtype in fun_name:
+                self.output_cxx_fp.write('\n            return {0}(*obj, {1});\n'.format(fun_name, args))
+            else:
+                self.output_cxx_fp.write('\n            return obj->{0}({1});\n'.format(fun_name, args))
+
+        self.generate_function_detail(self.functions, detail)
+
+    def generate_function_detail(self, functions, func_detail):
+        for overload_fun in functions.items():
             fun_name = overload_fun[0]
             return_type = overload_fun[1][0][0]
             self.output_cxx_fp.write(template.function_datail_start % (return_type,
@@ -260,15 +277,8 @@ class Gen:
                         args += ', '
 
                 fun_name = spec_fun[2]
-                if 'operator()' in fun_name:
-                    self.output_cxx_fp.write(
-                        '\n            return (*obj)({0});\n'.format(args))
-                if not self.cxxtype in fun_name:
-                    self.output_cxx_fp.write(
-                        '\n            return {0}(*obj, {1});\n'.format(fun_name, args))
-                else:
-                    self.output_cxx_fp.write(
-                        '\n            return obj->{0}({1});\n'.format(fun_name, args))
+
+                func_detail(fun_name, args)
 
                 self.output_cxx_fp.write('        } break;\n')
 
@@ -316,37 +326,10 @@ class Gen:
         return None
 
     def generate_class_function(self):
-        for overload_fun in self.class_functions.items():
-            fun_name = overload_fun[0]
-            return_type = overload_fun[1][0][0]
+        def detail(fun_name, args):
+            if not self.cxxtype in fun_name:
+                self.output_cxx_fp.write('\n            return {0}({1});\n'.format(fun_name, args))
+            else:
+                self.output_cxx_fp.write('\n            return {0}({1});\n'.format(fun_name, args))
 
-            self.output_cxx_fp.write(template.class_function_template_start % fun_name)
-            for spec_fun in overload_fun[1]:
-                self.output_cxx_fp.write('        case %d: {\n' % len(spec_fun[1]))
-                fun_name = spec_fun[2]
-
-                argc = 0
-                args = ''
-                arg_list = spec_fun[1]
-                for i in range(len(arg_list)):
-                    arg_type = arg_list[i]
-                    self.output_cxx_fp.write(self.parse_arg_type(arg_type).format(i))
-                    argc += 1
-                    args += 'arg{0}'.format(i)
-                    if not i == len(arg_list) - 1:
-                        args += ', '
-
-                if return_type == 'void':
-                    return_res = ''
-                else:
-                    return_res = '%s res = ' % return_type
-
-                return_val = self.parse_return_type(return_type)
-                if not self.cxxtype in fun_name:
-                    self.output_cxx_fp.write('\n            {2}{0}({1});\n'.format(fun_name, args, return_res))
-                else:
-                    self.output_cxx_fp.write('\n            {2}{0}({1});\n'.format(fun_name, args, return_res))
-                self.output_cxx_fp.write(return_val)
-
-                self.output_cxx_fp.write('        } break;\n    }\n')
-            self.output_cxx_fp.write(template.class_function_template_end % '')
+        self.generate_function_detail(self.class_functions, detail)

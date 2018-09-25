@@ -120,16 +120,15 @@ class Addon
     static napi_value CreateObject(napi_env env, napi_callback_info info);
     %s *target() { return target_; }
 
- private:
-    static napi_value Release(napi_env env, napi_callback_info info);
-    static napi_value New(napi_env env, napi_callback_info info);
-
     ////////////////////////////////////////////////////////////////////////
 """
 
 
-class_end = """
-    ////////////////////////////////////////////////////////////////////////
+class_end = """    ////////////////////////////////////////////////////////////////////////
+
+ private:
+    static napi_value Release(napi_env env, napi_callback_info info);
+    static napi_value New(napi_env env, napi_callback_info info);
 
     static napi_ref constructor_;
     %s *target_;
@@ -366,20 +365,5 @@ napi_value Addon::%s(napi_env env, napi_callback_info info)
     ////////////////////////////////////////////////////////////////////////
 
     return nullptr;
-}
-"""
-
-class_function_template_start = """
-napi_value %s(napi_env env, napi_callback_info info)
-{
-    size_t argc = 0;
-    napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr);
-    napi_value args[argc];
-    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
-
-    switch (argc) {
-"""
-class_function_template_end = """
-%s
 }
 """
