@@ -1,1 +1,4 @@
 *.pyc
+plugin
+node_modules
+package-lock.json

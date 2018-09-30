@@ -1,14 +1,15 @@
+from string import Template
 bind_gyp = """
 {
     "targets": [
         {
             "target_name": "plugin",
-            'include_dirs': [
-                'include'
+            "include_dirs": [
+                "include"
             ],
+            "libraries": [],
             "sources": ["%s",
-                        "%s",
-                        "../example.cc"],
+                        "%s"],
             "conditions": [
                 ["OS==\\"linux\\"", {"cflags": ["-frtti", "-w"],
                                    "cflags_cc": ["-frtti", "-w"]
@@ -20,10 +21,8 @@ bind_gyp = """
 """
 
 bind_cxx_fixed = """
-#include <emscripten/bind.h>
 #include <node_api.h>
-#include "../example.h"
-
+%s
 using namespace emscripten::internal;
 
 #define NAPI_DECLARE_METHOD(name, func)         \\
@@ -32,81 +31,114 @@ using namespace emscripten::internal;
     }
 
 extern "C" {
-void _embind_register_class(
-    TYPEID classType,
-    TYPEID pointerType,
-    TYPEID constPointerType,
-    TYPEID baseClassType,
-    const char *getActualTypeSignature,
-    GenericFunction getActualType,
-    const char *upcastSignature,
-    GenericFunction upcast,
-    const char *downcastSignature,
-    GenericFunction downcast,
-    const char *className,
-    const char *destructorSignature,
-    GenericFunction destructor) {}
-
-void _embind_register_class_constructor(
-    TYPEID classType,
-    unsigned argCount,
-    const TYPEID argTypes[],
-    const char *invokerSignature,
-    GenericFunction invoker,
-    GenericFunction constructor) {}
-
-void _embind_register_class_function(
-    TYPEID classType,
-    const char *methodName,
-    unsigned argCount,
-    const TYPEID argTypes[],
-    const char *invokerSignature,
-    GenericFunction invoker,
-    void *context,
-    unsigned isPureVirtual) {}
-
-void _embind_register_class_property(
-    TYPEID classType,
-    const char *fieldName,
-    TYPEID getterReturnType,
-    const char *getterSignature,
-    GenericFunction getter,
-    void *getterContext,
-    TYPEID setterArgumentType,
-    const char *setterSignature,
-    GenericFunction setter,
-    void *setterContext) {}
-
-void _embind_register_class_class_function(
-    TYPEID classType,
-    const char *methodName,
-    unsigned argCount,
-    const TYPEID argTypes[],
-    const char *invokerSignature,
-    GenericFunction invoker,
-    GenericFunction method) {}
-
-void _embind_register_class_class_property(
-    TYPEID classType,
-    const char *fieldName,
-    TYPEID fieldType,
-    const void *fieldContext,
-    const char *getterSignature,
-    GenericFunction getter,
-    const char *setterSignature,
-    GenericFunction setter) {}
+%s
 }
 """
+register_class = """
+    void _embind_register_class(
+        TYPEID classType,
+        TYPEID pointerType,
+        TYPEID constPointerType,
+        TYPEID baseClassType,
+        const char *getActualTypeSignature,
+        GenericFunction getActualType,
+        const char *upcastSignature,
+        GenericFunction upcast,
+        const char *downcastSignature,
+        GenericFunction downcast,
+        const char *className,
+        const char *destructorSignature,
+        GenericFunction destructor) {}
 
-class_start = """
-class Addon
+    void _embind_register_class_constructor(
+        TYPEID classType,
+        unsigned argCount,
+        const TYPEID argTypes[],
+        const char *invokerSignature,
+        GenericFunction invoker,
+        GenericFunction constructor) {}
+
+    void _embind_register_class_function(
+        TYPEID classType,
+        const char *methodName,
+        unsigned argCount,
+        const TYPEID argTypes[],
+        const char *invokerSignature,
+        GenericFunction invoker,
+        void *context,
+        unsigned isPureVirtual) {}
+
+    void _embind_register_class_property(
+        TYPEID classType,
+        const char *fieldName,
+        TYPEID getterReturnType,
+        const char *getterSignature,
+        GenericFunction getter,
+        void *getterContext,
+        TYPEID setterArgumentType,
+        const char *setterSignature,
+        GenericFunction setter,
+        void *setterContext) {}
+
+    void _embind_register_class_class_function(
+        TYPEID classType,
+        const char *methodName,
+        unsigned argCount,
+        const TYPEID argTypes[],
+        const char *invokerSignature,
+        GenericFunction invoker,
+        GenericFunction method) {}
+
+    void _embind_register_class_class_property(
+        TYPEID classType,
+        const char *fieldName,
+        TYPEID fieldType,
+        const void *fieldContext,
+        const char *getterSignature,
+        GenericFunction getter,
+        const char *setterSignature,
+        GenericFunction setter) {}
+"""
+
+register_constant = """
+    void _embind_register_constant(
+        const char* name,
+        TYPEID constantType,
+        double value){}
+"""
+register_object = """
+    void _embind_register_value_object(
+        TYPEID structType,
+        const char* fieldName,
+        const char* constructorSignature,
+        GenericFunction constructor,
+        const char* destructorSignature,
+        GenericFunction destructor){}
+
+    void _embind_register_value_object_field(
+        TYPEID structType,
+        const char* fieldName,
+        TYPEID getterReturnType,
+        const char* getterSignature,
+        GenericFunction getter,
+        void* getterContext,
+        TYPEID setterArgumentType,
+        const char* setterSignature,
+        GenericFunction setter,
+        void* setterContext){}
+    
+    void _embind_finalize_value_object(TYPEID structType){}
+"""
+class_declaration = Template("""
+/////////////////////////////////${jstype}///////////////////////////////////////
+class ${name}
 {
  public:
-    Addon()
+    ${name}()
         : target_(nullptr)
         , env_(nullptr)
         , wrapper_(nullptr) {}
-    ~Addon()
+    ~${name}()
     {
         napi_delete_reference(env_, wrapper_);
         if (target_ != nullptr) {
@@ -118,48 +150,57 @@ class Addon
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     static napi_status NewInstance(napi_env env, napi_callback_info info, napi_value *instance);
     static napi_value CreateObject(napi_env env, napi_callback_info info);
-    %s *target() { return target_; }
+    static napi_ref cons_ref();
+    ${type} *target() { return target_; }
+    void update_target(const ${type} &t) {
+        if (target_ != nullptr) {
+            delete target_;
+            target_ = nullptr;
+        }
+        target_ = new ${type}(t);
+    }
 
     ////////////////////////////////////////////////////////////////////////
-"""
-
-
-class_end = """    ////////////////////////////////////////////////////////////////////////
+${function}
+${property}
+${class_function}
+    ////////////////////////////////////////////////////////////////////////
 
  private:
     static napi_value Release(napi_env env, napi_callback_info info);
     static napi_value New(napi_env env, napi_callback_info info);
 
     static napi_ref constructor_;
-    %s *target_;
+    ${type} *target_;
     napi_env env_;
     napi_ref wrapper_;
 };
+""")
 
-"""
-
-fixed_class_function = """
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-napi_ref Addon::constructor_;
-void Addon::Destructor(napi_env env, void *nativeObject, void *finalize_hint)
+fixed_class_function = Template("""
+napi_ref ${name}::constructor_;
+napi_ref ${name}::cons_ref()
 {
-    printf("~~~~~~~  Destructor  ~~~~~~~~");
-    Addon *obj = static_cast<Addon *>(nativeObject);
+    return constructor_;
+}
+void ${name}::Destructor(napi_env env, void *nativeObject, void *finalize_hint)
+{
+    printf("~~~~~~~  ${jstype} Destructor  ~~~~~~~~\\n");
+    ${name} *obj = static_cast<${name} *>(nativeObject);
     delete obj;
 }
-napi_value Addon::Release(napi_env env, napi_callback_info info)
+napi_value ${name}::Release(napi_env env, napi_callback_info info)
 {
     return nullptr;
 }
-napi_value Addon::CreateObject(napi_env env, napi_callback_info info)
+napi_value ${name}::CreateObject(napi_env env, napi_callback_info info)
 {
     napi_value instance;
-    Addon::NewInstance(env, info, &instance);
+    ${name}::NewInstance(env, info, &instance);
 
     return instance;
 }
-napi_value Addon::New(napi_env env, napi_callback_info info)
+napi_value ${name}::New(napi_env env, napi_callback_info info)
 {
     size_t argc = 0;
     napi_value _this;
@@ -167,18 +208,18 @@ napi_value Addon::New(napi_env env, napi_callback_info info)
     napi_value args[argc];
     napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
 
-    Addon *obj = new Addon();
-    %s *target = constructor_factory(env, argc, args);
+    ${name} *obj = new ${name}();
+    ${type} *target = ${name}_constructor_factory(env, argc, args);
 
     obj->env_ = env;
     obj->target_ = target;
-    env, napi_wrap(env, _this, obj, Addon::Destructor,
-                   nullptr,  // finalize_hint
-                   &obj->wrapper_);
+    napi_wrap(env, _this, obj, ${name}::Destructor,
+              nullptr,  // finalize_hint
+              &obj->wrapper_);
 
     return _this;
 }
-napi_status Addon::NewInstance(napi_env env, napi_callback_info info, napi_value *instance)
+napi_status ${name}::NewInstance(napi_env env, napi_callback_info info, napi_value *instance)
 {
     napi_status status;
 
@@ -199,22 +240,19 @@ napi_status Addon::NewInstance(napi_env env, napi_callback_info info, napi_value
 
     return napi_ok;
 }
-"""
-
-napi_init = """
-void Addon::Init(napi_env env, napi_value exports)
+void ${name}::Init(napi_env env, napi_value exports)
 {
     napi_property_descriptor properties[] = {
         //property
-%s
+${declare_property}
         //function(return type, arguments, function name)
-%s
+${declare_function}
         NAPI_DECLARE_METHOD("delete", Release)
     };
 
     napi_value cons;
     napi_define_class(env,
-                      "%s",
+                      "${jstype}",
                       -1,
                       New,
                       nullptr,
@@ -224,15 +262,25 @@ void Addon::Init(napi_env env, napi_value exports)
 
     napi_create_reference(env, cons, 1, &constructor_);
 
-    napi_set_named_property(env, exports, "%s", cons);
+    napi_set_named_property(env, exports, "${jstype}", cons);
 }
+/////////////////////////////////${jstype}///////////////////////////////////////
+""")
+constant_func = """
+napi_value %s(napi_env env, napi_callback_info info)
+{
+    napi_value result;
+    napi_create_int32(env, %s, &result);
+    return result;
+}
+"""
+napi_init = Template("""
 napi_value Init(napi_env env, napi_value exports)
 {
-    Addon::Init(env, exports);
-
+${init}
     napi_property_descriptor desc[] = {
-%s
-        NAPI_DECLARE_METHOD("createObject", Addon::CreateObject)
+${declaration}
+${create_object}
     };
 
     napi_define_properties(env,
@@ -243,42 +291,44 @@ napi_value Init(napi_env env, napi_value exports)
 }
 
 NAPI_MODULE(NODE_GYP_MODULE_NAME, Init)
-"""
+""")
 
-constructor_func_start = """
-%s *constructor_factory(napi_env env, size_t argc, napi_value *args)
+constructor_func_start = Template("""
+${type} *${name}_constructor_factory(napi_env env, size_t argc, napi_value *args)
 {
-    %s *p = nullptr;
+    ${type} *p = nullptr;
     switch (argc) {
-"""
+""")
 constructor_func_end = """
     }
     return p;
 }
 """
-args_int = """
-            int32_t arg{0} = 0;
+
+
+args_int = """            int32_t arg{0} = 0;
             napi_get_value_int32(env, args[{0}], &arg{0});
 """
-
-args_string = """
-            size_t strlen;
+args_string = """            size_t strlen;
             napi_get_value_string_utf8(env, args[{0}], NULL, 0, &strlen);
             std::string arg{0}(strlen + 1, 0);
             size_t res;
             napi_get_value_string_utf8(env, args[{0}], (char *)arg{0}.c_str(), strlen + 1, &res);
 """
-args_cxxtype = """
-            Addon *p;
-            napi_unwrap(env, args[{0}], reinterpret_cast<void **>(&p));
-            %s &arg{0} = *(p->target());
+args_cxxtype = """            %s *p{0};
+            napi_unwrap(env, args[{0}], reinterpret_cast<void **>(&p{0}));
+            %s &arg{0} = *(p{0}->target());
+"""
+args_obj = """            void *p{0} = nullptr;
+            napi_get_value_external(env, args[{0}], &p{0});
+            %s &arg{0} = *((%s *)p{0});
 """
 return_void = """
     return nullptr;
 """
-return_external = """
+return_bool = """
     napi_value result;
-    napi_create_external(env, &res, nullptr, nullptr, &result);
+    napi_get_boolean(env, res, &result);
     return result;
 """
 return_int = """
@@ -286,11 +336,42 @@ return_int = """
     napi_create_int32(env, res, &result);
     return result;
 """
-return_string="""
+return_uint = """
+    napi_value result;
+    napi_create_uint32(env, res, &result);
+    return result;
+"""
+return_double = """
+    napi_value result;
+    napi_create_double(env, res, &result);
+    return result;
+"""
+return_string = """
     napi_value result;
     napi_create_string_utf8(env, res.c_str(), res.size(), &result);
     return result;
 """
+return_cxxtype = """
+    napi_value cons;
+    napi_get_reference_value(env, %scons_ref(), &cons);
+    napi_value result;
+    napi_new_instance(env, cons, 0, nullptr, &result);
+    %s *p;
+    napi_unwrap(env, result, reinterpret_cast<void **>(&p));
+    p->update_target(res);
+    return result;
+"""
+# return_obj = """
+#     napi_value cons;
+#     napi_get_reference_value(env, %scons_ref(), &cons);
+#     napi_value result;
+#     napi_new_instance(env, cons, 0, nullptr, &result);
+#     %s *p;
+#     napi_unwrap(env, result, reinterpret_cast<void **>(&p));
+#     p->update_target(res);
+#     return result;
+# """
+
 function_datail_start = """
 %s fun_%s_factory(%s *obj, napi_env env, size_t argc, napi_value *args)
 {
@@ -300,8 +381,8 @@ function_datail_end = """
     }
 }
 """
-func_template = """
-napi_value Addon::%s(napi_env env, napi_callback_info info)
+func_template = Template("""
+napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
 {
     size_t argc = 0;
     napi_value _this;
@@ -309,61 +390,73 @@ napi_value Addon::%s(napi_env env, napi_callback_info info)
     napi_value args[argc];
     napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
 
-    Addon *obj;
+    ${name} *obj;
     napi_unwrap(env, _this, reinterpret_cast<void **>(&obj));
 
     ////////////////////////////////////////////////////////////////////////
-    %s *target = obj->target_;
-    %sfun_%s_factory(target, env, argc, args);
+    ${type} *target = obj->target_;
+    ${return_res}fun_${fun_name}_factory(target, env, argc, args);
     ////////////////////////////////////////////////////////////////////////
-    %s
+    ${return_val}
 }
-"""
+""")
 
 getter_int = """
-    napi_create_int32(env, %s, &res);
+    %s result = %s;
+    napi_create_int32(env, result, &res);
+"""
+getter_obj = """
+    %s result = %s;
+    napi_create_external(env, &result, nullptr, nullptr, &res);
 """
 
-prop_getter = """
-napi_value Addon::%s(napi_env env, napi_callback_info info)
+prop_getter = Template("""
+napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
 {
     napi_value _this;
     env, napi_get_cb_info(env, info, nullptr, nullptr, &_this, nullptr);
 
-    Addon *obj;
+    ${name} *obj;
     napi_unwrap(env, _this, reinterpret_cast<void **>(&obj));
 
     ////////////////////////////////////////////////////////////////////////
-    %s *target = obj->target_;
+    ${type} *target = obj->target_;
     napi_value res;
-    %s
+    ${return_fun}
     ////////////////////////////////////////////////////////////////////////
 
     return res;
 }
-"""
+""")
 
 setter_int = """
     int32_t value;
     napi_get_value_int32(env, args[0], &value);
 """
-prop_setter = """
-napi_value Addon::%s(napi_env env, napi_callback_info info)
+setter_string = """
+    size_t strlen;
+    napi_get_value_string_utf8(env, args[0], NULL, 0, &strlen);
+    std::string value(strlen + 1, 0);
+    size_t res;
+    napi_get_value_string_utf8(env, args[0], (char *)value.c_str(), strlen + 1, &res);
+"""
+prop_setter = Template("""
+napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
 {
     size_t argc = 1;
     napi_value args[1];
     napi_value _this;
     napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
 
-    Addon *obj;
+    ${name} *obj;
     napi_unwrap(env, _this, reinterpret_cast<void **>(&obj));
 
     ////////////////////////////////////////////////////////////////////////
-    %s *target = obj->target_;
-%s
-%s
+    ${type} *target = obj->target_;
+${res}
+${fun}
     ////////////////////////////////////////////////////////////////////////
 
     return nullptr;
 }
-"""
+""")

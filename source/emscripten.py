@@ -3,15 +3,6 @@ from ply.lex import TOKEN
 import re
 from generate import Gen
 
-
-class Include:
-    RE = r'\#include(.*)'
-
-    def __init__(self):
-        self.include_file = []
-
-    def make(self, data):
-        print data
     
 class Class:
     __type_re = r'(emscripten::)?class_<(?P<cxxtype>.*)>\(\"(?P<jstype>.*)\"\)'
@@ -194,8 +185,8 @@ class ValueArray:
             self.elem_arr.append((result.group('cxx_field_getter_index'),result.group('cxx_setter')))
 
 class ValueObject:
-    __type_re = r'(emscripten::)?value_object<\s*(?P<cxxtype>[^\s]*)\s*>\s+\(\"(?P<jstype>.*)\"\)'
-    __field_re = r'\.field\(\"(?P<js_field>.*)\",\s*(?P<cxx_field_getter_index>.*)(\s,(?P<cxx_setter>))?\)'
+    __type_re = r'(emscripten::)?value_object<\s*(?P<cxxtype>.*)>\s*\(\"(?P<jstype>.*)\"\)'
+    __field_re = r'\.field\(\"(?P<js_field>.*)\",\s*(?P<cxx_field_getter_index>((?!,).)*)([,]\s*(?P<cxx_setter>.*))?\)'
     RE = __type_re + r'(' + r'\s+' + r'\.field\((.*)\)' + r')*'
     
     def __init__(self):
@@ -261,18 +252,10 @@ class Lexer:
     #     # t.lexer.skip(len(t.value))
     #     return t
 
-        
-    @TOKEN(Include.RE)
-    def t_INCLUDE(self, t):
-        # print t.value
-        obj = Include()
-        obj.make(t.value)
-        self.inlcudes.append(obj)
-        return t
 
     @TOKEN(Class.RE)
     def t_CLASS(self,t):
-        #print t.value
+        # print t.value
         obj = Class()
         obj.make(t.value)
         self.classes.append(obj)
@@ -306,7 +289,7 @@ class Lexer:
     
     @TOKEN(Constant.RE)
     def t_CONSTANT(self, t):
-        #print t.value
+        # print t.value
         result = re.match(Constant.RE, t.value)
         obj = Constant(result.group('jsval'), result.group('cxxval'))
         self.constants.append(obj)
@@ -314,7 +297,7 @@ class Lexer:
     
     @TOKEN(ValueArray.RE)
     def t_VALUE_ARRAY(self, t):
-        #print t.value
+        # print t.value
         obj = ValueArray()
         obj.make(t.value)
         self.value_arrays.append(obj)
@@ -322,7 +305,7 @@ class Lexer:
     
     @TOKEN(ValueObject.RE)
     def t_VALUE_OBJECT(self, t):
-        #print t.value
+        # print t.value
         obj = ValueObject()
         obj.make(t.value)
         self.value_objects.append(obj)
@@ -337,7 +320,7 @@ class Lexer:
         return t
 
     def t_error(self,t):
-        print("Illegal character '%s'(%d)" %(t.value[0], t.lineno))
+        # print("Illegal character '%s'(%d)" %(t.value[0], t.lineno))
         t.lexer.skip(1)
 
     def lexing(self, data, **kwargs):
@@ -349,13 +332,22 @@ class Lexer:
                 break
             # print tok
     
-    def napi_compile(self, path):
+    def napi_compile(self, path, include):
 
         print '\n-----------------napi compile-------------'
-        generator = Gen(path)
-        generator.parse_class(self.classes[0])
+        generator = Gen(path, include)
+        generator.parse_class(self.classes)
+        generator.parse_constant(self.constants)
+        generator.parse_objects(self.value_objects)
         generator.genfile_start()
         generator.genfile_end()
+        # generator.generate_gyp()
+
+        # print include
+        # for obj in self.constants:
+        #     print obj
+            # print obj.jsval
+            # print obj.cxxval
 
 
         return ""

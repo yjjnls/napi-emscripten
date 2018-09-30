@@ -2,10 +2,12 @@ import os
 import re
 import emscripten
 
+
 class Preprocessor:
     RE = r'EMSCRIPTEN_BINDINGS\(.*\)\s*\{(?P<bindings_body>.*)\}'
-    
+
     MACRO_DEFINE_RE = r'#define[ \t]+((?P<macro>\w+)\((?P<macro_arglist>[^\\]*)\))(?P<macro_def>[ \t]+((\\[ \t]*\n[ \t]*)([^\n\\]*))*)'
+
     def __init__(self):
         self.output = ''
         self.target = ''
@@ -16,8 +18,17 @@ class Preprocessor:
             file_obj = f
             self.data = file_obj.read()
             file_obj.close()
-    
+
     def compile(self):
+        searchObj = re.findall('#include(.*)\n', self.data)
+        self.include = []
+        if searchObj:
+            self.include = ['#include%s' % file for file in searchObj]
+        searchObj = re.findall('using namespace (.*)\n', self.data)
+        self.namespace = []
+        if searchObj:
+            self.namespace = ['using namespace %s' % namespace for namespace in searchObj]
+
         pattern = re.compile(Preprocessor.RE, flags=re.DOTALL)
         start = 0
         while True:
@@ -25,15 +36,15 @@ class Preprocessor:
             if result == None:
                 break
             self.output += self.data[start:result.start()]
-            self.output += self.napi_compile(result.group('bindings_body'))
+            self.output += self.napi_compile(result.group('bindings_body'), self.include+self.namespace)
             start = result.end()
 
-    def napi_compile(self, data):
+    def napi_compile(self, data, include):
         cxx_bind = self.cxx_preprocess(data)
         lexer = emscripten.Lexer()
         lexer.lexing(cxx_bind)
-        return lexer.napi_compile(self.target)
-    
+        return lexer.napi_compile(self.target, include)
+
     def cxx_preprocess(self, data):
         pattern = re.compile(Preprocessor.MACRO_DEFINE_RE, flags=re.DOTALL)
         start = 0
@@ -46,15 +57,16 @@ class Preprocessor:
                 break
             output += data[start:result.start()]
             start = result.end()
-            macros.append(( result.group('macro'), result.group('macro_arglist'), re.sub(r'[ \t]+\\[ \t]*',' ',result.group('macro_def')).strip() ))
+            macros.append((result.group('macro'), result.group('macro_arglist'), re.sub(
+                r'[ \t]+\\[ \t]*', ' ', result.group('macro_def')).strip()))
         return self.cxx_macro_replace(output, macros)
-    
+
     #print arglist_re, params
     def cxx_macro_replace(self, data, macros):
         for macro in macros:
             func, arglist, body = macro
             arglist_re, params = self.get_cxx_macro_arglist_re(arglist)
-            pattern = re.compile(func+r'\('+arglist_re+r'\)')
+            pattern = re.compile(func + r'\(' + arglist_re + r'\)')
             start = 0
             output = ''
             while True:
@@ -70,11 +82,11 @@ class Preprocessor:
 
     def cxx_macro_replace_execute(self, params, body, real_params):
         for param, rparam in zip(params, real_params):
-            body=re.sub(r'#%s'%(param), rparam ,body)
-            body=re.sub(r'%s'%(param), rparam ,body)
+            body = re.sub(r'#%s' % (param), rparam, body)
+            body = re.sub(r'%s' % (param), rparam, body)
         return body
 
-    def get_cxx_macro_arglist_re(self,data):
+    def get_cxx_macro_arglist_re(self, data):
         _re = r''
         params = []
         pattern = re.compile(r'(?P<param>\w+)')
