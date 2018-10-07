@@ -309,6 +309,9 @@ constructor_func_end = """
 args_int = """            int32_t arg{0} = 0;
             napi_get_value_int32(env, args[{0}], &arg{0});
 """
+args_double = """            double arg{0} = 0;
+            napi_get_value_double(env, args[{0}], &arg{0});
+"""
 args_string = """            size_t strlen;
             napi_get_value_string_utf8(env, args[{0}], NULL, 0, &strlen);
             std::string arg{0}(strlen + 1, 0);

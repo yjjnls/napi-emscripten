@@ -287,6 +287,8 @@ class Gen:
     def parse_arg_type(self, instance, arg):
         if arg == 'int' or arg == 'intptr_t' or arg == 'size_t':
             return template.args_int
+        if arg == 'double' or arg == 'float':
+            return template.args_double
         if 'string' in arg:
             return template.args_string
 
@@ -296,10 +298,18 @@ class Gen:
                                             instance['cxxtype'])
         searchObj = re.search('(const)\s*(.*)(&)', arg)
         if searchObj:
-            return template.args_obj % (searchObj.group(2),
-                                        searchObj.group(2))
+            arg = searchObj.group(2)
+        
+        for obj in self.value_objects.values():
+            # if arg.split('::')[-1] =='Rect':
+            #     print '~~~~~~~~~~~'
+            #     print obj['cxxtype'].split('::')[-1]
+            #     print '~~~~~~~~~~~'
+            if arg.split('::')[-1]==obj['jstype'].split('::')[-1]:
+                return template.args_obj % (obj['class_name'], obj['class_name'])
 
         # return template.args_obj % (arg, arg)
+        print arg
 
         return '\"parse_arg_type not supported type\"\n'
 
