@@ -23,6 +23,7 @@ class Gen:
 
         self.classes = {}
         self.value_objects = {}
+        self.value_arrays = {}
         self.pattern = func_pattern
         self.register_content = ''
         self.napi_declaration = ''
@@ -54,7 +55,8 @@ class Gen:
         napi_create_declaration = ''
 
         # value_objects
-        for instance in self.value_objects.values():
+        for jstype in self.value_objects_order:
+            instance = self.value_objects[jstype]
             # class declaration
             (napi_fun, napi_property) = self.generate_class_declaration(instance)
             # constructor implementation
@@ -197,6 +199,7 @@ class Gen:
             # print '=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~='
 
         self.register_content += template.register_class
+        self.register_content += template.register_val
 
     def parse_constructor(self, obj):
         result = {'constructor': []}
@@ -305,19 +308,27 @@ class Gen:
             arg = searchObj.group(2)
 
         for obj in self.value_objects.values():
-            # if arg.split('::')[-1] =='Rect':
-            #     print '~~~~~~~~~~~'
-            #     print obj['cxxtype'].split('::')[-1]
-            #     print '~~~~~~~~~~~'
             if arg.split('::')[-1] == obj['jstype'].split('::')[-1]:
                 return template.args_obj % (obj['class_name'], obj['cxxtype'])
 
-        return template.args_array % (arg)
+        for arr in self.value_arrays.values():
+            if arg.split('::')[-1] == arr['jstype'].split('::')[-1]:
+                arr_args = ''
+                args = ''
+                for i in range(arr['argc']):
+                    if arr['argtype'] == 'double':
+                        arr_args += template.arr_args_double % (i, i, i, i, i, i)
+
+                    args += 'arg{0}_%s' % i
+                    if not i == arr['argc'] - 1:
+                        args += ', '
+                return template.args_array % (arr_args, arg, arg, args)
+        print '--------------'
         print arg
 
         return '\"parse_arg_type not supported type\"\n'
 
-    def parse_return_type(self, instance, arg):
+    def parse_return_type(self, instance, arg, cxx_fun_name=None):
         if arg == 'void':
             return template.return_void
         if arg == 'bool':
@@ -335,17 +346,27 @@ class Gen:
 
         if cxx_type in arg:
             # return same class type
-            return template.return_cxxtype % ('', instance['class_name'])
+            return template.return_obj % ('', instance['class_name'])
         else:
             # return other object type
             for obj in self.value_objects.values():
                 if obj['cxxtype'] == arg:
-                    return template.return_cxxtype % (obj['class_name'] + '::',
-                                                      obj['class_name'])
+                    return template.return_obj % (obj['class_name'] + '::',
+                                                  obj['class_name'])
         # print '---------'
         # print arg
         if arg == 'val':
-            return template.return_void
+            val_type = 'int'
+            if '<' in cxx_fun_name:
+                searchObj = re.search('(<)(.*)(>)', cxx_fun_name)
+                if searchObj:
+                    val_type = searchObj.group(2)
+
+            if val_type in ['float', 'double']:
+                return template.return_val % (val_type, val_type, val_type, 'napi_create_double')
+            else:
+                return template.return_val % (val_type, val_type, val_type, 'napi_create_int32')
+
         return '\"parse_return_type not supported type\"\n'
 
     def generate_class_declaration(self, instance):
@@ -435,10 +456,10 @@ class Gen:
 
     def generate_function_detail(self, instance, functions, func_detail):
         for overload_fun in functions.items():
-            fun_name = overload_fun[0]
+            js_fun_name = overload_fun[0]
             return_type = overload_fun[1][0][0]
             self.output_cxx_fp.write(template.function_datail_start % (return_type,
-                                                                       fun_name,
+                                                                       js_fun_name,
                                                                        instance['cxxtype']))
             for spec_fun in overload_fun[1]:
                 self.output_cxx_fp.write('        case %d: {\n' % len(spec_fun[1]))
@@ -454,9 +475,9 @@ class Gen:
                     if not i == len(arg_list) - 1:
                         args += ', '
 
-                fun_name = spec_fun[2]
+                cxx_fun_name = spec_fun[2]
 
-                func_detail(fun_name, args)
+                func_detail(cxx_fun_name, args)
 
                 self.output_cxx_fp.write('        } break;\n')
 
@@ -466,7 +487,10 @@ class Gen:
                 return_res = ''
             else:
                 return_res = '%s res = ' % return_type
-            return_val = self.parse_return_type(instance, return_type)
+
+            cxx_fun_name = overload_fun[1][0][2]
+            return_val = self.parse_return_type(instance, return_type, cxx_fun_name)
+
             self.output_cxx_fp.write(template.func_template.substitute(name=instance['class_name'],
                                                                        fun_name=overload_fun[0],
                                                                        type=instance['cxxtype'],
@@ -478,44 +502,34 @@ class Gen:
         for prop in instance['properties'].items():
             # getter
             if prop[1][0][2] == None:
-                res = self.parse_getter_type(prop[1][0][0], 'target->%s' % prop[1][0][3])
+                res = "%s res = %s;" % (prop[1][0][0], 'target->%s' % prop[1][0][3])
             elif instance['cxxtype'] in prop[1][0][2]:
-                res = self.parse_getter_type(prop[1][0][0], 'target->%s()' % prop[1][0][2])
+                res = "%s res = %s;" % (prop[1][0][0], 'target->%s()' % prop[1][0][2])
             else:
-                res = self.parse_getter_type(prop[1][0][0], '%s(*target)' % prop[1][0][2])
+                res = "%s res = %s;" % (prop[1][0][0], '%s(*target)' % prop[1][0][2])
 
+            cxx_fun_name = prop[1][0][2]
+            return_val = self.parse_return_type(instance, prop[1][0][0], cxx_fun_name)
             self.output_cxx_fp.write(template.prop_getter.substitute(fun_name='get%s' % prop[0],
                                                                      name=instance['class_name'],
                                                                      type=instance['cxxtype'],
-                                                                     return_fun=res))
+                                                                     return_fun=res,
+                                                                     return_val=return_val))
             # setter
             if not prop[1][1] == None:
-                res = self.parse_setter_type(prop[1][0][0])
-                print instance['cxxtype']
-                print prop[1][1]
+                res = self.parse_arg_type(instance, prop[1][1][1][0]).format(0)
+                # print instance['cxxtype']
+                # print prop[1][1]
                 if instance['cxxtype'] in prop[1][1][2]:
-                    fun = '    target->%s(value);' % prop[1][1][2]
+                    fun = '    target->%s(arg0);' % prop[1][1][2]
                 else:
-                    fun = '    %s(*target, value);' % prop[1][1][2]
+                    fun = '    %s(*target, arg0);' % prop[1][1][2]
 
                 self.output_cxx_fp.write(template.prop_setter.substitute(fun_name='set%s' % prop[0],
                                                                          name=instance['class_name'],
                                                                          type=instance['cxxtype'],
                                                                          res=res,
                                                                          fun=fun))
-
-    def parse_getter_type(self, arg, fun):
-        if arg == 'int' or arg == 'intptr_t':
-            return template.getter_int % (arg, fun)
-        return template.getter_obj % (arg, fun)
-        return '\"parse_getter_type not supported type\"\n'
-
-    def parse_setter_type(self, arg):
-        if arg == 'int' or arg == 'intptr_t':
-            return template.setter_int
-        if 'string' in arg:
-            return template.setter_string
-        return '\"parse_setter_type not supported type\"\n'
 
     def generate_class_function(self, instance):
         def detail(fun_name, args):
@@ -535,9 +549,9 @@ class Gen:
     # -------------------objects----------------------------
     def parse_objects(self, objects):
         self.register_content += template.register_object
+        self.value_objects_order = []
         for obj in objects:
-            # if not obj.jstype == 'Size':
-            #     continue
+            self.value_objects_order.append(obj.jstype)
             self.value_objects[obj.jstype] = {'jstype': obj.jstype,
                                               'cxxtype': obj.cxxtype,
                                               'class_name': 'object_' + obj.jstype,
@@ -573,4 +587,18 @@ class Gen:
     # -------------------arrays----------------------------
 
     def parse_arrays(self, arrays):
-        pass
+        self.register_content += template.register_array
+        for arr in arrays:
+            arg_type = arr.cxxtype
+            # print arr.jstype
+            if '<' in arr.cxxtype:
+                searchObj = re.search('(<)(.*)(>)', arr.cxxtype)
+                if searchObj:
+                    arg_type = searchObj.group(2)
+
+            self.value_arrays[arr.jstype] = {'jstype': arr.jstype,
+                                             'cxxtype': arr.cxxtype,
+                                             'argc': len(arr.elem_arr),
+                                             'argtype': arg_type}
+        print '===========arrays=========='
+        print self.value_arrays

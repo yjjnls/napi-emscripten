@@ -503,6 +503,9 @@ namespace emscripten {
         bool delete_(const T& property) const {
             return internal::_emval_delete(handle, val(property).handle);
         }
+        internal::EM_VAL get_handle() {
+            return handle;
+        }
 
     private:
         // takes ownership, assumes handle already incref'd

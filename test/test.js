@@ -6,14 +6,30 @@ const cv = require(bindingPath);
 const assert = require('assert');
 
 // let mat = new cv.Mat(10, 20, cv.CV_8UC3);
-let Size = new cv.Size()
-console.log(Size)
-console.log(Size.width)
-console.log(Size.height)
-let mat = new cv.Mat(Size, cv.CV_8UC3);
+
+// let Size = new cv.Size()
+// console.log(Size)
+// console.log(Size.width)
+// console.log(Size.height)
+// let mat = new cv.Mat(Size, cv.CV_8UC3);
+
+let mat = new cv.Mat(2, 2, cv.CV_8UC4, [0, 1, 2, 3.1]);
+
 console.log(mat.type())
 console.log(mat.depth())
 console.log(mat.channels())
+let element = mat.ptr(0, 0);
+console.log('---element---')
+console.log(element[0])
+console.log(element[1])
+console.log(element[2])
+console.log(element[3])
+console.log('---element---')
+assert.equal(element[0], 0);
+assert.equal(element[1], 1);
+assert.equal(element[2], 2);
+assert.equal(element[3], 3);
+
 console.log(mat.empty())
 let size = mat.size()
 console.log(size)

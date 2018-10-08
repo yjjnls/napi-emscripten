@@ -99,7 +99,6 @@ register_class = """
         const char *setterSignature,
         GenericFunction setter) {}
 """
-
 register_constant = """
     void _embind_register_constant(
         const char *name,
@@ -128,6 +127,34 @@ register_object = """
         void *setterContext){}
     
     void _embind_finalize_value_object(TYPEID structType){}
+"""
+register_array = """
+    void _embind_register_value_array(
+        TYPEID tupleType,
+        const char *name,
+        const char *constructorSignature,
+        GenericFunction constructor,
+        const char *destructorSignature,
+        GenericFunction destructor){}
+    
+    void _embind_register_value_array_element(
+        TYPEID tupleType,
+        TYPEID getterReturnType,
+        const char *getterSignature,
+        GenericFunction getter,
+        void *getterContext,
+        TYPEID setterArgumentType,
+        const char *setterSignature,
+        GenericFunction setter,
+        void *setterContext){}
+
+    void _embind_finalize_value_array(TYPEID tupleType){}
+"""
+register_val = """
+    EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv){
+        return (_EM_VAL *)argv;
+    }
+    void _emval_decref(EM_VAL value){}
 """
 class_declaration = Template("""
 /////////////////////////////////${jstype}///////////////////////////////////////
@@ -326,8 +353,25 @@ args_obj = """            %s *p{0} = nullptr;
             napi_unwrap(env, args[{0}], reinterpret_cast<void **>(&p{0}));
             %s &arg{0} = *(p{0}->target());
 """
-args_array = """            %s arg{0};
+args_array = """            
+            napi_value array{0} = args[{0}];
+            bool isarray{0};
+            napi_is_array(env, array{0}, &isarray{0});
+            assert(isarray{0});
+            uint32_t length{0};
+            napi_get_array_length(env, array{0}, &length{0});
+            %s
+            %s &arg{0} = *new %s(%s);
 """
+
+arr_args_double = """
+            napi_value ret{0}_%s;
+            napi_get_element(env, array{0}, %s, &ret{0}_%s);
+            double arg{0}_%s = 0;
+            napi_get_value_double(env, ret{0}_%s, &arg{0}_%s);
+"""
+
+
 return_void = """
     return nullptr;
 """
@@ -356,7 +400,7 @@ return_string = """
     napi_create_string_utf8(env, res.c_str(), res.size(), &result);
     return result;
 """
-return_cxxtype = """
+return_obj = """
     napi_value cons;
     napi_get_reference_value(env, %scons_ref(), &cons);
     napi_value result;
@@ -366,16 +410,23 @@ return_cxxtype = """
     p->update_target(res);
     return result;
 """
-# return_obj = """
-#     napi_value cons;
-#     napi_get_reference_value(env, %scons_ref(), &cons);
-#     napi_value result;
-#     napi_new_instance(env, cons, 0, nullptr, &result);
-#     %s *p;
-#     napi_unwrap(env, result, reinterpret_cast<void **>(&p));
-#     p->update_target(res);
-#     return result;
-# """
+return_val = """
+    EM_VAR_ARGS *handle = (EM_VAR_ARGS *)res.get_handle();
+    typedef std::array<GenericWireType, PackSize<%s>::value> arr;
+    arr &elements = *(arr *)handle;
+    GenericWireType *cursor = &elements[0];
+    size_t array_length = cursor->w[0].u;
+    %s *array_data = (%s *)cursor->w[1].p;
+
+    napi_value result;
+    napi_create_array(env, &result);
+    for (int i = 0; i < array_length; i++) {
+        napi_value value;
+        %s(env, array_data[i], &value);
+        napi_set_element(env, result, i, value);
+    }
+    return result;
+"""
 
 function_datail_start = """
 %s fun_%s_factory(%s *obj, napi_env env, size_t argc, napi_value *args)
@@ -406,14 +457,14 @@ napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
 }
 """)
 
-getter_int = """
-    %s result = %s;
-    napi_create_int32(env, result, &res);
-"""
-getter_obj = """
-    %s result = %s;
-    napi_create_external(env, &result, nullptr, nullptr, &res);
-"""
+# getter_int = """
+#     %s result = %s;
+#     napi_create_int32(env, result, &res);
+# """
+# getter_obj = """
+#     %s result = %s;
+#     napi_create_external(env, &result, nullptr, nullptr, &res);
+# """
 
 prop_getter = Template("""
 napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
@@ -426,25 +477,23 @@ napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
 
     ////////////////////////////////////////////////////////////////////////
     ${type} *target = obj->target_;
-    napi_value res;
     ${return_fun}
     ////////////////////////////////////////////////////////////////////////
-
-    return res;
+    ${return_val}
 }
 """)
 
-setter_int = """
-    int32_t value;
-    napi_get_value_int32(env, args[0], &value);
-"""
-setter_string = """
-    size_t strlen;
-    napi_get_value_string_utf8(env, args[0], NULL, 0, &strlen);
-    std::string value(strlen + 1, 0);
-    size_t res;
-    napi_get_value_string_utf8(env, args[0], (char *)value.c_str(), strlen + 1, &res);
-"""
+# setter_int = """
+#     int32_t value;
+#     napi_get_value_int32(env, args[0], &value);
+# """
+# setter_string = """
+#     size_t strlen;
+#     napi_get_value_string_utf8(env, args[0], NULL, 0, &strlen);
+#     std::string value(strlen + 1, 0);
+#     size_t res;
+#     napi_get_value_string_utf8(env, args[0], (char *)value.c_str(), strlen + 1, &res);
+# """
 prop_setter = Template("""
 napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
 {

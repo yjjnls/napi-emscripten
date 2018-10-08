@@ -339,6 +339,7 @@ class Lexer:
         generator.parse_class(self.classes)
         generator.parse_constant(self.constants)
         generator.parse_objects(self.value_objects)
+        generator.parse_arrays(self.value_arrays)
         generator.genfile_start()
         generator.genfile_end()
         # generator.generate_gyp()

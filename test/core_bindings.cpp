@@ -477,11 +477,11 @@ EMSCRIPTEN_BINDINGS(binding_utils)
 //     function("rotatedRectBoundingRect", select_overload<Rect(const cv::RotatedRect&)>(&binding_utils::rotatedRectBoundingRect));
 //     function("rotatedRectBoundingRect2f", select_overload<Rect2f(const cv::RotatedRect&)>(&binding_utils::rotatedRectBoundingRect2f));
 
-    // emscripten::value_array<cv::Scalar_<double>> ("Scalar")
-    //     .element(index<0>())
-    //     .element(index<1>())
-    //     .element(index<2>())
-    //     .element(index<3>());
+    emscripten::value_array<cv::Scalar_<double>> ("Scalar")
+        .element(index<0>())
+        .element(index<1>())
+        .element(index<2>())
+        .element(index<3>());
 
     emscripten::value_object<binding_utils::MinMaxLoc>("MinMaxLoc")
         .field("minVal", &binding_utils::MinMaxLoc::minVal)
