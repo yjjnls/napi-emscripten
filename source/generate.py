@@ -36,7 +36,7 @@ class Gen:
 
         (shotname, extension) = os.path.splitext(os.path.basename(os.path.realpath(self.target)))
         self.output_js = os.path.join(self.base_path, 'plugin/%s.js' % shotname)
-        self.output_js_fp = open(self.output_js, 'w+')
+        # self.output_js_fp = open(self.output_js, 'w+')
 
         #########################################################################
         # node-gyp
@@ -102,7 +102,7 @@ class Gen:
 
     def genfile_end(self):
         self.output_cxx_fp.close()
-        self.output_js_fp.close()
+        # self.output_js_fp.close()
         if not self.supplemental_file_fp == None:
             self.supplemental_file_fp.close()
 
@@ -118,9 +118,13 @@ class Gen:
 
     def generate_namespace(self):
         self.output_cxx_fp.write('namespace %s {\n\n' % self.namespace)
-        if self.supplemental_file and 'template' in self.supplemental_file:
-            for template_fun in self.supplemental_file['template']:
-                self.output_cxx_fp.write('\t' + template_fun + '\n')
+        if self.supplemental_file:
+            if 'template' in self.supplemental_file:
+                for template_fun in self.supplemental_file['template']:
+                    self.output_cxx_fp.write('\t' + template_fun + '\n')
+            if 'class' in self.supplemental_file:
+                for template_fun in self.supplemental_file['class']:
+                    self.output_cxx_fp.write('\t' + template_fun + '\n')
         for meta_info in self.classes.values():
             for item in [meta_info['constructors'], meta_info['functions'], meta_info['properties'], meta_info['class_functions']]:
                 for overload_fun in item.values():
@@ -299,16 +303,16 @@ class Gen:
         searchObj = re.search('(const)\s*(.*)(&)', arg)
         if searchObj:
             arg = searchObj.group(2)
-        
+
         for obj in self.value_objects.values():
             # if arg.split('::')[-1] =='Rect':
             #     print '~~~~~~~~~~~'
             #     print obj['cxxtype'].split('::')[-1]
             #     print '~~~~~~~~~~~'
-            if arg.split('::')[-1]==obj['jstype'].split('::')[-1]:
-                return template.args_obj % (obj['class_name'], obj['class_name'])
+            if arg.split('::')[-1] == obj['jstype'].split('::')[-1]:
+                return template.args_obj % (obj['class_name'], obj['cxxtype'])
 
-        # return template.args_obj % (arg, arg)
+        return template.args_array % (arg)
         print arg
 
         return '\"parse_arg_type not supported type\"\n'
@@ -338,9 +342,10 @@ class Gen:
                 if obj['cxxtype'] == arg:
                     return template.return_cxxtype % (obj['class_name'] + '::',
                                                       obj['class_name'])
-        print '---------'
-        print arg
-        # return template.return_void
+        # print '---------'
+        # print arg
+        if arg == 'val':
+            return template.return_void
         return '\"parse_return_type not supported type\"\n'
 
     def generate_class_declaration(self, instance):
@@ -564,3 +569,8 @@ class Gen:
             # print obj.field_arr
         print '===========objects=========='
         # print self.value_objects.values()
+
+    # -------------------arrays----------------------------
+
+    def parse_arrays(self, arrays):
+        pass

@@ -16,6 +16,10 @@
         "template <typename T>extern val matPtr(const cv::Mat &mat, int i);",
         "template <typename T>extern val matPtr(const cv::Mat &mat, int i, int j);"
     ],
+    "class": [
+        "class MinMaxLoc\n     {\n     public:\n         double minVal;\n         double maxVal;\n         Point minLoc;\n         Point maxLoc;\n     };",
+        "class Circle\n     {\n     public:\n         Point2f center;\n         float radius;\n     };"
+      ],
     "&cv::Range::start": "int,cv::Range::start",
     "&cv::Range::end": "int,cv::Range::end",
     "&cv::TermCriteria::type": "int,cv::TermCriteria::type",

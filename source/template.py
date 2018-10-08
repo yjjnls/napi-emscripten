@@ -102,30 +102,30 @@ register_class = """
 
 register_constant = """
     void _embind_register_constant(
-        const char* name,
+        const char *name,
         TYPEID constantType,
         double value){}
 """
 register_object = """
     void _embind_register_value_object(
         TYPEID structType,
-        const char* fieldName,
-        const char* constructorSignature,
+        const char *fieldName,
+        const char *constructorSignature,
         GenericFunction constructor,
-        const char* destructorSignature,
+        const char *destructorSignature,
         GenericFunction destructor){}
 
     void _embind_register_value_object_field(
         TYPEID structType,
-        const char* fieldName,
+        const char *fieldName,
         TYPEID getterReturnType,
-        const char* getterSignature,
+        const char *getterSignature,
         GenericFunction getter,
-        void* getterContext,
+        void *getterContext,
         TYPEID setterArgumentType,
-        const char* setterSignature,
+        const char *setterSignature,
         GenericFunction setter,
-        void* setterContext){}
+        void *setterContext){}
     
     void _embind_finalize_value_object(TYPEID structType){}
 """
@@ -318,13 +318,15 @@ args_string = """            size_t strlen;
             size_t res;
             napi_get_value_string_utf8(env, args[{0}], (char *)arg{0}.c_str(), strlen + 1, &res);
 """
-args_cxxtype = """            %s *p{0};
+args_cxxtype = """            %s *p{0} = nullptr;
             napi_unwrap(env, args[{0}], reinterpret_cast<void **>(&p{0}));
             %s &arg{0} = *(p{0}->target());
 """
-args_obj = """            void *p{0} = nullptr;
-            napi_get_value_external(env, args[{0}], &p{0});
-            %s &arg{0} = *((%s *)p{0});
+args_obj = """            %s *p{0} = nullptr;
+            napi_unwrap(env, args[{0}], reinterpret_cast<void **>(&p{0}));
+            %s &arg{0} = *(p{0}->target());
+"""
+args_array = """            %s arg{0};
 """
 return_void = """
     return nullptr;

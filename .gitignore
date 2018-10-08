@@ -1,4 +1,6 @@
 *.pyc
-plugin
 node_modules
 package-lock.json
+build
+*binding.cc
+*core_binding.js
