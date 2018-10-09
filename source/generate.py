@@ -66,8 +66,8 @@ class Gen:
             # napi declaration
             self.generate_napi_class_declaration(instance, napi_fun, napi_property)
 
-            napi_init_declaration += '    %s::Init(env, exports);\n' % instance['class_name']
-            napi_create_declaration += '        NAPI_DECLARE_METHOD("createObject", %s::CreateObject),\n' % instance[
+            napi_init_declaration += '\t%s::Init(env, exports);\n' % instance['class_name']
+            napi_create_declaration += '\t\tNAPI_DECLARE_METHOD("createObject", %s::CreateObject),\n' % instance[
                 'class_name']
 
         # class
@@ -85,15 +85,15 @@ class Gen:
             # napi declaration
             self.generate_napi_class_declaration(instance, napi_fun, napi_property)
 
-            napi_init_declaration += '    %s::Init(env, exports);\n' % instance['class_name']
-            napi_create_declaration += '        NAPI_DECLARE_METHOD("createObject", %s::CreateObject),\n' % instance[
+            napi_init_declaration += '\t%s::Init(env, exports);\n' % instance['class_name']
+            napi_create_declaration += '\t\tNAPI_DECLARE_METHOD("createObject", %s::CreateObject),\n' % instance[
                 'class_name']
 
         # constant
         if self.constants:
-            self.napi_declaration += '        // constant\n'
+            self.napi_declaration += '\t\t// constant\n'
             for constant in self.constants:
-                self.napi_declaration += '        {"%s", nullptr, nullptr, %s, nullptr, 0, napi_default, 0},\n' % (
+                self.napi_declaration += '\t\t{"%s", nullptr, nullptr, %s, nullptr, 0, napi_default, 0},\n' % (
                     constant.jsval, 'get_constant_' + constant.jsval)
                 self.output_cxx_fp.write(template.constant_func % ('get_constant_' + constant.jsval, constant.cxxval))
 
@@ -154,7 +154,7 @@ class Gen:
 
         self.output_cxx_fp.write('\n}  // namespace binding_utils\nusing namespace binding_utils;\n')
 
-    def parse_func_line(self, line, cxx_type, bool_static=False):
+    def parse_func_line(self, line, cxx_type, bool_static=False, getter=True):
         if line == None:
             return None
         searchObj = re.search(self.pattern, line)
@@ -172,7 +172,10 @@ class Gen:
                 args_list = []
             return (return_type, args_list, fun_name, args_real)
         # only for raw property(public, no function)
-        return (line.split(',')[0], [], None, line.split(',')[1])
+        if getter:
+            return (line.split(',')[0], [], None, line.split(',')[1])
+        else:
+            return ('void', [line.split(',')[0]], None, line.split(',')[1])
 
     def parse_class(self, classes):
         for obj in classes:
@@ -256,6 +259,7 @@ class Gen:
             result[js_method] = []
             prop_function = prop[1][0][0]
             if ',' in prop_function:
+                # function (getter function, setter function)
                 getter = prop_function.split(',')[0]
                 if 'select_over' not in getter:
                     getter = self.supplemental_file[getter].encode("utf-8")
@@ -263,13 +267,14 @@ class Gen:
                 if 'select_over' not in setter:
                     setter = self.supplemental_file[setter].encode("utf-8")
             else:
-                getter = prop_function
-                if 'select_over' not in getter:
-                    getter = self.supplemental_file[getter].encode("utf-8")
+                # member varible (setter = getter)
                 setter = None
+                getter = self.supplemental_file[prop_function].encode("utf-8")
+                if 'select_over' not in getter:
+                    setter = getter
 
             result[js_method].append(self.parse_func_line(getter, obj.cxxtype))
-            result[js_method].append(self.parse_func_line(setter, obj.cxxtype))
+            result[js_method].append(self.parse_func_line(setter, obj.cxxtype, getter=False))
 
         print '===========properties=========='
         print result
@@ -283,7 +288,7 @@ class Gen:
             js_method = static_func[0]
             result[js_method] = []
             for spec_fun in static_func[1]:
-                detail = self.parse_func_line(spec_fun[0], obj.cxxtype, True)
+                detail = self.parse_func_line(spec_fun[0], obj.cxxtype, bool_static=True)
                 result[js_method].append(detail)
 
         print '===========class functions=========='
@@ -309,7 +314,26 @@ class Gen:
 
         for obj in self.value_objects.values():
             if arg.split('::')[-1] == obj['jstype'].split('::')[-1]:
-                return template.args_obj % (obj['class_name'], obj['cxxtype'])
+                i = 0
+                fun = ''
+                for prop in obj['properties'].items():
+                    prop_name = prop[0]
+                    prop_type = prop[1][0][0]
+                    fun += '\tnapi_value output{0}_%s;\n\tstd::string %s = "%s";\n' % (i, prop_name, prop_name)
+                    fun += '\tnapi_value key{0}_%s;\n\tnapi_create_string_utf8(env, %s.c_str(), %s.size(), &key{0}_%s);\n' % (
+                        i, prop_name, prop_name, i)
+                    fun += '\tnapi_get_property(env, args[{0}], key{0}_%s, &output{0}_%s);\n' % (i, i)
+                    if prop_type in ['float', 'double']:
+                        fun += '\tnapi_get_value_double(env, output{0}_%s, (double *)&(p{0}->target()->%s));\n' % (
+                            i, prop[1][1][3])
+                    else:
+                        fun += '\tnapi_get_value_int32(env, output{0}_%s, &(p{0}->target()->%s));\n' % (
+                            i, prop[1][1][3])
+                    i += 1
+                # print obj
+                # print fun
+                # print ''
+                return template.args_obj % (obj['class_name'], obj['class_name'], fun, obj['cxxtype'])
 
         for arr in self.value_arrays.values():
             if arg.split('::')[-1] == arr['jstype'].split('::')[-1]:
@@ -371,34 +395,34 @@ class Gen:
 
     def generate_class_declaration(self, instance):
         napi_fun = ''
-        declare_fun = '    // function\n'
+        declare_fun = '\t// function\n'
         if 'functions' in instance:
             for fun_name in instance['functions'].keys():
-                napi_fun += '        NAPI_DECLARE_METHOD("{0}", {0}),\n'.format(fun_name)
-                declare_fun += '    static napi_value %s(napi_env env, napi_callback_info info);\n' % fun_name
+                napi_fun += '\t\tNAPI_DECLARE_METHOD("{0}", {0}),\n'.format(fun_name)
+                declare_fun += '\tstatic napi_value %s(napi_env env, napi_callback_info info);\n' % fun_name
 
         napi_property = ''
-        declare_property = '    // property\n'
+        declare_property = '\t// property\n'
         if 'properties' in instance:
             for prop in instance['properties'].items():
                 prop_name = prop[0]
                 getter = 'get%s' % prop_name
-                declare_property += '    static napi_value %s(napi_env env, napi_callback_info info);\n' % getter
+                declare_property += '\tstatic napi_value %s(napi_env env, napi_callback_info info);\n' % getter
                 if not prop[1][1] == None:
                     setter = 'set%s' % prop_name
-                    declare_property += '    static napi_value %s(napi_env env, napi_callback_info info);\n' % setter
+                    declare_property += '\tstatic napi_value %s(napi_env env, napi_callback_info info);\n' % setter
                 else:
                     setter = 'nullptr'
-                napi_property += '        {"%s", nullptr, nullptr, %s, %s, 0, napi_default, 0},\n' % (prop_name,
-                                                                                                      getter,
-                                                                                                      setter)
+                napi_property += '\t\t{"%s", nullptr, nullptr, %s, %s, 0, napi_default, 0},\n' % (prop_name,
+                                                                                                  getter,
+                                                                                                  setter)
 
-        declare_static_function = '    // static_function\n'
+        declare_static_function = '\t// static_function\n'
         if 'class_functions' in instance:
             for fun_name in instance['class_functions'].keys():
-                declare_static_function += '    static napi_value %s(napi_env env, napi_callback_info info);\n' % fun_name
-                self.napi_declaration += '        NAPI_DECLARE_METHOD("{0}", {1}::{0}),\n'.format(fun_name,
-                                                                                                  instance['class_name'])
+                declare_static_function += '\tstatic napi_value %s(napi_env env, napi_callback_info info);\n' % fun_name
+                self.napi_declaration += '\t\tNAPI_DECLARE_METHOD("{0}", {1}::{0}),\n'.format(fun_name,
+                                                                                              instance['class_name'])
 
         self.output_cxx_fp.write(template.class_declaration.substitute(name=instance['class_name'],
                                                                        type=instance['cxxtype'],
@@ -421,7 +445,7 @@ class Gen:
                                                                             type=instance['cxxtype']))
         for list_value in instance['constructors'].values():
             for cons_fun in list_value:
-                self.output_cxx_fp.write('        case %d: {\n' % len(cons_fun[1]))
+                self.output_cxx_fp.write('  case %d: {\n' % len(cons_fun[1]))
 
                 argc = 0
                 args = ''
@@ -433,23 +457,23 @@ class Gen:
                     args += 'arg{0}'.format(i)
                     if not i == len(cons_fun[1]) - 1:
                         args += ', '
-                self.output_cxx_fp.write('            p = {0}({1});\n'.format(cons_fun[2], args))
+                self.output_cxx_fp.write('\tp = {0}({1});\n'.format(cons_fun[2], args))
 
-                self.output_cxx_fp.write('        } break;\n')
+                self.output_cxx_fp.write('  } break;\n')
 
         self.output_cxx_fp.write(template.constructor_func_end)
 
     def generate_function(self, instance):
         def detail(fun_name, args):
             if 'operator()' in fun_name:
-                self.output_cxx_fp.write('\n            return (*obj)({0});\n'.format(args))
+                self.output_cxx_fp.write('\n\treturn (*obj)({0});\n'.format(args))
             elif not instance['cxxtype'] in fun_name:
                 if args:
-                    self.output_cxx_fp.write('\n            return {0}(*obj, {1});\n'.format(fun_name, args))
+                    self.output_cxx_fp.write('\n\treturn {0}(*obj, {1});\n'.format(fun_name, args))
                 else:
-                    self.output_cxx_fp.write('\n            return {0}(*obj);\n'.format(fun_name))
+                    self.output_cxx_fp.write('\n\treturn {0}(*obj);\n'.format(fun_name))
             else:
-                self.output_cxx_fp.write('\n            return obj->{0}({1});\n'.format(fun_name, args))
+                self.output_cxx_fp.write('\n\treturn obj->{0}({1});\n'.format(fun_name, args))
 
         self.output_cxx_fp.write('/*-------------------  function  -------------------*/\n')
         self.generate_function_detail(instance, instance['functions'], detail)
@@ -462,7 +486,7 @@ class Gen:
                                                                        js_fun_name,
                                                                        instance['cxxtype']))
             for spec_fun in overload_fun[1]:
-                self.output_cxx_fp.write('        case %d: {\n' % len(spec_fun[1]))
+                self.output_cxx_fp.write('  case %d: {\n' % len(spec_fun[1]))
 
                 argc = 0
                 args = ''
@@ -479,7 +503,7 @@ class Gen:
 
                 func_detail(cxx_fun_name, args)
 
-                self.output_cxx_fp.write('        } break;\n')
+                self.output_cxx_fp.write('  } break;\n')
 
             self.output_cxx_fp.write(template.function_datail_end)
 
@@ -501,15 +525,17 @@ class Gen:
         self.output_cxx_fp.write('/*-------------------  property  -------------------*/\n')
         for prop in instance['properties'].items():
             # getter
-            if prop[1][0][2] == None:
-                res = "%s res = %s;" % (prop[1][0][0], 'target->%s' % prop[1][0][3])
-            elif instance['cxxtype'] in prop[1][0][2]:
-                res = "%s res = %s;" % (prop[1][0][0], 'target->%s()' % prop[1][0][2])
-            else:
-                res = "%s res = %s;" % (prop[1][0][0], '%s(*target)' % prop[1][0][2])
-
             cxx_fun_name = prop[1][0][2]
-            return_val = self.parse_return_type(instance, prop[1][0][0], cxx_fun_name)
+            varbile = prop[1][0][3]
+            return_type = prop[1][0][0]
+            if cxx_fun_name == None:
+                res = "%s res = %s;" % (return_type, 'target->%s' % varbile)
+            elif instance['cxxtype'] in cxx_fun_name:
+                res = "%s res = %s;" % (return_type, 'target->%s()' % cxx_fun_name)
+            else:
+                res = "%s res = %s;" % (return_type, '%s(*target)' % cxx_fun_name)
+
+            return_val = self.parse_return_type(instance, return_type, cxx_fun_name)
             self.output_cxx_fp.write(template.prop_getter.substitute(fun_name='get%s' % prop[0],
                                                                      name=instance['class_name'],
                                                                      type=instance['cxxtype'],
@@ -517,13 +543,16 @@ class Gen:
                                                                      return_val=return_val))
             # setter
             if not prop[1][1] == None:
-                res = self.parse_arg_type(instance, prop[1][1][1][0]).format(0)
-                # print instance['cxxtype']
-                # print prop[1][1]
-                if instance['cxxtype'] in prop[1][1][2]:
-                    fun = '    target->%s(arg0);' % prop[1][1][2]
+                arg = prop[1][1][1][0]
+                res = self.parse_arg_type(instance, arg).format(0)
+                cxx_fun_name = prop[1][1][2]
+                varbile = prop[1][1][3]
+                if cxx_fun_name == None:
+                    fun = '    target->%s = arg0;' % varbile
+                elif instance['cxxtype'] in cxx_fun_name:
+                    fun = '    target->%s(arg0);' % cxx_fun_name
                 else:
-                    fun = '    %s(*target, arg0);' % prop[1][1][2]
+                    fun = '    %s(*target, arg0);' % cxx_fun_name
 
                 self.output_cxx_fp.write(template.prop_setter.substitute(fun_name='set%s' % prop[0],
                                                                          name=instance['class_name'],
@@ -548,9 +577,12 @@ class Gen:
 
     # -------------------objects----------------------------
     def parse_objects(self, objects):
+        print '===================================='
         self.register_content += template.register_object
         self.value_objects_order = []
         for obj in objects:
+            # if not obj.jstype=='Size':
+            #     continue
             self.value_objects_order.append(obj.jstype)
             self.value_objects[obj.jstype] = {'jstype': obj.jstype,
                                               'cxxtype': obj.cxxtype,
@@ -569,12 +601,21 @@ class Gen:
                 setter = field[2]
                 if 'select_over' not in getter:
                     getter = self.supplemental_file[getter].encode("utf-8")
+                # if not setter == None:
+                #     if 'select_over' not in setter:
+                #         setter = self.supplemental_file[setter].encode("utf-8")
                 if not setter == None:
                     if 'select_over' not in setter:
                         setter = self.supplemental_file[setter].encode("utf-8")
+                elif ',' in getter:
+                    # member varible (getter=setter)
+                    setter = getter
 
                 properties[prop_name].append(self.parse_func_line(getter, obj.cxxtype))
-                properties[prop_name].append(self.parse_func_line(setter, obj.cxxtype))
+                properties[prop_name].append(self.parse_func_line(setter, obj.cxxtype, getter=False))
+            print obj.jstype
+            print properties
+            print ''
             # if obj.jstype == 'Exception':
             #     print self.value_objects[obj.jstype]
             # print self.value_objects[obj.jstype]

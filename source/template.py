@@ -20,7 +20,7 @@ bind_gyp = """
 }
 """
 
-bind_cxx_fixed = """
+bind_cxx_fixed = """\
 #include <node_api.h>
 %s
 using namespace emscripten::internal;
@@ -29,7 +29,25 @@ using namespace emscripten::internal;
     {                                           \\
         name, 0, func, 0, 0, 0, napi_default, 0 \\
     }
+#define NAPI_DECLARE_METHOD(name, func)         \\
+    {                                           \\
+        name, 0, func, 0, 0, 0, napi_default, 0 \\
+    }
+#define NAPI_ASSERT_BASE(env, assertion, message, ret_val)               \\
+  do {                                                                   \\
+    if (!(assertion)) {                                                  \\
+      napi_throw_error(                                                  \\
+          (env),                                                         \\
+        NULL,                                                            \\
+          "assertion (" #assertion ") failed: " message);                \\
+      break;                                                             \\
+    }                                                                    \\
+  } while (0)
 
+// Returns NULL on failed assertion.
+// This is meant to be used inside napi_callback methods.
+#define NAPI_ASSERT(env, assertion, message)                             \\
+  NAPI_ASSERT_BASE(env, assertion, message, NULL)
 extern "C" {
 %s
 }
@@ -323,52 +341,69 @@ NAPI_MODULE(NODE_GYP_MODULE_NAME, Init)
 constructor_func_start = Template("""
 ${type} *${name}_constructor_factory(napi_env env, size_t argc, napi_value *args)
 {
-    ${type} *p = nullptr;
-    switch (argc) {
+ ${type} *p = nullptr;
+ switch (argc) {
 """)
 constructor_func_end = """
-    }
-    return p;
+ }
+ return p;
 }
 """
 
 
-args_int = """            int32_t arg{0} = 0;
-            napi_get_value_int32(env, args[{0}], &arg{0});
+args_int = """\
+    // arg{0}
+    int32_t arg{0} = 0;
+    napi_get_value_int32(env, args[{0}], &arg{0});
 """
-args_double = """            double arg{0} = 0;
-            napi_get_value_double(env, args[{0}], &arg{0});
+args_double = """\
+    // arg{0}
+    double arg{0} = 0;
+    napi_get_value_double(env, args[{0}], &arg{0});
 """
-args_string = """            size_t strlen;
-            napi_get_value_string_utf8(env, args[{0}], NULL, 0, &strlen);
-            std::string arg{0}(strlen + 1, 0);
-            size_t res;
-            napi_get_value_string_utf8(env, args[{0}], (char *)arg{0}.c_str(), strlen + 1, &res);
+args_string = """\
+    // arg{0}
+    size_t strlen;
+    napi_get_value_string_utf8(env, args[{0}], NULL, 0, &strlen);
+    std::string arg{0}(strlen + 1, 0);
+    size_t res;
+    napi_get_value_string_utf8(env, args[{0}], (char *)arg{0}.c_str(), strlen + 1, &res);
 """
-args_cxxtype = """            %s *p{0} = nullptr;
-            napi_unwrap(env, args[{0}], reinterpret_cast<void **>(&p{0}));
-            %s &arg{0} = *(p{0}->target());
+args_cxxtype = """\
+    // arg{0}
+    %s *p{0} = nullptr;
+    napi_unwrap(env, args[{0}], reinterpret_cast<void **>(&p{0}));
+    %s &arg{0} = *(p{0}->target());
 """
-args_obj = """            %s *p{0} = nullptr;
-            napi_unwrap(env, args[{0}], reinterpret_cast<void **>(&p{0}));
-            %s &arg{0} = *(p{0}->target());
+args_obj = """\
+    // arg{0}
+    napi_valuetype valuetype{0};
+    napi_typeof(env, args[{0}], &valuetype{0});
+    NAPI_ASSERT(env, valuetype{0} == napi_object, "Passing arg is not object!");
+    napi_value cons{0};
+    napi_get_reference_value(env, %s::cons_ref(), &cons{0});
+    napi_value value{0};
+    napi_new_instance(env, cons{0}, 0, nullptr, &value{0});
+    %s *p{0} = nullptr;
+    napi_unwrap(env, value{0}, reinterpret_cast<void **>(&p{0}));
+%s    %s &arg{0} = *(p{0}->target());
 """
-args_array = """            
-            napi_value array{0} = args[{0}];
-            bool isarray{0};
-            napi_is_array(env, array{0}, &isarray{0});
-            assert(isarray{0});
-            uint32_t length{0};
-            napi_get_array_length(env, array{0}, &length{0});
-            %s
-            %s &arg{0} = *new %s(%s);
+args_array = """\
+    // arg{0}
+    napi_value array{0} = args[{0}];
+    bool isarray{0};
+    napi_is_array(env, array{0}, &isarray{0});
+    NAPI_ASSERT(env, isarray{0}, "Passing arg is not array!");
+    uint32_t length{0};
+    napi_get_array_length(env, array{0}, &length{0});
+%s    %s &arg{0} = *new %s(%s);
 """
 
-arr_args_double = """
-            napi_value ret{0}_%s;
-            napi_get_element(env, array{0}, %s, &ret{0}_%s);
-            double arg{0}_%s = 0;
-            napi_get_value_double(env, ret{0}_%s, &arg{0}_%s);
+arr_args_double = """\
+    napi_value ret{0}_%s;
+    napi_get_element(env, array{0}, %s, &ret{0}_%s);
+    double arg{0}_%s = 0;
+    napi_get_value_double(env, ret{0}_%s, &arg{0}_%s);
 """
 
 
@@ -431,10 +466,10 @@ return_val = """
 function_datail_start = """
 %s fun_%s_factory(%s *obj, napi_env env, size_t argc, napi_value *args)
 {
-    switch (argc) {
+ switch (argc) {
 """
 function_datail_end = """
-    }
+ }
 }
 """
 func_template = Template("""
@@ -453,18 +488,9 @@ napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
     ${type} *target = obj->target_;
     ${return_res}fun_${fun_name}_factory(target, env, argc, args);
     ////////////////////////////////////////////////////////////////////////
-    ${return_val}
+${return_val}
 }
 """)
-
-# getter_int = """
-#     %s result = %s;
-#     napi_create_int32(env, result, &res);
-# """
-# getter_obj = """
-#     %s result = %s;
-#     napi_create_external(env, &result, nullptr, nullptr, &res);
-# """
 
 prop_getter = Template("""
 napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
@@ -479,21 +505,10 @@ napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
     ${type} *target = obj->target_;
     ${return_fun}
     ////////////////////////////////////////////////////////////////////////
-    ${return_val}
+${return_val}
 }
 """)
 
-# setter_int = """
-#     int32_t value;
-#     napi_get_value_int32(env, args[0], &value);
-# """
-# setter_string = """
-#     size_t strlen;
-#     napi_get_value_string_utf8(env, args[0], NULL, 0, &strlen);
-#     std::string value(strlen + 1, 0);
-#     size_t res;
-#     napi_get_value_string_utf8(env, args[0], (char *)value.c_str(), strlen + 1, &res);
-# """
 prop_setter = Template("""
 napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
 {
