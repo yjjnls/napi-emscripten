@@ -1,0 +1,1 @@
+functions in namespace binding_utils can't be static

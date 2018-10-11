@@ -67,8 +67,8 @@ class Gen:
             self.generate_napi_class_declaration(instance, napi_fun, napi_property)
 
             napi_init_declaration += '\t%s::Init(env, exports);\n' % instance['class_name']
-            napi_create_declaration += '\t\tNAPI_DECLARE_METHOD("createObject", %s::CreateObject),\n' % instance[
-                'class_name']
+            # napi_create_declaration += '\t\tNAPI_DECLARE_METHOD("createObject", %s::CreateObject),\n' % instance[
+            #     'class_name']
 
         # class
         for instance in self.classes.values():
@@ -86,8 +86,8 @@ class Gen:
             self.generate_napi_class_declaration(instance, napi_fun, napi_property)
 
             napi_init_declaration += '\t%s::Init(env, exports);\n' % instance['class_name']
-            napi_create_declaration += '\t\tNAPI_DECLARE_METHOD("createObject", %s::CreateObject),\n' % instance[
-                'class_name']
+            # napi_create_declaration += '\t\tNAPI_DECLARE_METHOD("createObject", %s::CreateObject),\n' % instance[
+            #     'class_name']
 
         # constant
         if self.constants:
@@ -96,7 +96,15 @@ class Gen:
                 self.napi_declaration += '\t\t{"%s", nullptr, nullptr, %s, nullptr, 0, napi_default, 0},\n' % (
                     constant.jsval, 'get_constant_' + constant.jsval)
                 self.output_cxx_fp.write(template.constant_func % ('get_constant_' + constant.jsval, constant.cxxval))
-
+        # array
+        if self.value_arrays:
+            self.napi_declaration += '\t\t// array\n'
+            for arr in self.value_arrays.values():
+                self.napi_declaration += '\t\tNAPI_DECLARE_METHOD("%s", generate_%s),' % (arr['jstype'], arr['jstype'])
+                self.output_cxx_fp.write(template.array_func % (arr['jstype'], arr['argc']))
+        # global malloc
+        self.napi_declaration += '\n\n\t\tNAPI_DECLARE_METHOD("_malloc", global_malloc)'
+        self.output_cxx_fp.write(template.global_malloc)
         # napi declaration
         self.output_cxx_fp.write(template.napi_init.substitute(init=napi_init_declaration,
                                                                declaration=self.napi_declaration,
@@ -297,8 +305,10 @@ class Gen:
         return result
 
     def parse_arg_type(self, instance, arg):
-        if arg == 'int' or arg == 'intptr_t' or arg == 'size_t':
+        if arg == 'int' or arg == 'size_t':
             return template.args_int
+        if arg == 'intptr_t' or arg == 'long':
+            return template.args_long
         if arg == 'double' or arg == 'float':
             return template.args_double
         if 'string' in arg:
@@ -319,10 +329,8 @@ class Gen:
                 for prop in obj['properties'].items():
                     prop_name = prop[0]
                     prop_type = prop[1][0][0]
-                    fun += '\tnapi_value output{0}_%s;\n\tstd::string %s = "%s";\n' % (i, prop_name, prop_name)
-                    fun += '\tnapi_value key{0}_%s;\n\tnapi_create_string_utf8(env, %s.c_str(), %s.size(), &key{0}_%s);\n' % (
-                        i, prop_name, prop_name, i)
-                    fun += '\tnapi_get_property(env, args[{0}], key{0}_%s, &output{0}_%s);\n' % (i, i)
+                    fun += '\tnapi_value output{0}_%s;\n' % (i)
+                    fun += '\tnapi_get_named_property(env, args[{0}], "%s", &output{0}_%s);\n' % (prop_name, i)
                     if prop_type in ['float', 'double']:
                         fun += '\tnapi_get_value_double(env, output{0}_%s, (double *)&(p{0}->target()->%s));\n' % (
                             i, prop[1][1][3])
@@ -563,9 +571,9 @@ class Gen:
     def generate_class_function(self, instance):
         def detail(fun_name, args):
             if not instance['cxxtype'] in fun_name:
-                self.output_cxx_fp.write('\n            return {0}({1});\n'.format(fun_name, args))
+                self.output_cxx_fp.write('\n\treturn {0}({1});\n'.format(fun_name, args))
             else:
-                self.output_cxx_fp.write('\n            return {0}({1});\n'.format(fun_name, args))
+                self.output_cxx_fp.write('\n\treturn {0}({1});\n'.format(fun_name, args))
 
         self.output_cxx_fp.write('/*-------------------  class function  -------------------*/\n')
         self.generate_function_detail(instance, instance['class_functions'], detail)
@@ -613,9 +621,9 @@ class Gen:
 
                 properties[prop_name].append(self.parse_func_line(getter, obj.cxxtype))
                 properties[prop_name].append(self.parse_func_line(setter, obj.cxxtype, getter=False))
-            print obj.jstype
-            print properties
-            print ''
+            # print obj.jstype
+            # print properties
+            # print ''
             # if obj.jstype == 'Exception':
             #     print self.value_objects[obj.jstype]
             # print self.value_objects[obj.jstype]

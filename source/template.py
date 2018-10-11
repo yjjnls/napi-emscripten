@@ -319,6 +319,24 @@ napi_value %s(napi_env env, napi_callback_info info)
     return result;
 }
 """
+array_func = """
+napi_value generate_%s(napi_env env, napi_callback_info info)
+{
+    size_t argc = 0;
+    napi_value _this;
+    napi_get_cb_info(env, info, &argc, nullptr, &_this, nullptr);
+    napi_value args[argc];
+    napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
+
+    NAPI_ASSERT(env, argc <= %s, "Arg size is greater than the desired array size!");
+    napi_value result;
+    napi_create_array(env, &result);
+    for (int i = 0; i < argc; i++) {
+        napi_set_element(env, result, i, args[i]);
+    }
+    return result;
+}
+"""
 napi_init = Template("""
 napi_value Init(napi_env env, napi_value exports)
 {
@@ -355,6 +373,11 @@ args_int = """\
     // arg{0}
     int32_t arg{0} = 0;
     napi_get_value_int32(env, args[{0}], &arg{0});
+"""
+args_long = """\
+    // arg{0}
+    int64_t arg{0} = 0;
+    napi_get_value_int64(env, args[{0}], &arg{0});
 """
 args_double = """\
     // arg{0}
@@ -529,3 +552,24 @@ ${fun}
     return nullptr;
 }
 """)
+
+global_malloc = """
+napi_value global_malloc(napi_env env, napi_callback_info info)
+{
+    size_t argc = 0;
+    napi_value _this;
+    napi_get_cb_info(env, info, &argc, nullptr, &_this, nullptr);
+    napi_value args[argc];
+    napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
+
+    unsigned int kBufferSize = 0;
+    napi_get_value_uint32(env, args[0], &kBufferSize);
+    void *theCopy = nullptr;
+    napi_value buffer;
+    napi_create_buffer(env, kBufferSize, &theCopy, &buffer);
+    int64_t p = reinterpret_cast<int64_t>(theCopy);
+    napi_value result;
+    napi_create_int64(env, p, &result);
+    return result;
+}
+"""
