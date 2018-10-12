@@ -192,7 +192,6 @@ class Gen:
             if fun_name.split('::')[0] in self.namespace:
                 if not bool_static:
                     del args_list[0]
-                # self.namespace = fun_name.split('::')[0]
                 args_real = searchObj.group('args_list')
             if args_list == ['']:
                 args_list = []
@@ -361,9 +360,20 @@ class Gen:
                     if prop_type in ['float', 'double']:
                         fun += '\tnapi_get_value_double(env, output{0}_%s, (double *)&(p{0}->target()->%s));\n' % (
                             i, prop[1][1][3])
-                    else:
-                        fun += '\tnapi_get_value_int32(env, output{0}_%s, &(p{0}->target()->%s));\n' % (
+                    elif prop_type in ['int', 'size_t', 'short',  'char']:
+                        fun += '\tnapi_get_value_int32(env, output{0}_%s, (int32_t *)&(p{0}->target()->%s));\n' % (
                             i, prop[1][1][3])
+                    elif prop_type in ['unsigned int',  'unsigned short','unsgined char']:
+                        fun += '\tnapi_get_value_uint32(env, output{0}_%s, (uint32_t *)&(p{0}->target()->%s));\n' % (
+                            i, prop[1][1][3])
+                    elif prop_type in ['bool']:
+                        fun += '\tnapi_get_value_bool(env, output{0}_%s, &(p{0}->target()->%s));\n' % (i, prop[1][1][3])
+                    else:
+                        fun += '\tvoid *p{0}_%s = nullptr;\n\tnapi_get_value_external(env, output{0}_%s, &p{0}_%s);\n' % (
+                            i, i, i)
+                        fun += '\tp{0}->target()->%s = *((%s *)p{0}_%s);\n' % (prop[1][1][3], prop_type, i)
+                        print '~~~~~~~~~~~~~~~~~~~~~~'
+                        print prop_type
                     i += 1
                 # print obj
                 # print fun
@@ -689,6 +699,7 @@ class Gen:
 
     # -------------------functions----------------------------
     def parse_global_functions(self, functions):
+        self.register_content += template.register_func
         for func in functions:
             js_method = func.js_func
             if self.global_functions.get(js_method) == None:
@@ -696,7 +707,7 @@ class Gen:
             fun_name = func.cxx_funcs_policies
             if 'select_over' not in fun_name:
                 fun_name = self.supplemental_file[fun_name].encode("utf-8")
-            detail = self.parse_func_line(fun_name, '')
+            detail = self.parse_func_line(fun_name, '', bool_static=True)
             self.global_functions[js_method].append(detail)
         print '===========global functions=========='
         print self.global_functions

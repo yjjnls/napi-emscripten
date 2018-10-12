@@ -174,6 +174,15 @@ register_val = """
     }
     void _emval_decref(EM_VAL value) {}
 """
+register_func = """
+    void _embind_register_function(
+        const char *name,
+        unsigned argCount,
+        const TYPEID argTypes[],
+        const char *signature,
+        GenericFunction invoker,
+        GenericFunction function) {}
+"""
 class_declaration = Template("""
 /////////////////////////////////${jstype}///////////////////////////////////////
 class ${name}
