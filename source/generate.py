@@ -18,12 +18,14 @@ class Gen:
             self.supplemental_file_fp = None
             self.supplemental_file = None
 
-        self.supplement = supplement
+        self.supplement = supplement['supplement']
+        self.namespace = supplement['namespace']
         self.base_path = os.path.dirname(os.path.realpath(target))
 
         self.classes = {}
         self.value_objects = {}
         self.value_arrays = {}
+        self.global_functions = {}
         self.pattern = func_pattern
         self.register_content = ''
         self.napi_declaration = ''
@@ -100,10 +102,15 @@ class Gen:
         if self.value_arrays:
             self.napi_declaration += '\t\t// array\n'
             for arr in self.value_arrays.values():
-                self.napi_declaration += '\t\tNAPI_DECLARE_METHOD("%s", generate_%s),' % (arr['jstype'], arr['jstype'])
+                self.napi_declaration += '\t\tNAPI_DECLARE_METHOD("%s", generate_%s),\n' % (
+                    arr['jstype'], arr['jstype'])
                 self.output_cxx_fp.write(template.array_func % (arr['jstype'], arr['argc']))
+        # global functions
+        if self.global_functions:
+            self.generate_global_functions()
+
         # global malloc
-        self.napi_declaration += '\n\n\t\tNAPI_DECLARE_METHOD("_malloc", global_malloc)'
+        self.napi_declaration += '\n\t\tNAPI_DECLARE_METHOD("_malloc", global_malloc)'
         self.output_cxx_fp.write(template.global_malloc)
         # napi declaration
         self.output_cxx_fp.write(template.napi_init.substitute(init=napi_init_declaration,
@@ -127,7 +134,7 @@ class Gen:
         self.output_gyp_fp.close()
 
     def generate_namespace(self):
-        self.output_cxx_fp.write('namespace %s {\n\n' % self.namespace)
+        self.output_cxx_fp.write('namespace %s {\n\n' % self.namespace[0])
         if self.supplemental_file:
             if 'template' in self.supplemental_file:
                 for template_fun in self.supplemental_file['template']:
@@ -159,7 +166,18 @@ class Gen:
                                 spec_fun[0],
                                 spec_fun[2].split('::')[1],
                                 spec_fun[3]))
-
+        for overload_fun in self.global_functions.values():
+            for spec_fun in overload_fun:
+                print '============'
+                print spec_fun
+                if not spec_fun == None and\
+                        not spec_fun[3] == None and\
+                        not spec_fun[2] == None and\
+                        not '<' in spec_fun[2]:
+                    self.output_cxx_fp.write('\t' + 'extern %s %s(%s);\n' % (
+                        spec_fun[0],
+                        spec_fun[2].split('::')[1],
+                        spec_fun[3]))
         self.output_cxx_fp.write('\n}  // namespace binding_utils\nusing namespace binding_utils;\n')
 
     def parse_func_line(self, line, cxx_type, bool_static=False, getter=True):
@@ -171,10 +189,10 @@ class Gen:
             args_list = searchObj.group('args_list').split(', ')
             fun_name = searchObj.group('fun_name')
             args_real = None
-            if not cxx_type in fun_name:
+            if fun_name.split('::')[0] in self.namespace:
                 if not bool_static:
                     del args_list[0]
-                self.namespace = fun_name.split('::')[0]
+                # self.namespace = fun_name.split('::')[0]
                 args_real = searchObj.group('args_list')
             if args_list == ['']:
                 args_list = []
@@ -314,14 +332,23 @@ class Gen:
         if 'string' in arg:
             return template.args_string
 
-        cxx_type = instance['cxxtype'].split('::')
-        if cxx_type[-1] in arg:
-            return template.args_cxxtype % (instance['class_name'],
-                                            instance['cxxtype'])
+        if not instance == None:
+            cxx_type = instance['cxxtype'].split('::')
+            if cxx_type[-1] in arg:
+                return template.args_cxxtype % (instance['class_name'],
+                                                instance['cxxtype'])
+
         searchObj = re.search('(const)\s*(.*)(&)', arg)
         if searchObj:
             arg = searchObj.group(2)
+        searchObj = re.search('(.*)(&)', arg)
+        if searchObj:
+            arg = searchObj.group(1)
 
+        for obj in self.classes.values():
+            if arg.split('::')[-1] == obj['jstype'].split('::')[-1]:
+                return template.args_cxxtype % (obj['class_name'],
+                                                obj['cxxtype'])
         for obj in self.value_objects.values():
             if arg.split('::')[-1] == obj['jstype'].split('::')[-1]:
                 i = 0
@@ -365,40 +392,48 @@ class Gen:
             return template.return_void
         if arg == 'bool':
             return template.return_bool
-        if arg in ['int', 'intptr_t', 'size_t', 'int&', 'short', 'short&', 'char', 'char&']:
+        if arg in ['int', 'size_t', 'int&', 'short', 'short&', 'char', 'char&']:
             return template.return_int
-        if arg in ['unsigned int', 'unsigned int&', 'unsigned short', 'unsigned short&', 'unsgined char', 'unsigned char&']:
+        if arg in ['unsigned int', 'unsigned int&', 'unsigned short',
+                   'unsigned short&', 'unsgined char', 'unsigned char&']:
             return template.return_uint
+        if arg in ['intptr_t']:
+            return template.return_long
         if arg in ['float', 'float&', 'double', 'double&']:
             return template.return_double
         if arg == 'std::string':
             return template.return_string
 
-        cxx_type = instance['cxxtype'].split('::')[-1]
+        if not instance == None:
+            cxx_type = instance['jstype'].split('::')[-1]
+            if cxx_type in arg:
+                # return same class type
+                return template.return_obj % ('', instance['class_name'])
 
-        if cxx_type in arg:
-            # return same class type
-            return template.return_obj % ('', instance['class_name'])
-        else:
-            # return other object type
-            for obj in self.value_objects.values():
-                if obj['cxxtype'] == arg:
-                    return template.return_obj % (obj['class_name'] + '::',
-                                                  obj['class_name'])
-        # print '---------'
-        # print arg
-        if arg == 'val':
+        # return other object type
+        for obj in self.classes.values():
+            if obj['jstype'].split('::')[-1] == arg.split('::')[-1]:
+                return template.return_obj % (obj['class_name'] + '::',
+                                              obj['class_name'])
+        for obj in self.value_objects.values():
+            if obj['jstype'].split('::')[-1] == arg.split('::')[-1]:
+                return template.return_obj % (obj['class_name'] + '::',
+                                              obj['class_name'])
+        for arr in self.value_arrays.values():
+            if arr['jstype'].split('::')[-1] == arg.split('::')[-1]:
+                if arr['argtype'] == 'double':
+                    return template.return_array % ('napi_create_double')
+
+        if arg.split('::')[-1] == 'val':
+            # val is set to int defaultly
             val_type = 'int'
             if '<' in cxx_fun_name:
                 searchObj = re.search('(<)(.*)(>)', cxx_fun_name)
                 if searchObj:
                     val_type = searchObj.group(2)
 
-            if val_type in ['float', 'double']:
-                return template.return_val % (val_type, val_type, val_type, 'napi_create_double')
-            else:
-                return template.return_val % (val_type, val_type, val_type, 'napi_create_int32')
-
+            return template.return_val % (val_type, val_type, template.arr_type[val_type])
+        print arg
         return '\"parse_return_type not supported type\"\n'
 
     def generate_class_declaration(self, instance):
@@ -490,7 +525,7 @@ class Gen:
         for overload_fun in functions.items():
             js_fun_name = overload_fun[0]
             return_type = overload_fun[1][0][0]
-            self.output_cxx_fp.write(template.function_datail_start % (return_type,
+            self.output_cxx_fp.write(template.function_detail_start % (return_type,
                                                                        js_fun_name,
                                                                        instance['cxxtype']))
             for spec_fun in overload_fun[1]:
@@ -585,7 +620,6 @@ class Gen:
 
     # -------------------objects----------------------------
     def parse_objects(self, objects):
-        print '===================================='
         self.register_content += template.register_object
         self.value_objects_order = []
         for obj in objects:
@@ -632,9 +666,9 @@ class Gen:
             # print obj.field_arr
         print '===========objects=========='
         # print self.value_objects.values()
+        print ''
 
     # -------------------arrays----------------------------
-
     def parse_arrays(self, arrays):
         self.register_content += template.register_array
         for arr in arrays:
@@ -651,3 +685,64 @@ class Gen:
                                              'argtype': arg_type}
         print '===========arrays=========='
         print self.value_arrays
+        print ''
+
+    # -------------------functions----------------------------
+    def parse_global_functions(self, functions):
+        for func in functions:
+            js_method = func.js_func
+            if self.global_functions.get(js_method) == None:
+                self.global_functions[js_method] = []
+            fun_name = func.cxx_funcs_policies
+            if 'select_over' not in fun_name:
+                fun_name = self.supplemental_file[fun_name].encode("utf-8")
+            detail = self.parse_func_line(fun_name, '')
+            self.global_functions[js_method].append(detail)
+        print '===========global functions=========='
+        print self.global_functions
+        print ''
+
+    def generate_global_functions(self):
+        self.napi_declaration += '\t\t// global functions\n'
+        for func in self.global_functions.items():
+            print func
+            js_method = func[0]
+            return_type = func[1][0][0]
+            overload_fun = func[1]
+            self.napi_declaration += '\t\tNAPI_DECLARE_METHOD("%s", global_%s),\n' % (js_method, js_method)
+            self.output_cxx_fp.write(template.global_func_start.substitute(fun_name='global_' + js_method,
+                                                                           return_type=return_type))
+            for spec_fun in overload_fun:
+
+                self.output_cxx_fp.write('  case %d: {\n' % len(spec_fun[1]))
+
+                argc = 0
+                args = ''
+                arg_list = spec_fun[1]
+                for i in range(len(arg_list)):
+                    arg_type = arg_list[i]
+                    self.output_cxx_fp.write(self.parse_arg_type(None, arg_type).format(i))
+                    argc += 1
+                    args += 'arg{0}'.format(i)
+                    if not i == len(arg_list) - 1:
+                        args += ', '
+
+                cxx_fun_name = spec_fun[2]
+                self.output_cxx_fp.write('\treturn %s(%s);\n' % (cxx_fun_name, args))
+
+                self.output_cxx_fp.write('  } break;\n')
+
+            if return_type == 'void':
+                return_res = ''
+            else:
+                return_res = '%s res = ' % return_type
+
+            cxx_fun_name = func[1][0][2]
+            return_val = self.parse_return_type(None, return_type, cxx_fun_name)
+            # print return_val
+
+            self.output_cxx_fp.write(template.global_func_end.substitute(fun_name='global_' + js_method,
+                                                                         return_val=return_val,
+                                                                         return_res=return_res))
+            # import sys
+            # sys.exit(1)

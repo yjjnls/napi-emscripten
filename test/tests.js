@@ -43,7 +43,7 @@ testrunner.options.maxBlockDuration = 20000; // cause opencv_js.js need time to 
 
 testrunner.run(
     {
-        code: 'plugin/build/Release/plugin.node',
+        code: './plugin/opencv.js',
         tests: ['test_mat.js'],
     },
     function(err, report) {

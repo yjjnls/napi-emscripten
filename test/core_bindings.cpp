@@ -473,9 +473,9 @@ EMSCRIPTEN_BINDINGS(binding_utils)
         .field("size", &cv::RotatedRect::size)
         .field("angle", &cv::RotatedRect::angle);
 
-//     function("rotatedRectPoints", select_overload<emscripten::val(const cv::RotatedRect&)>(&binding_utils::rotatedRectPoints));
-//     function("rotatedRectBoundingRect", select_overload<Rect(const cv::RotatedRect&)>(&binding_utils::rotatedRectBoundingRect));
-//     function("rotatedRectBoundingRect2f", select_overload<Rect2f(const cv::RotatedRect&)>(&binding_utils::rotatedRectBoundingRect2f));
+    function("rotatedRectPoints", select_overload<emscripten::val(const cv::RotatedRect&)>(&binding_utils::rotatedRectPoints));
+    function("rotatedRectBoundingRect", select_overload<Rect(const cv::RotatedRect&)>(&binding_utils::rotatedRectBoundingRect));
+    function("rotatedRectBoundingRect2f", select_overload<Rect2f(const cv::RotatedRect&)>(&binding_utils::rotatedRectBoundingRect2f));
 
     emscripten::value_array<cv::Scalar_<double>> ("Scalar")
         .element(index<0>())
@@ -523,23 +523,23 @@ EMSCRIPTEN_BINDINGS(binding_utils)
         .field("code", &cv::Exception::code)
         .field("msg", &binding_utils::getExceptionMsg, &binding_utils::setExceptionMsg);
 
-//     function("exceptionFromPtr", &binding_utils::exceptionFromPtr, allow_raw_pointers());
+    function("exceptionFromPtr", &binding_utils::exceptionFromPtr, allow_raw_pointers());
 
-//     function("minEnclosingCircle", select_overload<binding_utils::Circle(const cv::Mat&)>(&binding_utils::minEnclosingCircle));
+    function("minEnclosingCircle", select_overload<binding_utils::Circle(const cv::Mat&)>(&binding_utils::minEnclosingCircle));
 
-//     function("minMaxLoc", select_overload<binding_utils::MinMaxLoc(const cv::Mat&, const cv::Mat&)>(&binding_utils::minMaxLoc));
+    function("minMaxLoc", select_overload<binding_utils::MinMaxLoc(const cv::Mat&, const cv::Mat&)>(&binding_utils::minMaxLoc));
 
-//     function("minMaxLoc", select_overload<binding_utils::MinMaxLoc(const cv::Mat&)>(&binding_utils::minMaxLoc_1));
+    function("minMaxLoc", select_overload<binding_utils::MinMaxLoc(const cv::Mat&)>(&binding_utils::minMaxLoc_1));
 
-//     function("morphologyDefaultBorderValue", &cv::morphologyDefaultBorderValue);
+    function("morphologyDefaultBorderValue", &cv::morphologyDefaultBorderValue);
 
-//     function("CV_MAT_DEPTH", &binding_utils::cvMatDepth);
+    function("CV_MAT_DEPTH", &binding_utils::cvMatDepth);
 
-//     function("CamShift", select_overload<emscripten::val(const cv::Mat&, Rect&, TermCriteria)>(&binding_utils::CamShiftWrapper));
+    function("CamShift", select_overload<emscripten::val(const cv::Mat&, Rect&, TermCriteria)>(&binding_utils::CamShiftWrapper));
 
-//     function("meanShift", select_overload<emscripten::val(const cv::Mat&, Rect&, TermCriteria)>(&binding_utils::meanShiftWrapper));
+    function("meanShift", select_overload<emscripten::val(const cv::Mat&, Rect&, TermCriteria)>(&binding_utils::meanShiftWrapper));
 
-//     function("getBuildInformation", &binding_utils::getBuildInformation);
+    function("getBuildInformation", &binding_utils::getBuildInformation);
 
     constant("CV_8UC1", CV_8UC1);
     constant("CV_8UC2", CV_8UC2);

@@ -25,9 +25,13 @@ class Preprocessor:
         if searchObj:
             self.include = ['#include%s' % file for file in searchObj]
         searchObj = re.findall('using namespace (.*)\n', self.data)
+        self.namespace_declaration = []
+        if searchObj:
+            self.namespace_declaration = ['using namespace %s' % namespace for namespace in searchObj]
+        searchObj = re.findall('\nnamespace (.*)\n', self.data)
         self.namespace = []
         if searchObj:
-            self.namespace = ['using namespace %s' % namespace for namespace in searchObj]
+            self.namespace = [namespace for namespace in searchObj]
 
         pattern = re.compile(Preprocessor.RE, flags=re.DOTALL)
         start = 0
@@ -36,7 +40,7 @@ class Preprocessor:
             if result == None:
                 break
             self.output += self.data[start:result.start()]
-            self.output += self.napi_compile(result.group('bindings_body'), self.include+self.namespace)
+            self.output += self.napi_compile(result.group('bindings_body'), {'supplement':self.include + self.namespace_declaration,'namespace':self.namespace})
             start = result.end()
 
     def napi_compile(self, data, include):

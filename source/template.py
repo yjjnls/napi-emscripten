@@ -121,7 +121,7 @@ register_constant = """
     void _embind_register_constant(
         const char *name,
         TYPEID constantType,
-        double value){}
+        double value) {}
 """
 register_object = """
     void _embind_register_value_object(
@@ -130,7 +130,7 @@ register_object = """
         const char *constructorSignature,
         GenericFunction constructor,
         const char *destructorSignature,
-        GenericFunction destructor){}
+        GenericFunction destructor) {}
 
     void _embind_register_value_object_field(
         TYPEID structType,
@@ -142,9 +142,9 @@ register_object = """
         TYPEID setterArgumentType,
         const char *setterSignature,
         GenericFunction setter,
-        void *setterContext){}
+        void *setterContext) {}
     
-    void _embind_finalize_value_object(TYPEID structType){}
+    void _embind_finalize_value_object(TYPEID structType) {}
 """
 register_array = """
     void _embind_register_value_array(
@@ -153,7 +153,7 @@ register_array = """
         const char *constructorSignature,
         GenericFunction constructor,
         const char *destructorSignature,
-        GenericFunction destructor){}
+        GenericFunction destructor) {}
     
     void _embind_register_value_array_element(
         TYPEID tupleType,
@@ -164,15 +164,15 @@ register_array = """
         TYPEID setterArgumentType,
         const char *setterSignature,
         GenericFunction setter,
-        void *setterContext){}
+        void *setterContext) {}
 
-    void _embind_finalize_value_array(TYPEID tupleType){}
+    void _embind_finalize_value_array(TYPEID tupleType) {}
 """
 register_val = """
-    EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv){
+    EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv) {
         return (_EM_VAL *)argv;
     }
-    void _emval_decref(EM_VAL value){}
+    void _emval_decref(EM_VAL value) {}
 """
 class_declaration = Template("""
 /////////////////////////////////${jstype}///////////////////////////////////////
@@ -182,7 +182,8 @@ class ${name}
     ${name}()
         : target_(nullptr)
         , env_(nullptr)
-        , wrapper_(nullptr) {}
+        , wrapper_(nullptr)
+        , is_deleted_(false) {}
     ~${name}()
     {
         napi_delete_reference(env_, wrapper_);
@@ -195,8 +196,11 @@ class ${name}
     static void Destructor(napi_env env, void *nativeObject, void *finalize_hint);
     static napi_status NewInstance(napi_env env, napi_callback_info info, napi_value *instance);
     static napi_value CreateObject(napi_env env, napi_callback_info info);
+    static napi_value isDeleted(napi_env env, napi_callback_info info);
     static napi_ref cons_ref();
     ${type} *target() { return target_; }
+    void setDeleted() { is_deleted_ = true; }
+    bool getDeleted() { return is_deleted_; }
     void update_target(const ${type} &t) {
         if (target_ != nullptr) {
             delete target_;
@@ -219,6 +223,7 @@ ${class_function}
     ${type} *target_;
     napi_env env_;
     napi_ref wrapper_;
+    bool is_deleted_;
 };
 """)
 
@@ -234,8 +239,33 @@ void ${name}::Destructor(napi_env env, void *nativeObject, void *finalize_hint)
     ${name} *obj = static_cast<${name} *>(nativeObject);
     delete obj;
 }
+napi_value ${name}::isDeleted(napi_env env, napi_callback_info info)
+{
+    size_t argc = 0;
+    napi_value _this;
+    napi_get_cb_info(env, info, &argc, nullptr, &_this, nullptr);
+    napi_value args[argc];
+    napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
+
+    ${name} *obj;
+    napi_unwrap(env, _this, reinterpret_cast<void **>(&obj));
+
+    napi_value result;
+    napi_get_boolean(env, obj->getDeleted(), &result);
+    return result;
+}
 napi_value ${name}::Release(napi_env env, napi_callback_info info)
 {
+    size_t argc = 0;
+    napi_value _this;
+    napi_get_cb_info(env, info, &argc, nullptr, &_this, nullptr);
+    napi_value args[argc];
+    napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
+
+    ${name} *obj;
+    napi_unwrap(env, _this, reinterpret_cast<void **>(&obj));
+
+    obj->setDeleted();
     return nullptr;
 }
 napi_value ${name}::CreateObject(napi_env env, napi_callback_info info)
@@ -292,7 +322,8 @@ void ${name}::Init(napi_env env, napi_value exports)
 ${declare_property}
         //function(return type, arguments, function name)
 ${declare_function}
-        NAPI_DECLARE_METHOD("delete", Release)
+        NAPI_DECLARE_METHOD("delete", Release),
+        NAPI_DECLARE_METHOD("isDeleted", isDeleted)
     };
 
     napi_value cons;
@@ -311,32 +342,7 @@ ${declare_function}
 }
 /////////////////////////////////${jstype}///////////////////////////////////////
 """)
-constant_func = """
-napi_value %s(napi_env env, napi_callback_info info)
-{
-    napi_value result;
-    napi_create_int32(env, %s, &result);
-    return result;
-}
-"""
-array_func = """
-napi_value generate_%s(napi_env env, napi_callback_info info)
-{
-    size_t argc = 0;
-    napi_value _this;
-    napi_get_cb_info(env, info, &argc, nullptr, &_this, nullptr);
-    napi_value args[argc];
-    napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
 
-    NAPI_ASSERT(env, argc <= %s, "Arg size is greater than the desired array size!");
-    napi_value result;
-    napi_create_array(env, &result);
-    for (int i = 0; i < argc; i++) {
-        napi_set_element(env, result, i, args[i]);
-    }
-    return result;
-}
-"""
 napi_init = Template("""
 napi_value Init(napi_env env, napi_value exports)
 {
@@ -448,6 +454,11 @@ return_uint = """
     napi_create_uint32(env, res, &result);
     return result;
 """
+return_long = """
+    napi_value result;
+    napi_create_int64(env, res, &result);
+    return result;
+"""
 return_double = """
     napi_value result;
     napi_create_double(env, res, &result);
@@ -468,25 +479,52 @@ return_obj = """
     p->update_target(res);
     return result;
 """
+return_array ="""
+    napi_value result;
+    napi_create_array(env, &result);
+    for (int i = 0; i < argc; i++) {
+        napi_value value;
+        %s(env, res[i], &value);
+        napi_set_element(env, result, i, value);
+    }
+    return result;
+"""
+arr_type = {
+    'char': 'napi_int8_array',
+    'unsigned char': 'napi_uint8_array',
+    'short': 'napi_int16_array',
+    'unsigned short': 'napi_uint16_array',
+    'int': 'napi_int32_array',
+    'unsigned int': 'napi_uint32_array',
+    'float': 'napi_float32_array',
+    'double': 'napi_float64_array'
+}
 return_val = """
     EM_VAR_ARGS *handle = (EM_VAR_ARGS *)res.get_handle();
     typedef std::array<GenericWireType, PackSize<%s>::value> arr;
     arr &elements = *(arr *)handle;
     GenericWireType *cursor = &elements[0];
     size_t array_length = cursor->w[0].u;
-    %s *array_data = (%s *)cursor->w[1].p;
+    void *array_data = (void *)cursor->w[1].p;
 
+    napi_value output_buffer;
+    napi_create_external_arraybuffer(env,
+                                     array_data,
+                                     array_length * sizeof(%s),
+                                     NULL,  // finalize_callback
+                                     NULL,  // finalize_hint
+                                     &output_buffer);
     napi_value result;
-    napi_create_array(env, &result);
-    for (int i = 0; i < array_length; i++) {
-        napi_value value;
-        %s(env, array_data[i], &value);
-        napi_set_element(env, result, i, value);
-    }
+    napi_create_typedarray(env,
+                           %s,
+                           array_length,
+                           output_buffer,
+                           0,
+                           &result);
     return result;
 """
 
-function_datail_start = """
+function_detail_start = """
 %s fun_%s_factory(%s *obj, napi_env env, size_t argc, napi_value *args)
 {
  switch (argc) {
@@ -519,7 +557,7 @@ prop_getter = Template("""
 napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
 {
     napi_value _this;
-    env, napi_get_cb_info(env, info, nullptr, nullptr, &_this, nullptr);
+    napi_get_cb_info(env, info, nullptr, nullptr, &_this, nullptr);
 
     ${name} *obj;
     napi_unwrap(env, _this, reinterpret_cast<void **>(&obj));
@@ -573,3 +611,52 @@ napi_value global_malloc(napi_env env, napi_callback_info info)
     return result;
 }
 """
+constant_func = """
+napi_value %s(napi_env env, napi_callback_info info)
+{
+    napi_value result;
+    napi_create_int32(env, %s, &result);
+    return result;
+}
+"""
+array_func = """
+napi_value generate_%s(napi_env env, napi_callback_info info)
+{
+    size_t argc = 0;
+    napi_value _this;
+    napi_get_cb_info(env, info, &argc, nullptr, &_this, nullptr);
+    napi_value args[argc];
+    napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
+
+    NAPI_ASSERT(env, argc <= %s, "Arg size is greater than the desired array size!");
+    napi_value result;
+    napi_create_array(env, &result);
+    for (int i = 0; i < argc; i++) {
+        napi_set_element(env, result, i, args[i]);
+    }
+    return result;
+}
+"""
+global_func_start = Template("""
+${return_type} fun_${fun_name}_factory(napi_env env, size_t argc, napi_value *args)
+{
+ switch (argc) {
+""")
+
+
+global_func_end = Template("""
+ }
+}
+napi_value ${fun_name}(napi_env env, napi_callback_info info)
+{
+    size_t argc = 0;
+    napi_value _this;
+    napi_get_cb_info(env, info, &argc, nullptr, &_this, nullptr);
+    napi_value args[argc];
+    napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
+
+    ${return_res}fun_${fun_name}_factory(env, argc, args);
+
+${return_val}
+}
+""")

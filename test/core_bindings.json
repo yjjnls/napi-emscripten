@@ -19,7 +19,7 @@
     "class": [
         "class MinMaxLoc\n     {\n     public:\n         double minVal;\n         double maxVal;\n         Point minLoc;\n         Point maxLoc;\n     };",
         "class Circle\n     {\n     public:\n         Point2f center;\n         float radius;\n     };"
-      ],
+    ],
     "&cv::Range::start": "int,cv::Range::start",
     "&cv::Range::end": "int,cv::Range::end",
     "&cv::TermCriteria::type": "int,cv::TermCriteria::type",
@@ -76,5 +76,9 @@
     "&cv::Moments::nu03": "double,cv::Moments::nu03",
     "&cv::Exception::code": "int,cv::Exception::code",
     "&binding_utils::getExceptionMsg": "select_overload<std::string(const cv::Exception&)>(&binding_utils::getExceptionMsg)",
-    "&binding_utils::setExceptionMsg": "select_overload<void(cv::Exception&, std::string)>(&binding_utils::setExceptionMsg)"
+    "&binding_utils::setExceptionMsg": "select_overload<void(cv::Exception&, std::string)>(&binding_utils::setExceptionMsg)",
+    "&binding_utils::exceptionFromPtr, allow_raw_pointers()": "select_overload<cv::Exception(intptr_t)>(&binding_utils::exceptionFromPtr)",
+    "&cv::morphologyDefaultBorderValue": "select_overload<Scalar()>(&cv::morphologyDefaultBorderValue)",
+    "&binding_utils::cvMatDepth": "select_overload<int(int)>(&binding_utils::cvMatDepth)",
+    "&binding_utils::getBuildInformation": "select_overload<std::string()>(&binding_utils::getBuildInformation)"
 }

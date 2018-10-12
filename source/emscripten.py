@@ -244,15 +244,6 @@ class Lexer:
     #    r'\n+'
     #    t.lexer.lineno += len(t.value)
 
-    # def t_COMMENT(self,t):
-    #     r'(/\*(.|\n)*?\*/)|(//.*)'
-    #     print '~~~~~~~~~~~~~~~~~~~~~~~~'
-    #     print t.value
-    #     print '~~~~~~~~~~~~~~~~~~~~~~~~'
-    #     # t.lexer.skip(len(t.value))
-    #     return t
-
-
     @TOKEN(Class.RE)
     def t_CLASS(self,t):
         # print t.value
@@ -340,6 +331,7 @@ class Lexer:
         generator.parse_constant(self.constants)
         generator.parse_objects(self.value_objects)
         generator.parse_arrays(self.value_arrays)
+        generator.parse_global_functions(self.functions)
         generator.genfile_start()
         generator.genfile_end()
         # generator.generate_gyp()
