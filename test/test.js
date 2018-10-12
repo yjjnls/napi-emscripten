@@ -12,7 +12,7 @@ src.data[2] = 0;
 src.data[5] = 2;
 
 let result = cv.minMaxLoc(src);
-
+console.log(result.minLoc.x)
 assert.equal(result.minVal, 0);
 assert.equal(result.maxVal, 2);
 assert.deepEqual(result.minLoc, {x: 2, y: 0});

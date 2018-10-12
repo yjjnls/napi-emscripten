@@ -422,5 +422,7 @@ module.exports = {
     'CV_64F': cv.CV_64F,
     'INT_MIN': cv.INT_MIN,
     'INT_MAX': cv.INT_MAX,
-    'matFromArray': Module['matFromArray']
+    'matFromArray': Module['matFromArray'],
+    'minMaxLoc': cv.minMaxLoc
+
 }
