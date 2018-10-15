@@ -445,59 +445,36 @@ arr_args_double = """\
 """
 
 
-return_void = """
-    return nullptr;
-"""
-return_bool = """
-    napi_value result;
-    napi_get_boolean(env, res, &result);
-    return result;
-"""
-return_int = """
-    napi_value result;
-    napi_create_int32(env, res, &result);
-    return result;
-"""
-return_uint = """
-    napi_value result;
-    napi_create_uint32(env, res, &result);
-    return result;
-"""
-return_long = """
-    napi_value result;
-    napi_create_int64(env, res, &result);
-    return result;
-"""
-return_double = """
-    napi_value result;
-    napi_create_double(env, res, &result);
-    return result;
-"""
-return_string = """
-    napi_value result;
-    napi_create_string_utf8(env, res.c_str(), res.size(), &result);
-    return result;
-"""
-return_obj = """
-    napi_value cons;
-    napi_get_reference_value(env, %scons_ref(), &cons);
-    napi_value result;
-    napi_new_instance(env, cons, 0, nullptr, &result);
-    %s *p;
-    napi_unwrap(env, result, reinterpret_cast<void **>(&p));
-    p->update_target(res);
-    return result;
-"""
-return_array ="""
-    napi_value result;
-    napi_create_array(env, &result);
+return_void = Template("""""")
+return_bool = Template("""    napi_get_boolean(env, ${cxx_val}, &${napi_val});
+""")
+return_int = Template("""    napi_create_int32(env, (int32_t)${cxx_val}, &${napi_val});
+""")
+return_uint = Template("""    napi_create_uint32(env, (uint32_t)${cxx_val}, &${napi_val});
+""")
+return_long = Template("""    napi_create_int64(env, (int64_t)${cxx_val}, &${napi_val});
+""")
+return_double = Template("""    napi_create_double(env, (double)${cxx_val}, &${napi_val});
+""")
+return_string = Template("""    napi_create_string_utf8(env, ${cxx_val}.c_str(), ${cxx_val}.size(), &${napi_val});
+""")
+return_class = Template("""    napi_value cons;
+    napi_get_reference_value(env, ${class_domain}cons_ref(), &cons);
+    napi_new_instance(env, cons, 0, nullptr, &${napi_val});
+    ${class_name} *p;
+    napi_unwrap(env, ${napi_val}, reinterpret_cast<void **>(&p));
+    p->update_target(${cxx_val});
+""")
+return_obj = Template("""    napi_create_object(env, &${napi_val});
+${obj_detail}
+""")
+return_array =Template("""    napi_create_array(env, &${napi_val});
     for (int i = 0; i < argc; i++) {
         napi_value value;
-        %s(env, res[i], &value);
-        napi_set_element(env, result, i, value);
+        ${create_fun}(env, ${cxx_val}[i], &value);
+        napi_set_element(env, ${napi_val}, i, value);
     }
-    return result;
-"""
+""")
 arr_type = {
     'char': 'napi_int8_array',
     'unsigned char': 'napi_uint8_array',
@@ -508,9 +485,8 @@ arr_type = {
     'float': 'napi_float32_array',
     'double': 'napi_float64_array'
 }
-return_val = """
-    EM_VAR_ARGS *handle = (EM_VAR_ARGS *)res.get_handle();
-    typedef std::array<GenericWireType, PackSize<%s>::value> arr;
+return_val = Template("""    EM_VAR_ARGS *handle = (EM_VAR_ARGS *)${cxx_val}.get_handle();
+    typedef std::array<GenericWireType, PackSize<${val_type}>::value> arr;
     arr &elements = *(arr *)handle;
     GenericWireType *cursor = &elements[0];
     size_t array_length = cursor->w[0].u;
@@ -519,19 +495,17 @@ return_val = """
     napi_value output_buffer;
     napi_create_external_arraybuffer(env,
                                      array_data,
-                                     array_length * sizeof(%s),
+                                     array_length * sizeof(${val_type}),
                                      NULL,  // finalize_callback
                                      NULL,  // finalize_hint
                                      &output_buffer);
-    napi_value result;
     napi_create_typedarray(env,
-                           %s,
+                           ${array_type},
                            array_length,
                            output_buffer,
                            0,
-                           &result);
-    return result;
-"""
+                           &${napi_val});
+""")
 
 function_detail_start = """
 %s fun_%s_factory(%s *obj, napi_env env, size_t argc, napi_value *args)

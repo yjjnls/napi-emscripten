@@ -360,10 +360,10 @@ class Gen:
                     if prop_type in ['float', 'double']:
                         fun += '\tnapi_get_value_double(env, output{0}_%s, (double *)&(p{0}->target()->%s));\n' % (
                             i, prop[1][1][3])
-                    elif prop_type in ['int', 'size_t', 'short',  'char']:
+                    elif prop_type in ['int', 'size_t', 'short', 'char']:
                         fun += '\tnapi_get_value_int32(env, output{0}_%s, (int32_t *)&(p{0}->target()->%s));\n' % (
                             i, prop[1][1][3])
-                    elif prop_type in ['unsigned int',  'unsigned short','unsgined char']:
+                    elif prop_type in ['unsigned int', 'unsigned short', 'unsgined char']:
                         fun += '\tnapi_get_value_uint32(env, output{0}_%s, (uint32_t *)&(p{0}->target()->%s));\n' % (
                             i, prop[1][1][3])
                     elif prop_type in ['bool']:
@@ -397,42 +397,72 @@ class Gen:
 
         return '\"parse_arg_type not supported type\"\n'
 
-    def parse_return_type(self, instance, arg, cxx_fun_name=None):
+    def parse_return_type(self, instance, arg, cxx_value='res', napi_value='result', cxx_fun_name=None, arg_name=None):
         if arg == 'void':
-            return template.return_void
+            return template.return_void.substitute()
         if arg == 'bool':
-            return template.return_bool
+            return template.return_bool.substitute(cxx_val=cxx_value, napi_val=napi_value)
         if arg in ['int', 'size_t', 'int&', 'short', 'short&', 'char', 'char&']:
-            return template.return_int
+            return template.return_int.substitute(cxx_val=cxx_value, napi_val=napi_value)
         if arg in ['unsigned int', 'unsigned int&', 'unsigned short',
                    'unsigned short&', 'unsgined char', 'unsigned char&']:
-            return template.return_uint
+            return template.return_uint.substitute(cxx_val=cxx_value, napi_val=napi_value)
         if arg in ['intptr_t']:
-            return template.return_long
+            return template.return_long.substitute(cxx_val=cxx_value, napi_val=napi_value)
         if arg in ['float', 'float&', 'double', 'double&']:
-            return template.return_double
+            return template.return_double.substitute(cxx_val=cxx_value, napi_val=napi_value)
         if arg == 'std::string':
-            return template.return_string
+            return template.return_string.substitute(cxx_val=cxx_value, napi_val=napi_value)
 
         if not instance == None:
             cxx_type = instance['jstype'].split('::')[-1]
             if cxx_type in arg:
-                # return same class type
-                return template.return_obj % ('', instance['class_name'])
+                # return the class instance itself
+                return template.return_class.substitute(cxx_val=cxx_value,
+                                                        napi_val=napi_value,
+                                                        class_domain='',
+                                                        class_name=instance['class_name'])
 
-        # return other object type
+        # return other class instance
         for obj in self.classes.values():
             if obj['jstype'].split('::')[-1] == arg.split('::')[-1]:
-                return template.return_obj % (obj['class_name'] + '::',
-                                              obj['class_name'])
+                return template.return_class.substitute(cxx_val=cxx_value,
+                                                        napi_val=napi_value,
+                                                        class_domain=instance['class_name'] + '::',
+                                                        class_name=instance['class_name'])
+        # return object
         for obj in self.value_objects.values():
-            if obj['jstype'].split('::')[-1] == arg.split('::')[-1]:
-                return template.return_obj % (obj['class_name'] + '::',
-                                              obj['class_name'])
+            arg_type = arg.split('::')[-1]
+            if arg_type == obj['jstype'].split('::')[-1]:
+                fun = ''
+                for prop in obj['properties'].items():
+                    prop_name = prop[0]
+                    prop_type = prop[1][0][0]
+                    if not arg_name == None:
+                        value_name = '%s_%s_val' % (arg_name, prop_name)
+                    else:
+                        value_name = '%s_val' % prop_name
+                    fun += '\tnapi_value %s;\n' % value_name
+                    if prop[1][0][2] == None:
+                        get_val = cxx_value + '.' + prop[1][0][3]
+                    else:
+                        get_val = '%s(%s)' % (prop[1][0][2], cxx_value)
+
+                    fun += self.parse_return_type(instance,
+                                                  prop_type,
+                                                  cxx_value=get_val,
+                                                  napi_value=value_name,
+                                                  arg_name=prop_name)
+
+                    fun += '\tnapi_set_named_property(env, %s, "%s", %s);\n' % (napi_value, prop_name, value_name)
+                return template.return_obj.substitute(napi_val=napi_value, obj_detail=fun)
+
         for arr in self.value_arrays.values():
             if arr['jstype'].split('::')[-1] == arg.split('::')[-1]:
                 if arr['argtype'] == 'double':
-                    return template.return_array % ('napi_create_double')
+                    return template.return_array.substitute(cxx_val=cxx_value,
+                                                            napi_val=napi_value,
+                                                            create_fun='napi_create_double')
 
         if arg.split('::')[-1] == 'val':
             # val is set to int defaultly
@@ -442,7 +472,10 @@ class Gen:
                 if searchObj:
                     val_type = searchObj.group(2)
 
-            return template.return_val % (val_type, val_type, template.arr_type[val_type])
+            return template.return_val.substitute(cxx_val=cxx_value,
+                                                  napi_val=napi_value,
+                                                  val_type=val_type,
+                                                  array_type=template.arr_type[val_type])
         print arg
         return '\"parse_return_type not supported type\"\n'
 
@@ -566,7 +599,12 @@ class Gen:
                 return_res = '%s res = ' % return_type
 
             cxx_fun_name = overload_fun[1][0][2]
-            return_val = self.parse_return_type(instance, return_type, cxx_fun_name)
+            return_val = self.parse_return_type(instance,
+                                                return_type,
+                                                cxx_value='res',
+                                                napi_value='result',
+                                                cxx_fun_name=cxx_fun_name)
+            return_val = '\tnapi_value result = nullptr;\n%s\n\treturn result;\n' % return_val
 
             self.output_cxx_fp.write(template.func_template.substitute(name=instance['class_name'],
                                                                        fun_name=overload_fun[0],
@@ -588,7 +626,13 @@ class Gen:
             else:
                 res = "%s res = %s;" % (return_type, '%s(*target)' % cxx_fun_name)
 
-            return_val = self.parse_return_type(instance, return_type, cxx_fun_name)
+            return_val = self.parse_return_type(instance,
+                                                return_type,
+                                                cxx_value='res',
+                                                napi_value='result',
+                                                cxx_fun_name=cxx_fun_name)
+            return_val = '\tnapi_value result = nullptr;\n%s\n\treturn result;\n' % return_val
+
             self.output_cxx_fp.write(template.prop_getter.substitute(fun_name='get%s' % prop[0],
                                                                      name=instance['class_name'],
                                                                      type=instance['cxxtype'],
@@ -749,7 +793,13 @@ class Gen:
                 return_res = '%s res = ' % return_type
 
             cxx_fun_name = func[1][0][2]
-            return_val = self.parse_return_type(None, return_type, cxx_fun_name)
+            return_val = self.parse_return_type(None,
+                                                return_type,
+                                                cxx_value='res',
+                                                napi_value='result',
+                                                cxx_fun_name=cxx_fun_name)
+            return_val = '\tnapi_value result = nullptr;\n%s\n\treturn result;\n' % return_val
+
             # print return_val
 
             self.output_cxx_fp.write(template.global_func_end.substitute(fun_name='global_' + js_method,
