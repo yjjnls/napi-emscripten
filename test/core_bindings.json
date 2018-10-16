@@ -80,5 +80,11 @@
     "&binding_utils::exceptionFromPtr, allow_raw_pointers()": "select_overload<cv::Exception(intptr_t)>(&binding_utils::exceptionFromPtr)",
     "&cv::morphologyDefaultBorderValue": "select_overload<Scalar()>(&cv::morphologyDefaultBorderValue)",
     "&binding_utils::cvMatDepth": "select_overload<int(int)>(&binding_utils::cvMatDepth)",
-    "&binding_utils::getBuildInformation": "select_overload<std::string()>(&binding_utils::getBuildInformation)"
+    "&binding_utils::getBuildInformation": "select_overload<std::string()>(&binding_utils::getBuildInformation)",
+    "only_default_constructor": [
+        "MinMaxLoc",
+        "Circle",
+        "Moments",
+        "Exception"
+    ]
 }
