@@ -84,5 +84,18 @@
         "Circle",
         "Moments",
         "Exception"
-    ]
+    ],
+    "&cv::HOGDescriptor::winSize": "Size,cv::HOGDescriptor::winSize",
+    "&cv::HOGDescriptor::blockSize": "Size,cv::HOGDescriptor::blockSize",
+    "&cv::HOGDescriptor::blockStride": "Size,cv::HOGDescriptor::blockStride",
+    "&cv::HOGDescriptor::cellSize": "Size,cv::HOGDescriptor::cellSize",
+    "&cv::HOGDescriptor::nbins": "int,cv::HOGDescriptor::nbins",
+    "&cv::HOGDescriptor::derivAperture": "int,cv::HOGDescriptor::derivAperture",
+    "&cv::HOGDescriptor::winSigma": "double,cv::HOGDescriptor::winSigma",
+    "&cv::HOGDescriptor::histogramNormType": "int,cv::HOGDescriptor::histogramNormType",
+    "&cv::HOGDescriptor::L2HysThreshold": "double,cv::HOGDescriptor::L2HysThreshold",
+    "&cv::HOGDescriptor::gammaCorrection": "bool,cv::HOGDescriptor::gammaCorrection",
+    "&cv::HOGDescriptor::svmDetector": "std::vector<float>,cv::HOGDescriptor::svmDetector",
+    "&cv::HOGDescriptor::nlevels": "int,cv::HOGDescriptor::nlevels",
+    "&cv::HOGDescriptor::signedGradient": "bool,cv::HOGDescriptor::signedGradient"
 }

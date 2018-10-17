@@ -643,40 +643,40 @@ QUnit.test('test_mat_miscs', function(assert) {
         mat.delete();
     }
 
-    // // split
-    // {
-    //     const R =7;
-    //     const G =13;
-    //     const B =29;
+    // split
+    {
+        const R =7;
+        const G =13;
+        const B =29;
 
-    //     let mat = cv.ones(5, 5, cv.CV_8UC3);
-    //     let view = mat.data;
-    //     view[0] = R;
-    //     view[1] = G;
-    //     view[2] = B;
+        let mat = cv.ones(5, 5, cv.CV_8UC3);
+        let view = mat.data;
+        view[0] = R;
+        view[1] = G;
+        view[2] = B;
 
-    //     let bgrPlanes = new cv.MatVector();
-    //     cv.split(mat, bgrPlanes);
-    //     assert.equal(bgrPlanes.size(), 3);
+        let bgrPlanes = new cv.MatVector();
+        cv.split(mat, bgrPlanes);
+        assert.equal(bgrPlanes.size(), 3);
 
-    //     let rMat = bgrPlanes.get(0);
-    //     view = rMat.data;
-    //     assert.equal(view[0], R);
+        let rMat = bgrPlanes.get(0);
+        view = rMat.data;
+        assert.equal(view[0], R);
 
-    //     let gMat = bgrPlanes.get(1);
-    //     view = gMat.data;
-    //     assert.equal(view[0], G);
+        let gMat = bgrPlanes.get(1);
+        view = gMat.data;
+        assert.equal(view[0], G);
 
-    //     let bMat = bgrPlanes.get(2);
-    //     view = bMat.data;
-    //     assert.equal(view[0], B);
+        let bMat = bgrPlanes.get(2);
+        view = bMat.data;
+        assert.equal(view[0], B);
 
-    //     mat.delete();
-    //     rMat.delete();
-    //     gMat.delete();
-    //     bgrPlanes.delete();
-    //     bMat.delete();
-    // }
+        mat.delete();
+        rMat.delete();
+        gMat.delete();
+        bgrPlanes.delete();
+        bMat.delete();
+    }
 
     // elemSize
     {
@@ -898,20 +898,20 @@ QUnit.test('test_mat_operations', function(assert) {
     }
 });
 
-// QUnit.test('test_mat_roi', function(assert) {
-//     // test minMaxLoc
-//     {
-//         let mat = cv.matFromArray(2, 2, cv.CV_8UC1, [0, 1, 2, 3]);
-//         let roi = mat.roi(new cv.Rect(1, 1, 1, 1));
+QUnit.test('test_mat_roi', function(assert) {
+    // test minMaxLoc
+    {
+        let mat = cv.matFromArray(2, 2, cv.CV_8UC1, [0, 1, 2, 3]);
+        let roi = mat.roi(new cv.Rect(1, 1, 1, 1));
 
-//         assert.equal(roi.rows, 1);
-//         assert.equal(roi.cols, 1);
-//         assert.deepEqual(roi.data, new Uint8Array([mat.ucharAt(1, 1)]));
+        assert.equal(roi.rows, 1);
+        assert.equal(roi.cols, 1);
+        assert.deepEqual(roi.data, new Uint8Array([mat.ucharAt(1, 1)]));
 
-//         mat.delete();
-//         roi.delete();
-//     }
-// });
+        mat.delete();
+        roi.delete();
+    }
+});
 
 
 QUnit.test('test_mat_range', function(assert) {

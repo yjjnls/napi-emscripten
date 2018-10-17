@@ -3,7 +3,8 @@ sys.path.append('../source')
 
 import preprocessor
 p = preprocessor.Preprocessor()
-p.input("./core_bindings.cpp")
+# p.input("./core_bindings.cpp")
+p.input("./binding.cpp")
 # p.input("/root/NewWebassembly/myclass_binding.cc")
 p.compile()
 

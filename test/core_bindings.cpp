@@ -323,6 +323,12 @@ namespace binding_utils
         return cv::getBuildInformation();
     }
 }
+namespace Wrapper
+{
+    void split_wrapper(const cv::Mat& arg1, std::vector<cv::Mat>& arg2) {
+        return cv::split(arg1, arg2);
+    }
+}
 
 EMSCRIPTEN_BINDINGS(binding_utils)
 {
@@ -472,6 +478,8 @@ EMSCRIPTEN_BINDINGS(binding_utils)
         .field("center", &cv::RotatedRect::center)
         .field("size", &cv::RotatedRect::size)
         .field("angle", &cv::RotatedRect::angle);
+
+    function("split", select_overload<void(const cv::Mat&, std::vector<cv::Mat>&)>(&Wrapper::split_wrapper));
 
     function("rotatedRectPoints", select_overload<emscripten::val(const cv::RotatedRect&)>(&binding_utils::rotatedRectPoints));
     function("rotatedRectBoundingRect", select_overload<Rect(const cv::RotatedRect&)>(&binding_utils::rotatedRectBoundingRect));

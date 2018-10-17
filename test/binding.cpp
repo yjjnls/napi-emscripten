@@ -107,7 +107,7 @@ namespace binding_utils
         return new cv::Mat(rows, cols, type, reinterpret_cast<void*>(data), step);
     }
 
-    static emscripten::val getMatSize(const cv::Mat& mat)
+    emscripten::val getMatSize(const cv::Mat& mat)
     {
         emscripten::val size = emscripten::val::array();
         for (int i = 0; i < mat.dims; i++) {
@@ -116,7 +116,7 @@ namespace binding_utils
         return size;
     }
 
-    static emscripten::val getMatStep(const cv::Mat& mat)
+    emscripten::val getMatStep(const cv::Mat& mat)
     {
         emscripten::val step = emscripten::val::array();
         for (int i = 0; i < mat.dims; i++) {
@@ -125,12 +125,12 @@ namespace binding_utils
         return step;
     }
 
-    static Mat matEye(int rows, int cols, int type)
+    Mat matEye(int rows, int cols, int type)
     {
         return Mat(cv::Mat::eye(rows, cols, type));
     }
 
-    static Mat matEye(Size size, int type)
+    Mat matEye(Size size, int type)
     {
         return Mat(cv::Mat::eye(size, type));
     }

@@ -35,13 +35,25 @@ class Preprocessor:
 
         pattern = re.compile(Preprocessor.RE, flags=re.DOTALL)
         start = 0
+        pos = []
         while True:
-            result = pattern.search(self.data, start)
+            start = self.data.find('EMSCRIPTEN_BINDINGS', start + 1)
+            if start == -1:
+                break
+            pos.append(start)
+            start = self.data.find('}', start + 1)
+            if start == -1:
+                break
+            pos.append(start + 1)
+        output = ''
+        for i in range(len(pos) / 2):
+            print '-------1-----'
+            result = pattern.search(self.data, pos[2 * i], pos[2 * i + 1])
             if result == None:
                 break
-            self.output += self.data[start:result.start()]
-            self.output += self.napi_compile(result.group('bindings_body'), {'supplement':self.include + self.namespace_declaration,'namespace':self.namespace})
-            start = result.end()
+            output += result.group('bindings_body')
+        self.napi_compile(output, {'supplement': self.include +
+                                   self.namespace_declaration, 'namespace': self.namespace})
 
     def napi_compile(self, data, include):
         cxx_bind = self.cxx_preprocess(data)

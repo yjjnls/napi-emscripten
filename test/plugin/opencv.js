@@ -364,6 +364,37 @@ Module['matFromImageData'] = function (imageData) {
     return mat;
 };
 
+
+/********************************************************************** */
+var HEAP,
+    /** @type {ArrayBuffer} */
+    buffer,
+    /** @type {Int8Array} */
+    HEAP8,
+    /** @type {Uint8Array} */
+    HEAPU8,
+    /** @type {Int16Array} */
+    HEAP16,
+    /** @type {Uint16Array} */
+    HEAPU16,
+    /** @type {Int32Array} */
+    HEAP32,
+    /** @type {Uint32Array} */
+    HEAPU32,
+    /** @type {Float32Array} */
+    HEAPF32,
+    /** @type {Float64Array} */
+    HEAPF64;
+
+Module['HEAP8'] = HEAP8 = new Int8Array(buffer);
+Module['HEAP16'] = HEAP16 = new Int16Array(buffer);
+Module['HEAP32'] = HEAP32 = new Int32Array(buffer);
+Module['HEAPU8'] = HEAPU8 = new Uint8Array(134217728);
+Module['HEAPU16'] = HEAPU16 = new Uint16Array(buffer);
+Module['HEAPU32'] = HEAPU32 = new Uint32Array(buffer);
+Module['HEAPF32'] = HEAPF32 = new Float32Array(buffer);
+Module['HEAPF64'] = HEAPF64 = new Float64Array(buffer);
+
 module.exports = {
     'Mat': cv.Mat,
     'Range': cv.Range,
@@ -422,7 +453,17 @@ module.exports = {
     'CV_64F': cv.CV_64F,
     'INT_MIN': cv.INT_MIN,
     'INT_MAX': cv.INT_MAX,
+    'minMaxLoc': cv.minMaxLoc,
+    'MatVector': cv.MatVector,
     'matFromArray': Module['matFromArray'],
-    'minMaxLoc': cv.minMaxLoc
+    'HEAP8': Module['HEAP8'],
+    'HEAP16': Module['HEAP16'],
+    'HEAP32': Module['HEAP32'],
+    'HEAPU8': Module['HEAPU8'],
+    'HEAPU16': Module['HEAPU16'],
+    'HEAPU32': Module['HEAPU32'],
+    'HEAPF32': Module['HEAPF32'],
+    'HEAPF64': Module['HEAPF64'],
+    'split': cv.split
 
 }

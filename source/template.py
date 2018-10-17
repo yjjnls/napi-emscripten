@@ -169,8 +169,14 @@ register_array = """
     void _embind_finalize_value_array(TYPEID tupleType) {}
 """
 register_val = """
+#ifndef _WIN32
+#include <unistd.h>
+#endif
     EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv) {
-        return (_EM_VAL *)argv;
+#ifndef _WIN32
+        usleep(1);
+#endif
+        return (struct _EM_VAL* )argv;
     }
     void _emval_decref(EM_VAL value) {}
 """
@@ -389,6 +395,11 @@ args_int = """\
     int32_t arg{0} = 0;
     napi_get_value_int32(env, args[{0}], &arg{0});
 """
+args_uint = """\
+    // arg{0}
+    int32_t arg{0} = 0;
+    napi_get_value_uint32(env, args[{0}], &arg{0});
+"""
 args_long = """\
     // arg{0}
     int64_t arg{0} = 0;
@@ -485,7 +496,7 @@ arr_type = {
     'float': 'napi_float32_array',
     'double': 'napi_float64_array'
 }
-return_val = Template("""    EM_VAR_ARGS *handle = (EM_VAR_ARGS *)${cxx_val}.get_handle();
+return_val_array = Template("""    EM_VAR_ARGS *handle = (EM_VAR_ARGS *)${cxx_val}.get_handle();
     typedef std::array<GenericWireType, PackSize<${val_type}>::value> arr;
     arr &elements = *(arr *)handle;
     GenericWireType *cursor = &elements[0];
@@ -506,7 +517,16 @@ return_val = Template("""    EM_VAR_ARGS *handle = (EM_VAR_ARGS *)${cxx_val}.get
                            0,
                            &${napi_val});
 """)
-
+return_val_object = Template("""    if (res.isUndefined()) {
+        return nullptr;
+    }
+    EM_VAR_ARGS *handle = (EM_VAR_ARGS *)${cxx_val}.get_handle();
+    typedef std::array<GenericWireType, PackSize<${val_type}>::value> arr;
+    arr &elements = *(arr *)handle;
+    GenericWireType *cursor = &elements[0];
+${get_data}
+${create_return_val}
+""")
 function_detail_start = """
 %s fun_%s_factory(%s *obj, napi_env env, size_t argc, napi_value *args)
 {
@@ -617,6 +637,21 @@ napi_value generate_%s(napi_env env, napi_callback_info info)
     for (int i = 0; i < argc; i++) {
         napi_set_element(env, result, i, args[i]);
     }
+    return result;
+}
+"""
+vector_func = """
+napi_value generate_%s(napi_env env, napi_callback_info info)
+{
+    size_t argc = 0;
+    napi_value _this;
+    napi_get_cb_info(env, info, &argc, nullptr, &_this, nullptr);
+    napi_value args[argc];
+    napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
+
+    auto data = new std::vector<%s>();
+    napi_value result;
+    napi_create_external(env, data, nullptr, nullptr, &result);
     return result;
 }
 """
