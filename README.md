@@ -1,1 +1,1 @@
-# pynapiemscripten
+# napi-emscripten

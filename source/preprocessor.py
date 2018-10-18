@@ -31,8 +31,7 @@ class Preprocessor:
         searchObj = re.findall('\nnamespace (.*)\n', self.data)
         self.namespace = []
         if searchObj:
-            self.namespace = [namespace for namespace in searchObj]
-
+            self.namespace = [namespace.rstrip(' {') for namespace in searchObj]
         pattern = re.compile(Preprocessor.RE, flags=re.DOTALL)
         start = 0
         pos = []
@@ -47,7 +46,6 @@ class Preprocessor:
             pos.append(start + 1)
         output = ''
         for i in range(len(pos) / 2):
-            print '-------1-----'
             result = pattern.search(self.data, pos[2 * i], pos[2 * i + 1])
             if result == None:
                 break

@@ -389,7 +389,11 @@ constructor_func_end = """
 }
 """
 
-
+args_bool="""\
+    // arg{0}
+    bool arg{0};
+    napi_get_value_bool(env, args[{0}], &arg{0});
+"""
 args_int = """\
     // arg{0}
     int32_t arg{0} = 0;
@@ -412,11 +416,11 @@ args_double = """\
 """
 args_string = """\
     // arg{0}
-    size_t strlen;
-    napi_get_value_string_utf8(env, args[{0}], NULL, 0, &strlen);
-    std::string arg{0}(strlen + 1, 0);
-    size_t res;
-    napi_get_value_string_utf8(env, args[{0}], (char *)arg{0}.c_str(), strlen + 1, &res);
+    size_t strlen{0};
+    napi_get_value_string_utf8(env, args[{0}], NULL, 0, &strlen{0});
+    std::string arg{0}(strlen{0} + 1, 0);
+    size_t res{0};
+    napi_get_value_string_utf8(env, args[{0}], (char *)arg{0}.c_str(), strlen{0} + 1, &res{0});
 """
 args_cxxtype = """\
     // arg{0}

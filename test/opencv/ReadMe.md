@@ -1,8 +1,21 @@
+```sh
+$ npm install node-qunit
+
+$ python2 test.py
+$ ./build.sh
+$ LD_LIBRARY_PATH=/usr/local/lib node tests.js
+```
+
 functions in namespace binding_utils can't be static
 
 declared value_objects should be noted in supplements wheather it has constructors with declared fields as args. 
 
 template function and class/struct declared in namespace should be noted in json
+
+typedef used should be noted 
+
+
+---
 
 in 'test mat access' ,
 ```js

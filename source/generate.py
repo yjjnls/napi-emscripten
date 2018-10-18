@@ -5,14 +5,6 @@ import json
 
 func_pattern = 'select_overload<(?P<return_type>.*)[(](?P<args_list>.*)[)].*>[(][&](?P<fun_name>((?!,).)*)[)(.*)]'
 
-
-def arg_template(types):
-    result = []
-    for arg_type in types:
-        result += ['%s' % arg_type, '%s&' % arg_type, 'const %s' % arg_type, 'const %s&' % arg_type]
-    return result
-
-
 class Gen:
     def __init__(self, target, supplement):
         self.target = target
@@ -81,7 +73,8 @@ class Gen:
             #     'class_name']
 
         # class
-        for instance in self.classes.values():
+        for jstype in self.classes_order:
+            instance = self.classes[jstype]
             # class declaration
             (napi_fun, napi_property) = self.generate_class_declaration(instance)
             # constructor implementation
@@ -156,6 +149,24 @@ class Gen:
                                                   start=os.path.dirname(self.output_gyp))))
         self.output_gyp_fp.close()
 
+    # -------------------namespace---------------------------
+    def normalize_arg(self, arg):
+        pattern = re.compile('(const)\s*(.*)(&)', flags=re.DOTALL)
+        searchObj = pattern.search(arg)
+        if searchObj:
+            arg = searchObj.group(2)
+
+        pattern = re.compile('(.*)(&)', flags=re.DOTALL)
+        searchObj = pattern.search(arg)
+        if searchObj:
+            arg = searchObj.group(1)
+
+        if self.supplemental_file and \
+                'typedef' in self.supplemental_file and \
+                arg in self.supplemental_file['typedef']:
+            arg = self.supplemental_file['typedef'][arg].encode("utf-8")
+        return arg
+
     def generate_namespace(self):
         for namespace in self.namespace:
             self.output_cxx_fp.write('namespace %s {\n\n' % namespace)
@@ -202,179 +213,75 @@ class Gen:
                             spec_fun[3]))
             self.output_cxx_fp.write('\n}  // namespace %s\nusing namespace %s;\n' % (namespace, namespace))
 
+    # ****
     def parse_func_line(self, line, cxx_type, bool_static=False, getter=True):
         if line == None:
             return None
         searchObj = re.search(self.pattern, line)
         if searchObj:
+            # return type
             return_type = searchObj.group('return_type')
-            args_list = searchObj.group('args_list').split(', ')
+            if self.supplemental_file and \
+                    'typedef' in self.supplemental_file and \
+                    return_type in self.supplemental_file['typedef']:
+                return_type = self.supplemental_file['typedef'][return_type]
+            # args list
+            args_list = []
+            for x in searchObj.group('args_list').split(','):
+                if self.supplemental_file and \
+                        'typedef' in self.supplemental_file and \
+                        x.strip() in self.supplemental_file['typedef']:
+                    args_list.append(self.supplemental_file['typedef'][x.strip()])
+                else:
+                    args_list.append(x.strip())
+            if args_list == ['']:
+                args_list = []
+            # fun name
             fun_name = searchObj.group('fun_name')
+            # args declation
             args_real = None
             if fun_name.split('::')[0] in self.namespace:
                 if not bool_static:
                     del args_list[0]
                 args_real = searchObj.group('args_list')
-            if args_list == ['']:
-                args_list = []
             return (return_type, args_list, fun_name, args_real)
         # only for raw property(public, no function)
         if getter:
-            return (line.split(',')[0], [], None, line.split(',')[1])
+            return (line.split(',')[0].strip(), [], None, line.split(',')[1].strip())
         else:
-            return ('void', [line.split(',')[0]], None, line.split(',')[1])
+            return ('void', [line.split(',')[0].strip()], None, line.split(',')[1].strip())
 
-    def parse_class(self, classes):
-        for obj in classes:
-            meta_info = {}
-
-            meta_info['cxxtype'] = obj.cxxtype
-            meta_info['jstype'] = obj.jstype
-            meta_info['class_name'] = 'class_' + obj.jstype
-
-            constructors = self.parse_constructor(obj)
-            functions = self.parse_function(obj)
-            properties = self.parse_property(obj)
-            class_function = self.parse_class_function(obj)
-
-            meta_info['constructors'] = constructors
-            meta_info['functions'] = functions
-            meta_info['properties'] = properties
-            meta_info['class_functions'] = class_function
-
-            self.classes[obj.jstype] = meta_info
-
-            # print '=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~= start'
-            # print self.classes[obj.jstype].values()
-            # print '=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~='
-
-        self.register_content += template.register_class
-        self.register_content += template.register_val
-
-    def parse_constructor(self, obj):
-        result = {'constructor': []}
-        for constructor in obj.constructors:
-            # print 'constructor arg types: %s\n' % constructor.cxxargtypes
-            # print 'constructor cxxparams: %s\n' % constructor.cxxparams
-            if constructor.cxxargtypes == None:
-                fun_name = constructor.cxxparams.split(',')[0]
-                if 'select_over' not in fun_name:
-                    fun_name = self.supplemental_file[fun_name].encode("utf-8")
-                searchObj = re.search(self.pattern, fun_name)
-                if searchObj:
-                    args_list = searchObj.group('args_list').split(', ')
-                    if args_list == ['']:
-                        args_list = []
-                    result['constructor'].append(('%s *' % obj.cxxtype,
-                                                  searchObj.group('args_list').split(', '),
-                                                  searchObj.group('fun_name'),
-                                                  searchObj.group('args_list')))
-            else:
-                args_list = constructor.cxxargtypes.split(', ')
-                if args_list == ['']:
-                    args_list = []
-                result['constructor'].append(('%s *' % obj.cxxtype,
-                                              args_list,
-                                              'new %s' % obj.cxxtype,
-                                              None))
-
-        print '===========constructors=========='
-        print result
-        print ''
-        return result
-
-    def parse_function(self, obj):
-        result = {}
-        for function in obj.functions.items():
-            js_method = function[0]
-            result[js_method] = []
-            for spec_fun in function[1]:
-                fun_name = spec_fun[0]
-                if 'select_over' not in fun_name:
-                    fun_name = self.supplemental_file[fun_name].encode("utf-8")
-                detail = self.parse_func_line(fun_name, obj.cxxtype)
-                result[js_method].append(detail)
-        print '===========functions=========='
-        print result
-        print ''
-        return result
-
-    def parse_property(self, obj):
-        result = {}
-        for prop in obj.properties.items():
-            js_method = prop[0]
-            result[js_method] = []
-            prop_function = prop[1][0][0]
-            if ',' in prop_function:
-                # function (getter function, setter function)
-                getter = prop_function.split(',')[0]
-                if 'select_over' not in getter:
-                    getter = self.supplemental_file[getter].encode("utf-8")
-                setter = prop_function.split(',')[1]
-                if 'select_over' not in setter:
-                    setter = self.supplemental_file[setter].encode("utf-8")
-            else:
-                # member varible (setter = getter)
-                setter = None
-                print prop_function
-                getter = self.supplemental_file[prop_function].encode("utf-8")
-                if 'select_over' not in getter:
-                    setter = getter
-
-            result[js_method].append(self.parse_func_line(getter, obj.cxxtype))
-            result[js_method].append(self.parse_func_line(setter, obj.cxxtype, getter=False))
-
-        print '===========properties=========='
-        print result
-        print ''
-        return result
-
-    def parse_class_function(self, obj):
-        result = {}
-        for static_func in obj.class_functions.items():
-            # print static_func
-            js_method = static_func[0]
-            result[js_method] = []
-            for spec_fun in static_func[1]:
-                detail = self.parse_func_line(spec_fun[0], obj.cxxtype, bool_static=True)
-                result[js_method].append(detail)
-
-        print '===========class functions=========='
-        print result
-        print ''
-        return result
-
+    # ****
     def parse_arg_type(self, instance, arg):
-        if arg in arg_template(['int', 'size_t', 'short', 'char']):
+        arg = self.normalize_arg(arg)
+
+        if arg in ['bool']:
+            return template.args_bool
+        if arg in ['int', 'size_t', 'short', 'char']:
             return template.args_int
-        if arg in arg_template(['unsigned int', 'unsigned short', 'unsigned char']):
+        if arg in ['unsigned int', 'unsigned short', 'unsigned char']:
             return template.args_uint
-        if arg in arg_template(['intptr_t', 'long']):
+        if arg in ['intptr_t', 'long']:
             return template.args_long
-        if arg in arg_template(['double', 'float']):
+        if arg in ['double', 'float']:
             return template.args_double
-        if arg in arg_template(['std::string']):
+        if arg in ['std::string', 'string', 'String']:
             return template.args_string
 
+        # class
         if not instance == None:
             cxx_type = instance['cxxtype'].split('::')
             if cxx_type[-1] in arg:
                 return template.args_cxxtype % (instance['class_name'],
                                                 instance['cxxtype'])
 
-        searchObj = re.search('(const)\s*(.*)(&)', arg)
-        if searchObj:
-            arg = searchObj.group(2)
-        searchObj = re.search('(.*)(&)', arg)
-        if searchObj:
-            arg = searchObj.group(1)
-
         for obj in self.classes.values():
-            if arg.split('::')[-1] == obj['jstype'].split('::')[-1]:
+            if arg.split('::')[-1] == obj['cxxtype'].split('::')[-1]:
                 return template.args_cxxtype % (obj['class_name'],
                                                 obj['cxxtype'])
+        # value objects
         for obj in self.value_objects.values():
-            if arg.split('::')[-1] == obj['jstype'].split('::')[-1]:
+            if arg.split('::')[-1] == obj['cxxtype'].split('::')[-1]:
                 i = 0
                 fun = ''
                 for prop in obj['properties'].items():
@@ -399,7 +306,7 @@ class Gen:
                         fun += '\tp{0}->target()->%s = *((%s *)p{0}_%s);\n' % (prop[1][1][3], prop_type, i)
                     i += 1
                 return template.args_obj % (obj['class_name'], obj['class_name'], fun, obj['cxxtype'])
-
+        # value arrays
         for arr in self.value_arrays.values():
             if arg.split('::')[-1] == arr['jstype'].split('::')[-1]:
                 arr_args = ''
@@ -412,33 +319,41 @@ class Gen:
                     if not i == arr['argc'] - 1:
                         args += ', '
                 return template.args_array % (arr_args, arg, arg, args)
-        for vec in self.vectors.values():
-            if arg.split('::')[-1] == vec['cxxtype'].split('::')[-1]:
-                return template.args_cxxtype % (vec['class_name'],
-                                                vec['cxxtype'])
-        print '------  parse_arg_type not supported type  ------'
-        print arg
+        # vector
+        if 'vector' in arg:
+            searchObj = re.search('(<)(.*)(>)', arg)
+            if searchObj:
+                arg = searchObj.group(2)
+            for vec in self.vectors.values():
+                if arg.split('::')[-1] == vec['element_type'].split('::')[-1]:
+                    return template.args_cxxtype % (vec['class_name'],
+                                                    vec['cxxtype'])
 
-        return '\"parse_arg_type not supported type\"\n'
+        return ''
+        print '\"parse_arg_type not supported type: [%s]\"\n' % arg
+        return '\"parse_arg_type not supported type: [%s]\"\n' % arg
 
+    # ****
     def parse_return_type(self, instance, arg, cxx_value='res', napi_value='result', cxx_fun_name=None, arg_name=None):
+        arg = self.normalize_arg(arg)
+
         if arg == 'void':
             return template.return_void.substitute()
         if arg == 'bool':
             return template.return_bool.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        if arg in arg_template(['int', 'size_t', 'short', 'char']):
+        if arg in ['int', 'size_t', 'short', 'char']:
             return template.return_int.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        if arg in arg_template(['unsigned int', 'unsigned short', 'unsigned char']):
+        if arg in ['unsigned int', 'unsigned short', 'unsigned char']:
             return template.return_uint.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        if arg in arg_template(['intptr_t', 'long']):
+        if arg in ['intptr_t', 'long']:
             return template.return_long.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        if arg in arg_template(['float', 'double']):
+        if arg in ['float', 'double']:
             return template.return_double.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        if arg in arg_template(['std::string']):
+        if arg in ['std::string']:
             return template.return_string.substitute(cxx_val=cxx_value, napi_val=napi_value)
 
         if not instance == None:
-            cxx_type = instance['jstype'].split('::')[-1]
+            cxx_type = instance['cxxtype'].split('::')[-1]
             if cxx_type in arg:
                 # return the class instance itself
                 return template.return_class.substitute(cxx_val=cxx_value,
@@ -448,7 +363,7 @@ class Gen:
 
         # return other class instance
         for obj in self.classes.values():
-            if obj['jstype'].split('::')[-1] == arg.split('::')[-1]:
+            if obj['cxxtype'].split('::')[-1] == arg.split('::')[-1]:
                 return template.return_class.substitute(cxx_val=cxx_value,
                                                         napi_val=napi_value,
                                                         class_domain=obj['class_name'] + '::',
@@ -456,7 +371,7 @@ class Gen:
         # return object
         for obj in self.value_objects.values():
             arg_type = arg.split('::')[-1]
-            if arg_type == obj['jstype'].split('::')[-1]:
+            if arg_type == obj['cxxtype'].split('::')[-1]:
                 fun = ''
                 for prop in obj['properties'].items():
                     prop_name = prop[0]
@@ -528,9 +443,142 @@ class Gen:
                                                              get_data=get_data,
                                                              create_return_val=create_return_val)
 
-        print '------ parse_return_type not supported type ------'
-        print arg
-        return '\"parse_return_type not supported type\"\n'
+        return template.return_void.substitute()
+
+        print '\"parse_return_type not supported type: [%s]\"\n' % arg
+        return '\"parse_return_type not supported type: [%s]\"\n' % arg
+
+    # -------------------class---------------------------
+    def parse_class(self, classes):
+        self.classes_order = []
+        for obj in classes:
+            meta_info = {}
+
+            self.classes_order.append(obj.jstype)
+
+            obj.cxxtype = obj.cxxtype.split(',')[0].strip()
+            meta_info['cxxtype'] = obj.cxxtype
+            meta_info['jstype'] = obj.jstype
+            meta_info['class_name'] = 'class_' + obj.jstype
+
+            constructors = self.parse_constructor(obj)
+            functions = self.parse_function(obj)
+            properties = self.parse_property(obj)
+            class_function = self.parse_class_function(obj)
+
+            meta_info['constructors'] = constructors
+            meta_info['functions'] = functions
+            meta_info['properties'] = properties
+            meta_info['class_functions'] = class_function
+
+            self.classes[obj.jstype] = meta_info
+
+            # print '=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~= start'
+            # print self.classes[obj.jstype].values()
+            # print '=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~='
+
+        self.register_content += template.register_class
+        self.register_content += template.register_val
+
+        # print '============================'
+        # print self.classes['BackgroundSubtractorMOG2']
+        # print '============================'
+
+    def parse_constructor(self, obj):
+        result = {'constructor': []}
+        for constructor in obj.constructors:
+            # print 'constructor arg types: %s\n' % constructor.cxxargtypes
+            # print 'constructor cxxparams: %s\n' % constructor.cxxparams
+            if constructor.cxxargtypes == None:
+                fun_name = constructor.cxxparams.split(',')[0]
+                if 'select_over' not in fun_name:
+                    fun_name = self.supplemental_file[fun_name].encode("utf-8")
+                searchObj = re.search(self.pattern, fun_name)
+                if searchObj:
+                    args_list = searchObj.group('args_list').split(', ')
+                    if args_list == ['']:
+                        args_list = []
+                    result['constructor'].append(('%s *' % obj.cxxtype,
+                                                  searchObj.group('args_list').split(', '),
+                                                  searchObj.group('fun_name'),
+                                                  searchObj.group('args_list')))
+            else:
+                args_list = constructor.cxxargtypes.split(', ')
+                if args_list == ['']:
+                    args_list = []
+                result['constructor'].append(('%s *' % obj.cxxtype,
+                                              args_list,
+                                              'new %s' % obj.cxxtype,
+                                              None))
+        if result['constructor'] == []:
+            result['constructor'].append((obj.cxxtype + ' *',
+                                          [],
+                                          'new ' + obj.cxxtype,
+                                          None)),
+        # print '===========constructors=========='
+        # print result
+        # print ''
+        return result
+
+    def parse_function(self, obj):
+        result = {}
+        for function in obj.functions.items():
+            js_method = function[0]
+            result[js_method] = []
+            for spec_fun in function[1]:
+                fun_name = spec_fun[0]
+                if 'select_over' not in fun_name:
+                    fun_name = self.supplemental_file[fun_name].encode("utf-8")
+                detail = self.parse_func_line(fun_name, obj.cxxtype)
+                result[js_method].append(detail)
+        # print '===========functions=========='
+        # print result
+        # print ''
+        return result
+
+    def parse_property(self, obj):
+        result = {}
+        for prop in obj.properties.items():
+            js_method = prop[0]
+            result[js_method] = []
+            prop_function = prop[1][0][0]
+            if ',' in prop_function:
+                # function (getter function, setter function)
+                getter = prop_function.split(',')[0]
+                if 'select_over' not in getter:
+                    getter = self.supplemental_file[getter].encode("utf-8")
+                setter = prop_function.split(',')[1]
+                if 'select_over' not in setter:
+                    setter = self.supplemental_file[setter].encode("utf-8")
+            else:
+                # member varible (setter = getter)
+                setter = None
+                getter = self.supplemental_file[prop_function].encode("utf-8")
+                if 'select_over' not in getter:
+                    setter = getter
+
+            result[js_method].append(self.parse_func_line(getter, obj.cxxtype))
+            result[js_method].append(self.parse_func_line(setter, obj.cxxtype, getter=False))
+
+        # print '===========properties=========='
+        # print result
+        # print ''
+        return result
+
+    def parse_class_function(self, obj):
+        result = {}
+        for static_func in obj.class_functions.items():
+            # print static_func
+            js_method = static_func[0]
+            result[js_method] = []
+            for spec_fun in static_func[1]:
+                detail = self.parse_func_line(spec_fun[0], obj.cxxtype, bool_static=True)
+                result[js_method].append(detail)
+
+        # print '===========class functions=========='
+        # print result
+        # print ''
+        return result
 
     def generate_class_declaration(self, instance):
         napi_fun = ''
@@ -729,6 +777,7 @@ class Gen:
         for obj in objects:
             # if not obj.jstype=='Size':
             #     continue
+            obj.cxxtype = obj.cxxtype.split(',')[0].strip()
             self.value_objects_order.append(obj.jstype)
             self.value_objects[obj.jstype] = {'jstype': obj.jstype,
                                               'cxxtype': obj.cxxtype,
@@ -763,23 +812,15 @@ class Gen:
                                                                                       filed_type,
                                                                                       'new ' + obj.cxxtype,
                                                                                       None))
-            # print obj.jstype
-            # print properties
-            # print ''
-            # if obj.jstype == 'Exception':
-            #     print self.value_objects[obj.jstype]
-            # print self.value_objects[obj.jstype]
-            # print obj.jstype
-            # print obj.cxxtype
-            # print obj.field_arr
-        print '===========objects=========='
-        print self.value_objects.values()
-        print ''
+        # print '===========objects=========='
+        # print self.value_objects.values()
+        # print ''
 
     # -------------------arrays----------------------------
     def parse_arrays(self, arrays):
         self.register_content += template.register_array
         for arr in arrays:
+            arr.cxxtype = arr.cxxtype.split(',')[0].strip()
             arg_type = arr.cxxtype
             # print arr.jstype
             if '<' in arr.cxxtype:
@@ -791,9 +832,9 @@ class Gen:
                                              'cxxtype': arr.cxxtype,
                                              'argc': len(arr.elem_arr),
                                              'argtype': arg_type}
-        print '===========arrays=========='
-        print self.value_arrays
-        print ''
+        # print '===========arrays=========='
+        # print self.value_arrays
+        # print ''
 
     # -------------------functions----------------------------
     def parse_global_functions(self, functions):
@@ -807,9 +848,9 @@ class Gen:
                 fun_name = self.supplemental_file[fun_name].encode("utf-8")
             detail = self.parse_func_line(fun_name, '', bool_static=True)
             self.global_functions[js_method].append(detail)
-        print '===========global functions=========='
-        print self.global_functions
-        print ''
+        # print '===========global functions=========='
+        # print self.global_functions
+        # print ''
 
     def generate_global_functions(self):
         self.napi_declaration += '\t\t// global functions\n'
@@ -862,9 +903,16 @@ class Gen:
     # -------------------vectors----------------------------
     def parse_vectors(self, vectors):
         for vec in vectors:
+            vec.cxxelemtype = vec.cxxelemtype.split(',')[0].strip()
+            if self.supplemental_file and \
+                    'typedef' in self.supplemental_file and \
+                    vec.cxxelemtype in self.supplemental_file['typedef']:
+                vec.cxxelemtype = self.supplemental_file['typedef'][vec.cxxelemtype].encode("utf-8")
+            vec.class_.cxxtype = 'std::vector<%s>' % vec.cxxelemtype
             self.vectors[vec.jstype] = {'jstype': vec.jstype,
                                         'cxxtype': vec.class_.cxxtype,
                                         'class_name': 'vec' + vec.jstype,
+                                        'element_type': vec.cxxelemtype,
                                         'constructors': {'constructor': [('%s *' % vec.class_.cxxtype,
                                                                           [],
                                                                           'new %s' % vec.class_.cxxtype,
@@ -888,9 +936,10 @@ class Gen:
 
             self.vectors[vec.jstype]['functions'] = fun_list
 
-        print '===========vectors=========='
-        print self.vectors
-        print ''
+        # print '===========vectors=========='
+        # for vec in self.vectors.values():
+        #     print vec
+        # print ''
 
     def generate_vector_function(self, instance):
         def detail(fun_name, args):
