@@ -22,8 +22,7 @@
         "Rect": "Rect_<int>",
         "Rect2f": "Rect_<float>",
         "cv::Rect": "Rect_<int>",
-        "cv::Rect2f": "Rect_<float>",
-        "std::vector<Rect>":"std::vector<Rect_<int>>"
+        "cv::Rect2f": "Rect_<float>"
     },
     "&cv::Range::start": "int,cv::Range::start",
     "&cv::Range::end": "int,cv::Range::end",

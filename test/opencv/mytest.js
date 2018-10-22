@@ -5,40 +5,66 @@ const cv = require('./plugin/opencv.js');
 
 const assert = require('assert');
 
-let data = new Uint8Array([0, 0, 0, 255, 0, 1, 2, 3]);
-console.log(data)
-console.log(data.buffer)
-let dataPtr = cv._malloc(8);
-console.log(dataPtr)
+let rectVector = new cv.RectVector();
+let rect = {x: 1, y: 2, width: 3, height: 4};
+rectVector.push_back(rect);
+rectVector.push_back(new cv.Rect());
+rectVector.push_back(new cv.Rect(rect));
+// rectVector.push_back(new cv.Rect({x: 5, y: 6}, {width: 7, height: 8}));
+rectVector.push_back(new cv.Rect(9, 10, 11, 12));
 
-console.log(new Uint8Array(2))
-console.log(cv.HEAPU8.byteOffset)
-console.log(cv.HEAPU8.byteOffset)
-let dataHeap = new Uint8Array(cv.HEAPU8.buffer, dataPtr, 8);
-console.log(dataHeap.buffer)
-console.log(dataHeap)
-dataHeap.set(new Uint8Array(data.buffer));
-console.log(dataHeap)
+assert.equal(rectVector.size(), 4);
 
-let mat = new cv.Mat(8, 1, cv.CV_8UC1, dataPtr, 0);
+let item = rectVector.get(0);
+console.log(item)
+assert.equal(item.x, 1);
+assert.equal(item.y, 2);
+assert.equal(item.width, 3);
+assert.equal(item.height, 4);
 
+item = rectVector.get(1);
+assert.equal(item.x, 0);
+assert.equal(item.y, 0);
+assert.equal(item.width, 0);
+assert.equal(item.height, 0);
 
-let unsignedCharView = new Uint8Array(data.buffer);
-let charView = new Int8Array(data.buffer);
-let shortView = new Int16Array(data.buffer);
-let unsignedShortView = new Uint16Array(data.buffer);
-let intView = new Int32Array(data.buffer);
-let float32View = new Float32Array(data.buffer);
-let float64View = new Float64Array(data.buffer);
+item = rectVector.get(2);
+assert.equal(item.x, 1);
+assert.equal(item.y, 2);
+assert.equal(item.width, 3);
+assert.equal(item.height, 4);
 
-// console.log(unsignedCharView)
-// console.log(mat.data)
-assert.deepEqual(unsignedCharView, mat.data);
-assert.deepEqual(charView, mat.data8S);
-assert.deepEqual(shortView, mat.data16S);
-assert.deepEqual(unsignedShortView, mat.data16U);
-assert.deepEqual(intView, mat.data32S);
-assert.deepEqual(float32View, mat.data32F);
-assert.deepEqual(float64View, mat.data64F);
+// item = rectVector.get(3);
+// assert.equal(item.x, 5);
+// assert.equal(item.y, 6);
+// assert.equal(item.width, 7);
+// assert.equal(item.height, 8);
+
+item = rectVector.get(3);
+assert.equal(item.x, 9);
+assert.equal(item.y, 10);
+assert.equal(item.width, 11);
+assert.equal(item.height, 12);
+
+rectVector.delete();
 
 global.gc();
+
+
+// const R =7;
+// const G =13;
+// const B =29;
+
+// let mat = cv.ones(5, 5, cv.CV_8UC3);
+// let view = mat.data;
+// view[0] = R;
+// view[1] = G;
+// view[2] = B;
+
+// let bgrPlanes = new cv.MatVector();
+// cv.split(mat, bgrPlanes);
+// assert.equal(bgrPlanes.size(), 3);
+
+// let rMat = bgrPlanes.get(0);
+// view = rMat.data;
+// assert.equal(view[0], R);

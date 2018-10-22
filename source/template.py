@@ -169,13 +169,8 @@ register_array = """
     void _embind_finalize_value_array(TYPEID tupleType) {}
 """
 register_val = """
-#ifndef _WIN32
-#include <unistd.h>
-#endif
     EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv) {
-#ifndef _WIN32
-        usleep(1);
-#endif
+        printf("%p\\n", argv);
         return (struct _EM_VAL* )argv;
     }
     void _emval_decref(EM_VAL value) {}
@@ -233,6 +228,7 @@ ${class_function}
  private:
     static napi_value Release(napi_env env, napi_callback_info info);
     static napi_value New(napi_env env, napi_callback_info info);
+    static ${type} *${name}_constructor_factory(napi_env env, size_t argc, napi_value *args);
 
     static napi_ref constructor_;
     ${type} *target_;
@@ -378,7 +374,7 @@ NAPI_MODULE(NODE_GYP_MODULE_NAME, Init)
 """)
 
 constructor_func_start = Template("""
-${type} *${name}_constructor_factory(napi_env env, size_t argc, napi_value *args)
+${type} *${name}::${name}_constructor_factory(napi_env env, size_t argc, napi_value *args)
 {
  ${type} *p = nullptr;
  switch (argc) {
@@ -460,7 +456,8 @@ arr_args_double = """\
 """
 
 
-return_void = Template("""""")
+return_void = Template("""    ${napi_val} = nullptr;
+""")
 return_bool = Template("""    napi_get_boolean(env, ${cxx_val}, &${napi_val});
 """)
 return_int = Template("""    napi_create_int32(env, (int32_t)${cxx_val}, &${napi_val});
@@ -500,10 +497,9 @@ arr_type = {
     'float': 'napi_float32_array',
     'double': 'napi_float64_array'
 }
-return_val_array = Template("""    EM_VAR_ARGS *handle = (EM_VAR_ARGS *)${cxx_val}.get_handle();
+return_val_array = Template("""    EM_VAR_ARGS handle = (EM_VAR_ARGS)${cxx_val}.get_handle();
     typedef std::array<GenericWireType, PackSize<${val_type}>::value> arr;
-    arr &elements = *(arr *)handle;
-    GenericWireType *cursor = &elements[0];
+    GenericWireType *cursor = (GenericWireType*)handle;
     size_t array_length = cursor->w[0].u;
     void *array_data = (void *)cursor->w[1].p;
 
@@ -524,10 +520,10 @@ return_val_array = Template("""    EM_VAR_ARGS *handle = (EM_VAR_ARGS *)${cxx_va
 return_val_object = Template("""    if (res.isUndefined()) {
         return nullptr;
     }
-    EM_VAR_ARGS *handle = (EM_VAR_ARGS *)${cxx_val}.get_handle();
+    EM_VAR_ARGS handle = (EM_VAR_ARGS)${cxx_val}.get_handle();
     typedef std::array<GenericWireType, PackSize<${val_type}>::value> arr;
-    arr &elements = *(arr *)handle;
-    GenericWireType *cursor = &elements[0];
+    GenericWireType *cursor = (GenericWireType*)handle;
+
 ${get_data}
 ${create_return_val}
 """)

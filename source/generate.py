@@ -5,6 +5,7 @@ import json
 
 func_pattern = 'select_overload<(?P<return_type>.*)[(](?P<args_list>.*)[)].*>[(][&](?P<fun_name>((?!,).)*)[)(.*)]'
 
+
 class Gen:
     def __init__(self, target, supplement):
         self.target = target
@@ -29,6 +30,20 @@ class Gen:
         self.pattern = func_pattern
         self.register_content = ''
         self.napi_declaration = ''
+
+        if self.supplemental_file and \
+                'value_objects' in self.supplemental_file and \
+                'alias' in self.supplemental_file['value_objects']:
+            self.object_alias = self.supplemental_file['value_objects']['alias']
+        else:
+            self.object_alias = None
+
+        if self.supplemental_file and \
+                'value_objects' in self.supplemental_file and \
+                'constructor' in self.supplemental_file['value_objects']:
+            self.object_supplemental_constructor = self.supplemental_file['value_objects']['constructor']
+        else:
+            self.object_supplemental_constructor = None
 
     def genfile_start(self):
         if not os.path.exists(os.path.join(self.base_path, 'plugin')):
@@ -57,74 +72,26 @@ class Gen:
         napi_create_declaration = ''
 
         # value_objects
-        for jstype in self.value_objects_order:
-            instance = self.value_objects[jstype]
-            # class declaration
-            (napi_fun, napi_property) = self.generate_class_declaration(instance)
-            # constructor implementation
-            self.generate_constructor(instance)
-            # property implementation
-            self.generate_prop(instance)
-            # napi declaration
-            self.generate_napi_class_declaration(instance, napi_fun, napi_property)
-
-            napi_init_declaration += '\t%s::Init(env, exports);\n' % instance['class_name']
-            # napi_create_declaration += '\t\tNAPI_DECLARE_METHOD("createObject", %s::CreateObject),\n' % instance[
-            #     'class_name']
+        napi_init_declaration += self.generate_class_declartion()
+        napi_init_declaration += self.generate_object_declartion()
+        napi_init_declaration += self.generate_vector_declartion()
 
         # class
-        for jstype in self.classes_order:
-            instance = self.classes[jstype]
-            # class declaration
-            (napi_fun, napi_property) = self.generate_class_declaration(instance)
-            # constructor implementation
-            self.generate_constructor(instance)
-            # function implementation
-            self.generate_function(instance)
-            # property implementation
-            self.generate_prop(instance)
-            # class function implementation
-            self.generate_class_function(instance)
-            # napi declaration
-            self.generate_napi_class_declaration(instance, napi_fun, napi_property)
-
-            napi_init_declaration += '\t%s::Init(env, exports);\n' % instance['class_name']
-            # napi_create_declaration += '\t\tNAPI_DECLARE_METHOD("createObject", %s::CreateObject),\n' % instance[
-            #     'class_name']
+        self.generate_class_details()
+        self.generate_object_details()
+        self.generate_vector_details()
 
         # vector
-        for instance in self.vectors.values():
-            # class declaration
-            (napi_fun, napi_property) = self.generate_class_declaration(instance)
-            # constructor implementation
-            self.generate_constructor(instance)
-            # function implementation
-            self.generate_vector_function(instance)
-            # napi declaration
-            self.generate_napi_class_declaration(instance, napi_fun, napi_property)
-
-            napi_init_declaration += '\t%s::Init(env, exports);\n' % instance['class_name']
 
         # constant
         if self.constants:
-            self.napi_declaration += '\t\t// constant\n'
-            for constant in self.constants:
-                self.napi_declaration += '\t\t{"%s", nullptr, nullptr, %s, nullptr, 0, napi_default, 0},\n' % (
-                    constant.jsval, 'get_constant_' + constant.jsval)
-                self.output_cxx_fp.write(template.constant_func % ('get_constant_' + constant.jsval, constant.cxxval))
+            self.generate_constant()
         # array
         if self.value_arrays:
-            self.napi_declaration += '\t\t// array\n'
-            for arr in self.value_arrays.values():
-                self.napi_declaration += '\t\tNAPI_DECLARE_METHOD("%s", generate_%s),\n' % (
-                    arr['jstype'], arr['jstype'])
-                self.output_cxx_fp.write(template.array_func % (arr['jstype'], arr['argc']))
+            self.generate_arrays()
         # global functions
         if self.global_functions:
             self.generate_global_functions()
-
-        # vectors
-        # self.generate_vectors()
         # global malloc
         self.napi_declaration += '\n\t\tNAPI_DECLARE_METHOD("_malloc", global_malloc)'
         self.output_cxx_fp.write(template.global_malloc)
@@ -161,10 +128,8 @@ class Gen:
         if searchObj:
             arg = searchObj.group(1)
 
-        if self.supplemental_file and \
-                'typedef' in self.supplemental_file and \
-                arg in self.supplemental_file['typedef']:
-            arg = self.supplemental_file['typedef'][arg].encode("utf-8")
+        if self.object_alias and arg in self.object_alias:
+            arg = self.object_alias[arg].encode("utf-8")
         return arg
 
     def generate_namespace(self):
@@ -220,20 +185,11 @@ class Gen:
         searchObj = re.search(self.pattern, line)
         if searchObj:
             # return type
-            return_type = searchObj.group('return_type')
-            if self.supplemental_file and \
-                    'typedef' in self.supplemental_file and \
-                    return_type in self.supplemental_file['typedef']:
-                return_type = self.supplemental_file['typedef'][return_type]
+            return_type = self.normalize_arg(searchObj.group('return_type'))
             # args list
             args_list = []
             for x in searchObj.group('args_list').split(','):
-                if self.supplemental_file and \
-                        'typedef' in self.supplemental_file and \
-                        x.strip() in self.supplemental_file['typedef']:
-                    args_list.append(self.supplemental_file['typedef'][x.strip()])
-                else:
-                    args_list.append(x.strip())
+                args_list.append(self.normalize_arg(x.strip()))
             if args_list == ['']:
                 args_list = []
             # fun name
@@ -269,11 +225,11 @@ class Gen:
             return template.args_string
 
         # class
-        if not instance == None:
-            cxx_type = instance['cxxtype'].split('::')
-            if cxx_type[-1] in arg:
-                return template.args_cxxtype % (instance['class_name'],
-                                                instance['cxxtype'])
+        # if not instance == None:
+        #     cxx_type = instance['cxxtype'].split('::')
+        #     if cxx_type[-1] in arg:
+        #         return template.args_cxxtype % (instance['class_name'],
+        #                                         instance['cxxtype'])
 
         for obj in self.classes.values():
             if arg.split('::')[-1] == obj['cxxtype'].split('::')[-1]:
@@ -290,8 +246,8 @@ class Gen:
                     fun += '\tnapi_value output{0}_%s;\n' % (i)
                     fun += '\tnapi_get_named_property(env, args[{0}], "%s", &output{0}_%s);\n' % (prop_name, i)
                     if prop_type in ['float', 'double']:
-                        fun += '\tnapi_get_value_double(env, output{0}_%s, (double *)&(p{0}->target()->%s));\n' % (
-                            i, prop[1][1][3])
+                        fun += '\tdouble tmp{0}_%s;\n\tnapi_get_value_double(env, output{0}_%s, &tmp{0}_%s);\n\tp{0}->target()->%s = tmp{0}_%s;\n' % (
+                            i, i, i, prop[1][1][3], i)
                     elif prop_type in ['int', 'size_t', 'short', 'char']:
                         fun += '\tnapi_get_value_int32(env, output{0}_%s, (int32_t *)&(p{0}->target()->%s));\n' % (
                             i, prop[1][1][3])
@@ -329,7 +285,7 @@ class Gen:
                     return template.args_cxxtype % (vec['class_name'],
                                                     vec['cxxtype'])
 
-        return ''
+        # return ''
         print '\"parse_arg_type not supported type: [%s]\"\n' % arg
         return '\"parse_arg_type not supported type: [%s]\"\n' % arg
 
@@ -338,7 +294,7 @@ class Gen:
         arg = self.normalize_arg(arg)
 
         if arg == 'void':
-            return template.return_void.substitute()
+            return template.return_void.substitute(napi_val=napi_value)
         if arg == 'bool':
             return template.return_bool.substitute(cxx_val=cxx_value, napi_val=napi_value)
         if arg in ['int', 'size_t', 'short', 'char']:
@@ -349,7 +305,7 @@ class Gen:
             return template.return_long.substitute(cxx_val=cxx_value, napi_val=napi_value)
         if arg in ['float', 'double']:
             return template.return_double.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        if arg in ['std::string']:
+        if arg in ['std::string', 'string']:
             return template.return_string.substitute(cxx_val=cxx_value, napi_val=napi_value)
 
         if not instance == None:
@@ -435,7 +391,7 @@ class Gen:
                                                                             val_type.split('::')[-1], val_type)
 
                 create_return_val = self.parse_return_type(instance,
-                                                           val_type,
+                                                           val_type.split('::')[-1],
                                                            cxx_value='%s_data' % val_type.split('::')[-1],
                                                            napi_value=napi_value)
                 return template.return_val_object.substitute(cxx_val=cxx_value,
@@ -443,29 +399,28 @@ class Gen:
                                                              get_data=get_data,
                                                              create_return_val=create_return_val)
 
-        return template.return_void.substitute()
-
+        # return template.return_void.substitute(napi_val=napi_value)
+        # print cxx_fun_name
         print '\"parse_return_type not supported type: [%s]\"\n' % arg
         return '\"parse_return_type not supported type: [%s]\"\n' % arg
 
     # -------------------class---------------------------
     def parse_class(self, classes):
-        self.classes_order = []
         for obj in classes:
             meta_info = {}
 
-            self.classes_order.append(obj.jstype)
-
             obj.cxxtype = obj.cxxtype.split(',')[0].strip()
-            meta_info['cxxtype'] = obj.cxxtype
-            meta_info['jstype'] = obj.jstype
-            meta_info['class_name'] = 'class_' + obj.jstype
 
             constructors = self.parse_constructor(obj)
+            if constructors == None:
+                continue
             functions = self.parse_function(obj)
             properties = self.parse_property(obj)
             class_function = self.parse_class_function(obj)
 
+            meta_info['cxxtype'] = obj.cxxtype
+            meta_info['jstype'] = obj.jstype
+            meta_info['class_name'] = 'class_' + obj.jstype
             meta_info['constructors'] = constructors
             meta_info['functions'] = functions
             meta_info['properties'] = properties
@@ -511,10 +466,11 @@ class Gen:
                                               'new %s' % obj.cxxtype,
                                               None))
         if result['constructor'] == []:
-            result['constructor'].append((obj.cxxtype + ' *',
-                                          [],
-                                          'new ' + obj.cxxtype,
-                                          None)),
+            return None
+        #     result['constructor'].append((obj.cxxtype + ' *',
+        #                                   [],
+        #                                   'new ' + obj.cxxtype,
+        #                                   None))
         # print '===========constructors=========='
         # print result
         # print ''
@@ -764,21 +720,50 @@ class Gen:
         self.output_cxx_fp.write('/*-------------------  class function  -------------------*/\n')
         self.generate_function_detail(instance, instance['class_functions'], detail)
 
+    def generate_class_declartion(self):
+        declartion = ''
+        for instance in self.classes.values():
+            # class declaration
+            (napi_fun, napi_property) = self.generate_class_declaration(instance)
+            # napi declaration
+            self.generate_napi_class_declaration(instance, napi_fun, napi_property)
+
+            declartion += '\t%s::Init(env, exports);\n' % instance['class_name']
+            # napi_create_declaration += '\t\tNAPI_DECLARE_METHOD("createObject", %s::CreateObject),\n' % instance[
+            #     'class_name']
+        return declartion
+
+    def generate_class_details(self):
+        for instance in self.classes.values():
+            # constructor implementation
+            self.generate_constructor(instance)
+            # function implementation
+            self.generate_function(instance)
+            # property implementation
+            self.generate_prop(instance)
+            # class function implementation
+            self.generate_class_function(instance)
+
     # -------------------constant---------------------------
     def parse_constant(self, constants):
         self.register_content += template.register_constant
         self.constants = constants
 
+    def generate_constant(self):
+        self.napi_declaration += '\t\t// constant\n'
+        for constant in self.constants:
+            self.napi_declaration += '\t\t{"%s", nullptr, nullptr, %s, nullptr, 0, napi_default, 0},\n' % (
+                constant.jsval, 'get_constant_' + constant.jsval)
+            self.output_cxx_fp.write(template.constant_func % ('get_constant_' + constant.jsval, constant.cxxval))
+
     # -------------------objects----------------------------
     def parse_objects(self, objects):
         self.register_content += template.register_object
-        self.value_objects_order = []
         only_default_constructor = [fun.encode("utf-8") for fun in self.supplemental_file['only_default_constructor']]
         for obj in objects:
             # if not obj.jstype=='Size':
             #     continue
             obj.cxxtype = obj.cxxtype.split(',')[0].strip()
-            self.value_objects_order.append(obj.jstype)
             self.value_objects[obj.jstype] = {'jstype': obj.jstype,
                                               'cxxtype': obj.cxxtype,
                                               'class_name': 'object_' + obj.jstype,
@@ -812,9 +797,45 @@ class Gen:
                                                                                       filed_type,
                                                                                       'new ' + obj.cxxtype,
                                                                                       None))
+                self.value_objects[obj.jstype]['constructors']['constructor'].append((obj.cxxtype + ' *',
+                                                                                      ['const %s&' % obj.jstype],
+                                                                                      'new ' + obj.cxxtype,
+                                                                                      None))
+            if self.object_supplemental_constructor and obj.jstype in self.object_supplemental_constructor:
+                for cons_arg in self.object_supplemental_constructor[obj.jstype]:
+                    arg_list = []
+                    for arg in cons_arg:
+                        arg_list.append(arg.encode('utf-8'))
+                    self.value_objects[obj.jstype]['constructors']['constructor'].append((obj.cxxtype + ' *',
+                                                                                          arg_list,
+                                                                                          'new ' + obj.cxxtype,
+                                                                                          None))
         # print '===========objects=========='
-        # print self.value_objects.values()
+        # # print self.value_objects.values()
+        # for obj in self.value_objects.values():
+        #     print obj
+        #     print ''
         # print ''
+
+    def generate_object_declartion(self):
+        declartion = ''
+        for instance in self.value_objects.values():
+            # class declaration
+            (napi_fun, napi_property) = self.generate_class_declaration(instance)
+            # napi declaration
+            self.generate_napi_class_declaration(instance, napi_fun, napi_property)
+
+            declartion += '\t%s::Init(env, exports);\n' % instance['class_name']
+            # napi_create_declaration += '\t\tNAPI_DECLARE_METHOD("createObject", %s::CreateObject),\n' % instance[
+            #     'class_name']
+        return declartion
+
+    def generate_object_details(self):
+        for instance in self.value_objects.values():
+            # constructor implementation
+            self.generate_constructor(instance)
+            # property implementation
+            self.generate_prop(instance)
 
     # -------------------arrays----------------------------
     def parse_arrays(self, arrays):
@@ -835,6 +856,13 @@ class Gen:
         # print '===========arrays=========='
         # print self.value_arrays
         # print ''
+
+    def generate_arrays(self):
+        self.napi_declaration += '\t\t// array\n'
+        for arr in self.value_arrays.values():
+            self.napi_declaration += '\t\tNAPI_DECLARE_METHOD("%s", generate_%s),\n' % (
+                arr['jstype'], arr['jstype'])
+            self.output_cxx_fp.write(template.array_func % (arr['jstype'], arr['argc']))
 
     # -------------------functions----------------------------
     def parse_global_functions(self, functions):
@@ -904,10 +932,9 @@ class Gen:
     def parse_vectors(self, vectors):
         for vec in vectors:
             vec.cxxelemtype = vec.cxxelemtype.split(',')[0].strip()
-            if self.supplemental_file and \
-                    'typedef' in self.supplemental_file and \
-                    vec.cxxelemtype in self.supplemental_file['typedef']:
-                vec.cxxelemtype = self.supplemental_file['typedef'][vec.cxxelemtype].encode("utf-8")
+            vec.cxxelemtype = vec.cxxelemtype.split('::')[-1]
+            vec.cxxelemtype = self.normalize_arg(vec.cxxelemtype)
+
             vec.class_.cxxtype = 'std::vector<%s>' % vec.cxxelemtype
             self.vectors[vec.jstype] = {'jstype': vec.jstype,
                                         'cxxtype': vec.class_.cxxtype,
@@ -950,3 +977,21 @@ class Gen:
 
         self.output_cxx_fp.write('/*-------------------  function  -------------------*/\n')
         self.generate_function_detail(instance, instance['functions'], detail)
+
+    def generate_vector_declartion(self):
+        declartion = ''
+        for instance in self.vectors.values():
+            # class declaration
+            (napi_fun, napi_property) = self.generate_class_declaration(instance)
+            # napi declaration
+            self.generate_napi_class_declaration(instance, napi_fun, napi_property)
+
+            declartion += '\t%s::Init(env, exports);\n' % instance['class_name']
+        return declartion
+
+    def generate_vector_details(self):
+        for instance in self.vectors.values():
+            # constructor implementation
+            self.generate_constructor(instance)
+            # function implementation
+            self.generate_vector_function(instance)
