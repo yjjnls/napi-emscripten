@@ -1,4 +1,5 @@
 const bindingPath = require.resolve(`./build/Release/plugin.node`);
+
 var cv = require(bindingPath); // eslint-disable-line no-var
 
 // var helper = require('../helper.js');
@@ -410,8 +411,9 @@ module.exports = {
     'Circle': cv.Circle,
     'Moments': cv.Moments,
     'Exception': cv.Exception,
-
+    //////////////////////////
     '_malloc': cv._malloc,
+    //////////////////////////
     'eye': cv.eye,
     'ones': cv.ones,
     'zeros': cv.zeros,
@@ -461,6 +463,7 @@ module.exports = {
     'MatVector': cv.MatVector,
     'RectVector': cv.RectVector,
     'matFromArray': Module['matFromArray'],
+    //////////////////////////
     'HEAP8': Module['HEAP8'],
     'HEAP16': Module['HEAP16'],
     'HEAP32': Module['HEAP32'],
@@ -469,6 +472,35 @@ module.exports = {
     'HEAPU32': Module['HEAPU32'],
     'HEAPF32': Module['HEAPF32'],
     'HEAPF64': Module['HEAPF64'],
-    'split': cv.split
+    //////////////////////////
+    'split': cv.split,
+    'calcHist': cv.calcHist,
+    'cvtColor': cv.cvtColor,
+    'COLOR_BGR2GRAY': cv.COLOR_BGR2GRAY,
+    'COLOR_BGR2BGRA': cv.COLOR_BGR2BGRA,
+    'equalizeHist': cv.equalizeHist,
+    'threshold': cv.threshold,
+    'adaptiveThreshold': cv.adaptiveThreshold,
+    'moments': cv.moments,
+    'contourArea': cv.contourArea,
+    'minEnclosingCircle': cv.minEnclosingCircle,
+    'blur': cv.blur,
+    'GaussianBlur': cv.GaussianBlur,
+    'medianBlur': cv.medianBlur,
+    'transpose': cv.transpose,
+    'bilateralFilter': cv.bilateralFilter,
+    'watershed': cv.watershed,
+    'vconcat': cv.vconcat,
+    'hconcat': cv.hconcat,
+    'distanceTransform': cv.distanceTransform,
+    'distanceTransformWithLabels': cv.distanceTransformWithLabels,
+    'integral': cv.integral,
+    'integral2': cv.integral2,
+    'DIST_L2': cv.DIST_L2,
+    'DIST_LABEL_CCOMP': cv.DIST_LABEL_CCOMP,
+    "BORDER_DEFAULT": cv.BORDER_DEFAULT,
+    'groupRectangles': cv.groupRectangles,
+    'CascadeClassifier': cv.CascadeClassifier,
+    'HOGDescriptor': cv.HOGDescriptor
 
 }

@@ -7,13 +7,13 @@ $ ./build.sh
 $ LD_LIBRARY_PATH=/usr/local/lib node tests.js
 ```
 ## supplement file
-functions in namespace binding_utils can't be static
+1. functions in namespace binding_utils can't be static
 
-declared value_objects should be noted in supplements wheather it has constructors with declared fields as args. 
+2. declared value_objects should be noted in supplements wheather it has constructors with declared fields as args. 
 
-template function and class/struct declared in namespace should be noted in json
+3. template function and class/struct declared in namespace should be noted in json
 
-if jsmethod and cxxmethod are different in declartion, it should be noted
+4. if jsmethod and cxxmethod are different in declartion, it should be noted
 ```cpp
 #define EMSCRIPTEN_CV_RECT(type, name) \
     emscripten::value_object<cv::Rect_<type>> (name) \
@@ -25,6 +25,11 @@ if jsmethod and cxxmethod are different in declartion, it should be noted
     EMSCRIPTEN_CV_RECT(int, "Rect")
     EMSCRIPTEN_CV_RECT(float, "Rect2f")
 ``` 
+
+5. `val` is commonly JsArray format, it can be napi typedarray, object, number, string or others. It shoud noted according to their function name. In function args, val usually is array type. While in function return type, it can not only be array but also be single number, string or object.
+
+
+
 
 ## notes
 Args passing to value_object constructor(js code) should be the same order with the declartion(cpp code).

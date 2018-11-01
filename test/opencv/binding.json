@@ -18,12 +18,23 @@
         "class MinMaxLoc\n     {\n     public:\n         double minVal;\n         double maxVal;\n         Point minLoc;\n         Point maxLoc;\n     };",
         "class Circle\n     {\n     public:\n         Point2f center;\n         float radius;\n     };"
     ],
-    "typedef": {
-        "Rect": "Rect_<int>",
-        "Rect2f": "Rect_<float>",
-        "cv::Rect": "Rect_<int>",
-        "cv::Rect2f": "Rect_<float>"
+    "value_objects": {
+        "alias": {
+            "Rect": "Rect_<int>",
+            "Rect2f": "Rect_<float>"
+        },
+        "constructor": {
+            "Rect": [
+                ["const Point&", "const Size&"]
+            ]
+        }
     },
+    "only_default_constructor": [
+        "MinMaxLoc",
+        "Circle",
+        "Moments",
+        "Exception"
+    ],
     "&cv::Range::start": "int,cv::Range::start",
     "&cv::Range::end": "int,cv::Range::end",
     "&cv::TermCriteria::type": "int,cv::TermCriteria::type",
@@ -85,12 +96,6 @@
     "&cv::morphologyDefaultBorderValue": "select_overload<Scalar()>(&cv::morphologyDefaultBorderValue)",
     "&binding_utils::cvMatDepth": "select_overload<int(int)>(&binding_utils::cvMatDepth)",
     "&binding_utils::getBuildInformation": "select_overload<std::string()>(&binding_utils::getBuildInformation)",
-    "only_default_constructor": [
-        "MinMaxLoc",
-        "Circle",
-        "Moments",
-        "Exception"
-    ],
     "&cv::HOGDescriptor::winSize": "Size,cv::HOGDescriptor::winSize",
     "&cv::HOGDescriptor::blockSize": "Size,cv::HOGDescriptor::blockSize",
     "&cv::HOGDescriptor::blockStride": "Size,cv::HOGDescriptor::blockStride",

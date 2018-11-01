@@ -19,18 +19,71 @@ namespace emscripten {
         template<typename WrapperType>
         val wrapped_extend(const std::string&, const val&);
 
+        enum _EMVAL_TYPE{
+            _EMVAL_UNDEFINED = 1,
+            _EMVAL_NULL = 2,
+            _EMVAL_TRUE = 3,
+            _EMVAL_FALSE = 4,
+            _EMVAL_ARRAY = 5,
+            _EMVAL_NUMBER = 6,
+            _EMVAL_STRING = 7,
+            _EMVAL_OBJECT = 8,
+
+        };
+        struct _EM_VAL
+        {
+            _EM_VAL()
+                : type(_EMVAL_UNDEFINED), data(nullptr) {}
+            _EM_VAL(void *p)
+                : type(_EMVAL_UNDEFINED), data(p) {}
+            _EM_VAL(enum _EMVAL_TYPE t)
+                : type(t), data(nullptr) {}
+            _EM_VAL(const _EM_VAL &v)
+            {
+                type = v.type;
+                data = v.data;
+            }
+            _EM_VAL(_EM_VAL &&v)
+            {
+                type = v.type;
+                data = v.data;
+                v.type = _EMVAL_UNDEFINED;
+                v.data = nullptr;
+            }
+            _EM_VAL &operator=(const _EM_VAL &v)
+            {
+                type = v.type;
+                data = v.data;
+                return *this;
+            }
+            _EM_VAL &operator=(_EM_VAL &&v)
+            {
+                type = v.type;
+                data = v.data;
+                v.type = _EMVAL_UNDEFINED;
+                v.data = nullptr;
+                return *this;
+            }
+            enum _EMVAL_TYPE type;
+            void *data;
+        };
+        template <typename T>
+        struct __EM_VAL : public _EM_VAL
+        {
+            __EM_VAL(const T &c)
+                : _EM_VAL(),container(c)
+            {
+            }
+            T container;
+        };
+        typedef std::shared_ptr<struct _EM_VAL> EM_VAL;
         // Implemented in JavaScript.  Don't call these directly.
-        extern "C" {
+        extern "C"
+        {
             void _emval_register_symbol(const char*);
 
-            enum {
-                _EMVAL_UNDEFINED = 1,
-                _EMVAL_NULL = 2,
-                _EMVAL_TRUE = 3,
-                _EMVAL_FALSE = 4
-            };
 
-            typedef struct _EM_VAL* EM_VAL;
+            // typedef struct _EM_VAL *EM_VAL;
             typedef struct _EM_DESTRUCTORS* EM_DESTRUCTORS;
             typedef struct _EM_METHOD_CALLER* EM_METHOD_CALLER;
             typedef double EM_GENERIC_WIRE_TYPE;
@@ -200,6 +253,7 @@ namespace emscripten {
 
         template<typename ElementType>
         inline void writeGenericWireType(GenericWireType*& cursor, const memory_view<ElementType>& wt) {
+            // printf("size: %d \ndata: %p\n",wt.size,wt.data);
             cursor->w[0].u = wt.size;
             cursor->w[1].p = wt.data;
             ++cursor;
@@ -225,6 +279,10 @@ namespace emscripten {
             WireTypePack(Args&&... args) {
                 GenericWireType* cursor = elements.data();
                 writeGenericWireTypes(cursor, std::forward<Args>(args)...);
+            }
+            ~WireTypePack()
+            {
+                // printf("   ~WireTypePack\n");
             }
 
             operator EM_VAR_ARGS() const {
@@ -285,7 +343,8 @@ namespace emscripten {
         // same with: = += -= *= /= %= <<= >>= >>>= &= ^= |=
 
         static val array() {
-            return val(internal::_emval_new_array());
+            return val(std::make_shared<internal::_EM_VAL>(internal::_EMVAL_ARRAY));
+            // return val(internal::_emval_new_array());
         }
 
         template<typename T>
@@ -301,11 +360,11 @@ namespace emscripten {
         }
 
         static val undefined() {
-            return val(internal::EM_VAL(internal::_EMVAL_UNDEFINED));
+            return val(std::make_shared<internal::_EM_VAL>(internal::_EMVAL_UNDEFINED));
         }
 
         static val null() {
-            return val(internal::EM_VAL(internal::_EMVAL_NULL));
+            return val(std::make_shared<internal::_EM_VAL>(internal::_EMVAL_NULL));
         }
 
         static val take_ownership(internal::EM_VAL e) {
@@ -325,10 +384,14 @@ namespace emscripten {
             using namespace internal;
 
             typedef internal::BindingType<T> BT;
-            WireTypePack<T> argv(std::forward<T>(value));
+            // WireTypePack<T> argv(std::forward<T>(value));
+            // handle = _emval_take_value(
+            //     internal::TypeID<T>::get(),
+            //     argv);
+            WireTypePack<T> *argv = new WireTypePack<T>(std::forward<T>(value));
             handle = _emval_take_value(
                 internal::TypeID<T>::get(),
-                argv);
+                argv);            
         }
 
         val() = delete;
@@ -350,6 +413,8 @@ namespace emscripten {
         }
 
         ~val() {
+            // printf("~val()\n");
+            assert(handle->data == nullptr);
             internal::_emval_decref(handle);
         }
 
@@ -368,35 +433,47 @@ namespace emscripten {
         }
 
         bool hasOwnProperty(const char* key) const {
-            return val::global("Object")["prototype"]["hasOwnProperty"].call<bool>("call", *this, val(key));
+            return false;
+            // return val::global("Object")["prototype"]["hasOwnProperty"].call<bool>("call", *this, val(key));
         }
 
         bool isNull() const {
-            return handle == internal::EM_VAL(internal::_EMVAL_NULL);
+            return handle->type == internal::_EMVAL_NULL;
+            // return handle == internal::EM_VAL(internal::_EMVAL_NULL);
         }
 
         bool isUndefined() const {
-            return handle == internal::EM_VAL(internal::_EMVAL_UNDEFINED);
+            return handle->type == internal::_EMVAL_UNDEFINED && isEmpty();
+            // return handle == internal::EM_VAL(internal::_EMVAL_UNDEFINED);
         }
 
         bool isTrue() const {
-            return handle == internal::EM_VAL(internal::_EMVAL_TRUE);
+            return handle->type == internal::_EMVAL_TRUE;
+            // return handle == internal::EM_VAL(internal::_EMVAL_TRUE);
         }
 
         bool isFalse() const {
-            return handle == internal::EM_VAL(internal::_EMVAL_FALSE);
+            return handle->type == internal::_EMVAL_FALSE;
+            // return handle == internal::EM_VAL(internal::_EMVAL_FALSE);
         }
 
         bool isNumber() const {
-            return typeOf().as<std::string>() == "number";
+            return handle->type == internal::_EMVAL_NUMBER;
+            // return typeOf().as<std::string>() == "number";
         }
 
         bool isString() const {
-            return typeOf().as<std::string>() == "string";
+            return handle->type == internal::_EMVAL_STRING;
+            // return typeOf().as<std::string>() == "string";
         }
 
         bool isArray() const {
-            return instanceof(global("Array"));
+            return handle->type == internal::_EMVAL_ARRAY;
+            // return instanceof(global("Array"));
+        }
+        
+        bool isEmpty() const {
+            return handle->data == nullptr;
         }
 
         bool equals(const val& v) const {
@@ -456,11 +533,47 @@ namespace emscripten {
             return internalCall(internal::_emval_call, std::forward<Args>(args)...);
         }
 
-        template<typename ReturnValue, typename... Args>
-        ReturnValue call(const char* name, Args&&... args) const {
+        // template<typename ReturnValue, typename... Args>
+        // ReturnValue call(const char* name, Args&&... args) const {
+        //     using namespace internal;
+
+        //     return MethodCaller<ReturnValue, Args...>::call(handle, name, std::forward<Args>(args)...);
+        // }
+        template <typename Vec, typename Arg>
+        void push(internal::GenericWireType *cursor, Vec &arr, Arg &arg)
+        {
+            arr.push_back(arg);
+            cursor->w[1].p = arr.data();
+            cursor->w[0].u = arr.size();
+            // printf("cursor: %p\t%p\n",cursor,cursor->w[1].p);
+        }
+        template <typename ReturnValue, typename... Args>
+        ReturnValue call(const char *name, Args &&... args)
+        {
             using namespace internal;
 
-            return MethodCaller<ReturnValue, Args...>::call(handle, name, std::forward<Args>(args)...);
+            if (isArray()) {
+                using elem_type = typename std::common_type<Args...>::type;
+                typedef std::vector<elem_type> arr;
+                typedef emscripten::memory_view<elem_type> memory_view2arr;
+                if (isEmpty()) {
+                    _EM_VAL *val = new __EM_VAL<arr>(arr());
+                    val->type = _EMVAL_ARRAY;
+                    arr &p = static_cast<__EM_VAL<arr> *>(val)->container;
+
+                    // handle = std::make_shared<_EM_VAL>(val);
+                    handle = EM_VAL(val);
+
+                    memory_view2arr data(p.size(), (elem_type *)p.data());
+                    WireTypePack<memory_view2arr> *argv = new WireTypePack<memory_view2arr>(std::forward<memory_view2arr>(data));
+                    handle->data = argv;
+                }
+                arr &array = static_cast<__EM_VAL<arr> *>(handle.get())->container;
+                WireTypePack<memory_view2arr> *container = (WireTypePack<memory_view2arr> *)handle->data;
+                GenericWireType *container_cursor = (GenericWireType *)(EM_VAR_ARGS)*container;
+
+                std::initializer_list<int>{(push(container_cursor, array, std::forward<Args>(args)), 0)...};
+            }
         }
 
         template<typename T, typename ...Policies>
@@ -505,6 +618,10 @@ namespace emscripten {
         }
         internal::EM_VAL get_handle() {
             return handle;
+        }
+        void clear_handle() {
+            handle->type = internal::_EMVAL_UNDEFINED;
+            handle->data = nullptr;
         }
 
     private:

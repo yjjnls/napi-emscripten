@@ -182,6 +182,11 @@ class Gen:
     def parse_func_line(self, line, cxx_type, bool_static=False, getter=True):
         if line == None:
             return None
+
+        val_type = None
+        if 'val' in line and line in self.supplemental_file:
+            val_type = self.supplemental_file[line]
+
         searchObj = re.search(self.pattern, line)
         if searchObj:
             # return type
@@ -200,6 +205,16 @@ class Gen:
                 if not bool_static:
                     del args_list[0]
                 args_real = searchObj.group('args_list')
+            # val type supplement
+            if val_type:
+                i = 0
+                if 'val' in return_type:
+                    return_type = val_type[i].encode('utf-8')
+                    i += 1
+                for j in range(len(args_list)):
+                    if 'val' in args_list[j]:
+                        args_list[j] = val_type[i].encode('utf-8')
+                        i += 1
             return (return_type, args_list, fun_name, args_real)
         # only for raw property(public, no function)
         if getter:
@@ -280,11 +295,18 @@ class Gen:
             searchObj = re.search('(<)(.*)(>)', arg)
             if searchObj:
                 arg = searchObj.group(2)
+            arg = self.normalize_arg(arg)
             for vec in self.vectors.values():
                 if arg.split('::')[-1] == vec['element_type'].split('::')[-1]:
                     return template.args_cxxtype % (vec['class_name'],
                                                     vec['cxxtype'])
-
+        # val
+        if arg.split('::')[-1] == 'val':
+            # print arg
+            # if instance:
+            #     print instance['class_name']
+            return ""
+            return template.arg_val
         # return ''
         print '\"parse_arg_type not supported type: [%s]\"\n' % arg
         return '\"parse_arg_type not supported type: [%s]\"\n' % arg
@@ -350,35 +372,51 @@ class Gen:
 
                     fun += '\tnapi_set_named_property(env, %s, "%s", %s);\n' % (napi_value, prop_name, value_name)
                 return template.return_obj.substitute(napi_val=napi_value, obj_detail=fun)
-
+        # return value_array
         for arr in self.value_arrays.values():
             if arr['jstype'].split('::')[-1] == arg.split('::')[-1]:
                 if arr['argtype'] == 'double':
                     return template.return_array.substitute(cxx_val=cxx_value,
                                                             napi_val=napi_value,
                                                             create_fun='napi_create_double')
-
-        if arg.split('::')[-1] == 'val':
-            # val is set to int defaultly
-            val_type = 'int'
-            if '<' in cxx_fun_name:
-                searchObj = re.search('(<)(.*)(>)', cxx_fun_name)
-                if searchObj:
-                    val_type = searchObj.group(2)
-            # array of basic type
-            if val_type in ['char', 'unsigned char', 'short', 'unsigned short',
-                            'int', 'unsigned int', 'float', 'double']:
-                # print val_type
-                return template.return_val_array.substitute(cxx_val=cxx_value,
+        # return vector
+        if 'vector' in arg:
+            searchObj = re.search('(<)(.*)(>)', arg)
+            if searchObj:
+                arg = searchObj.group(2)
+            arg = self.normalize_arg(arg)
+            for vec in self.vectors.values():
+                if arg.split('::')[-1] == vec['element_type'].split('::')[-1]:
+                    return template.return_class.substitute(cxx_val=cxx_value,
                                                             napi_val=napi_value,
-                                                            val_type=val_type,
-                                                            array_type=template.arr_type[val_type])
-            elif 'vector' in val_type:
+                                                            class_domain=vec['class_name'] + '::',
+                                                            class_name=vec['class_name'])
+                    # return template.args_cxxtype % (vec['class_name'],
+                    #                                 vec['cxxtype'])
+        # return val
+        if arg.split('::')[-1] == 'val' and \
+                self.supplemental_file and \
+                cxx_fun_name in self.supplemental_file:
 
-                searchObj = re.search('(<)(.*)(>)', val_type)
+            val_type = self.supplemental_file[cxx_fun_name]
+            # return typedarray
+            if '[' in val_type:
+                searchObj = re.search('(\[)(.*)(\])', val_type)
                 if searchObj:
                     val_type = searchObj.group(2)
-
+                # array of basic type
+                if val_type in ['char', 'unsigned char', 'short', 'unsigned short',
+                                'int', 'unsigned int', 'float', 'double', 'long', 'size_t']:
+                    return template.return_val_array.substitute(cxx_val=cxx_value,
+                                                                napi_val=napi_value,
+                                                                val_type=val_type,
+                                                                array_type=template.arr_type[val_type])
+                else:
+                    print "error  " + val_type
+                    print cxx_fun_name
+                    return "error"
+            # return single type/instance
+            else:
                 if val_type == 'float':
                     get_data = '\tfloat array_data = cursor->w[0].f;\n\tassert(array_data);\n'
                     get_data += '\tfloat &%s_data = array_data;\n' % (val_type.split('::')[-1])
@@ -398,9 +436,7 @@ class Gen:
                                                              val_type=val_type,
                                                              get_data=get_data,
                                                              create_return_val=create_return_val)
-
         # return template.return_void.substitute(napi_val=napi_value)
-        # print cxx_fun_name
         print '\"parse_return_type not supported type: [%s]\"\n' % arg
         return '\"parse_return_type not supported type: [%s]\"\n' % arg
 

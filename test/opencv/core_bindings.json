@@ -25,7 +25,10 @@
         },
         "constructor": {
             "Rect": [
-                ["const Point&", "const Size&"]
+                [
+                    "const Point&",
+                    "const Size&"
+                ]
             ]
         }
     },
@@ -108,5 +111,88 @@
     "&cv::HOGDescriptor::gammaCorrection": "bool,cv::HOGDescriptor::gammaCorrection",
     "&cv::HOGDescriptor::svmDetector": "std::vector<float>,cv::HOGDescriptor::svmDetector",
     "&cv::HOGDescriptor::nlevels": "int,cv::HOGDescriptor::nlevels",
-    "&cv::HOGDescriptor::signedGradient": "bool,cv::HOGDescriptor::signedGradient"
+    "&cv::HOGDescriptor::signedGradient": "bool,cv::HOGDescriptor::signedGradient",
+    "binding_utils::getMatSize": "[size_t]",
+    "binding_utils::getMatStep": "[size_t]",
+    "binding_utils::matData<unsigned char>": "[unsigned char]",
+    "binding_utils::matData<char>": "[char]",
+    "binding_utils::matData<unsigned short>": "[unsigned short]",
+    "binding_utils::matData<short>": "[short]",
+    "binding_utils::matData<int>": "[int]",
+    "binding_utils::matData<float>": "[float]",
+    "binding_utils::matData<double>": "[double]",
+    "binding_utils::matPtr<unsigned char>": "[unsigned char]",
+    "binding_utils::matPtr<char>": "[char]",
+    "binding_utils::matPtr<short>": "[short]",
+    "binding_utils::matPtr<unsigned short>": "[unsigned short]",
+    "binding_utils::matPtr<int>": "[int]",
+    "binding_utils::matPtr<float>": "[float]",
+    "binding_utils::matPtr<double>": "[double]",
+    "emscripten::internal::VectorAccess<std::vector<int>>::get": "int",
+    "emscripten::internal::VectorAccess<std::vector<float>>::get": "float",
+    "emscripten::internal::VectorAccess<std::vector<double>>::get": "double",
+    "emscripten::internal::VectorAccess<std::vector<cv::Point>>::get": "cv::Point",
+    "emscripten::internal::VectorAccess<std::vector<cv::Mat>>::get": "cv::Mat",
+    "emscripten::internal::VectorAccess<std::vector<cv::Rect>>::get": "cv::Rect",
+    "binding_utils::rotatedRectPoints": "[Point2f]",
+    "binding_utils::CamShiftWrapper": "[Rect]",
+    "binding_utils::meanShiftWrapper": "[Rect]",
+    "select_overload<val(const Mat&, int)>(&binding_utils::matPtr<char>)": [
+        "val,[char]"
+    ],
+    "select_overload<val(const Mat&, int)>(&binding_utils::matPtr<unsigned char>)": [
+        "val,[unsigned char]"
+    ],
+    "select_overload<val(const Mat&, int)>(&binding_utils::matPtr<short>)": [
+        "val,[short]"
+    ],
+    "select_overload<val(const Mat&, int)>(&binding_utils::matPtr<unsigned short>)": [
+        "val,[unsigned short]"
+    ],
+    "select_overload<val(const Mat&, int)>(&binding_utils::matPtr<int>)": [
+        "val,[int]"
+    ],
+    "select_overload<val(const Mat&, int)>(&binding_utils::matPtr<float>)": [
+        "val,[float]"
+    ],
+    "select_overload<val(const Mat&, int)>(&binding_utils::matPtr<double>)": [
+        "val,[double]"
+    ],
+    "select_overload<val(const cv::Mat&)>(&binding_utils::matData<char>)": [
+        "val,[char]"
+    ],
+    "select_overload<val(const cv::Mat&)>(&binding_utils::matData<unsigned char>)": [
+        "val,[unsigned char]"
+    ],
+    "select_overload<val(const cv::Mat&)>(&binding_utils::matData<short>)": [
+        "val,[short]"
+    ],
+    "select_overload<val(const cv::Mat&)>(&binding_utils::matData<unsigned short>)": [
+        "val,[unsigned short]"
+    ],
+    "select_overload<val(const cv::Mat&)>(&binding_utils::matData<int>)": [
+        "val,[int]"
+    ],
+    "select_overload<val(const cv::Mat&)>(&binding_utils::matData<float>)": [
+        "val,[float]"
+    ],
+    "select_overload<val(const cv::Mat&)>(&binding_utils::matData<double>)": [
+        "val,[double]"
+    ],
+    "select_overload<val(const cv::Mat&)>(&binding_utils::getMatSize)": [
+        "val,[size_t]"
+    ],
+    "select_overload<val(const cv::Mat&)>(&binding_utils::getMatStep)": [
+        "val,[size_t]"
+    ],
+    "select_overload<void(const std::vector<cv::Mat>&, const emscripten::val&, const cv::Mat&, cv::Mat&, const emscripten::val&, const emscripten::val&, bool)>(&Wrappers::calcHist_wrapper)": [
+        "val,[int]",
+        "val,[int]",
+        "val,[float]"
+    ],
+    "select_overload<void(const std::vector<cv::Mat>&, const emscripten::val&, const cv::Mat&, cv::Mat&, const emscripten::val&, const emscripten::val&)>(&Wrappers::calcHist_wrapper_1)": [
+        "val,[int]",
+        "val,[int]",
+        "val,[float]"
+    ]
 }

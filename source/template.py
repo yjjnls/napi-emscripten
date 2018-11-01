@@ -170,11 +170,56 @@ register_array = """
 """
 register_val = """
     EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv) {
-        printf("%p\\n", argv);
-        return (struct _EM_VAL* )argv;
+        return std::make_shared<_EM_VAL>((void *)argv);
     }
     void _emval_decref(EM_VAL value) {}
 """
+# register_val = """
+#     EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv) {
+#         return (struct _EM_VAL*)argv;
+#     }
+#     void _emval_decref(EM_VAL value) {}
+#     EM_VAL _emval_new_array() {
+
+#         typedef std::vector<double> vec2d;
+#         typedef emscripten::memory_view<vec2d> memory_view2d;
+#         // todo: where to deallocate
+#         vec2d *vec = new vec2d();
+#         // std::shared_ptr<vec2d> vec = std::make_shared<vec2d>();
+#         // WireTypePack<vec2d *> *argv = new WireTypePack<vec2d *>(std::forward<vec2d *>(vec));
+#         memory_view2d data(vec->size(), vec);
+
+#         WireTypePack<memory_view2d> *argv = new WireTypePack<memory_view2d>(std::forward<memory_view2d>(data));
+
+#         return (struct _EM_VAL*)argv;
+#     }
+#     EM_METHOD_CALLER _emval_get_method_caller(
+#         unsigned argCount, // including return value
+#         const TYPEID argTypes[]) {
+#         return nullptr;
+#     }
+#     void _emval_call_void_method(
+#         EM_METHOD_CALLER caller,
+#         EM_VAL handle,
+#         const char* methodName,
+#         EM_VAR_ARGS argv) {
+
+#         typedef std::vector<double> vec2d;
+#         typedef emscripten::memory_view<vec2d> memory_view2d;
+#         WireTypePack<memory_view2d> *container = (WireTypePack<memory_view2d> *)handle;
+#         GenericWireType *container_cursor = (GenericWireType *)(EM_VAR_ARGS)*container;
+#         vec2d &vec = *(vec2d *)container_cursor->w[1].p;
+
+#         GenericWireType *data_cursor = (GenericWireType *)argv;
+#         // todo: how to know using cursor->w[0].u
+#         unsigned data = data_cursor->w[0].u;
+
+#         container_cursor->w[0].u++;
+#         printf("_emval_call_void_method: %p %s %d\n", &vec, methodName, data);
+#         vec.push_back((double)data);
+#         printf("------ %p %d\n",vec.data(), container_cursor->w[0].u);
+#     }
+# """
 register_func = """
     void _embind_register_function(
         const char *name,
@@ -385,7 +430,7 @@ constructor_func_end = """
 }
 """
 
-args_bool="""\
+args_bool = """\
     // arg{0}
     bool arg{0};
     napi_get_value_bool(env, args[{0}], &arg{0});
@@ -480,7 +525,7 @@ return_class = Template("""    napi_value cons;
 return_obj = Template("""    napi_create_object(env, &${napi_val});
 ${obj_detail}
 """)
-return_array =Template("""    napi_create_array(env, &${napi_val});
+return_array = Template("""    napi_create_array(env, &${napi_val});
     for (int i = 0; i < argc; i++) {
         napi_value value;
         ${create_fun}(env, ${cxx_val}[i], &value);
@@ -495,11 +540,12 @@ arr_type = {
     'int': 'napi_int32_array',
     'unsigned int': 'napi_uint32_array',
     'float': 'napi_float32_array',
-    'double': 'napi_float64_array'
+    'double': 'napi_float64_array',
+    'long': 'napi_bigint64_array',
+    'size_t': 'napi_biguint64_array'
 }
-return_val_array = Template("""    EM_VAR_ARGS handle = (EM_VAR_ARGS)${cxx_val}.get_handle();
-    typedef std::array<GenericWireType, PackSize<${val_type}>::value> arr;
-    GenericWireType *cursor = (GenericWireType*)handle;
+return_val_array = Template("""    WireTypePack<${val_type}> *argv = (WireTypePack<${val_type}> *)${cxx_val}.get_handle()->data;
+    GenericWireType *cursor = (GenericWireType *)(EM_VAR_ARGS)*argv;
     size_t array_length = cursor->w[0].u;
     void *array_data = (void *)cursor->w[1].p;
 
@@ -516,16 +562,19 @@ return_val_array = Template("""    EM_VAR_ARGS handle = (EM_VAR_ARGS)${cxx_val}.
                            output_buffer,
                            0,
                            &${napi_val});
+    delete argv;
+    ${cxx_val}.clear_handle();
 """)
 return_val_object = Template("""    if (res.isUndefined()) {
         return nullptr;
     }
-    EM_VAR_ARGS handle = (EM_VAR_ARGS)${cxx_val}.get_handle();
-    typedef std::array<GenericWireType, PackSize<${val_type}>::value> arr;
-    GenericWireType *cursor = (GenericWireType*)handle;
+    WireTypePack<${val_type}> *argv = (WireTypePack<${val_type}> *)${cxx_val}.get_handle()->data;
+    GenericWireType *cursor = (GenericWireType *)(EM_VAR_ARGS)*argv;
 
 ${get_data}
 ${create_return_val}
+    delete argv;
+    ${cxx_val}.clear_handle();
 """)
 function_detail_start = """
 %s fun_%s_factory(%s *obj, napi_env env, size_t argc, napi_value *args)

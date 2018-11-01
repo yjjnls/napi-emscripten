@@ -699,21 +699,21 @@ QUnit.test('test_mat_miscs', function(assert) {
 
     // step
     {
-        // let mat = cv.ones(5, 5, cv.CV_8UC3);
-        // assert.equal(mat.step[0], 15);
-        // assert.equal(mat.step[1], 3);
+        let mat = cv.ones(5, 5, cv.CV_8UC3);
+        assert.equal(mat.step[0], 15);
+        assert.equal(mat.step[1], 3);
 
-        // let mat2 = cv.zeros(5, 5, cv.CV_8UC1);
-        // assert.equal(mat2.step[0], 5);
-        // assert.equal(mat2.step[1], 1);
+        let mat2 = cv.zeros(5, 5, cv.CV_8UC1);
+        assert.equal(mat2.step[0], 5);
+        assert.equal(mat2.step[1], 1);
 
-        // let mat3 = cv.eye(5, 5, cv.CV_16UC3);
-        // assert.equal(mat3.step[0], 30);
-        // assert.equal(mat3.step[1], 6);
+        let mat3 = cv.eye(5, 5, cv.CV_16UC3);
+        assert.equal(mat3.step[0], 30);
+        assert.equal(mat3.step[1], 6);
 
-        // mat.delete();
-        // mat2.delete();
-        // mat3.delete();
+        mat.delete();
+        mat2.delete();
+        mat3.delete();
     }
 
     // dot
