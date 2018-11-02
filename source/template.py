@@ -494,12 +494,34 @@ args_array = """\
 """
 
 arr_args_double = """\
-    napi_value ret{0}_%s;
-    napi_get_element(env, array{0}, %s, &ret{0}_%s);
-    double arg{0}_%s = 0;
-    napi_get_value_double(env, ret{0}_%s, &arg{0}_%s);
+    napi_value ret{{0}}_{0};
+    napi_get_element(env, array{{0}}, {0}, &ret{{0}}_{0});
+    double arg{{0}}_{0} = 0;
+    napi_get_value_double(env, ret{{0}}_{0}, &arg{{0}}_{0});
 """
-
+arr_args_int = """\
+    napi_value ret{{0}}_{0};
+    napi_get_element(env, array{{0}}, {0}, &ret{{0}}_{0});
+    int32_t arg{{0}}_{0} = 0;
+    napi_get_value_int32(env, ret{{0}}_{0}, &arg{{0}}_{0});
+"""
+arr_args = {
+    'float': arr_args_double,
+    'double': arr_args_double,
+    'int': arr_args_int
+}
+args_val_array = """\
+    // arg{0}
+    std::vector<%s> vec{0};
+    napi_value array{0} = args[{0}];
+    uint32_t length{0};
+    napi_get_array_length(env, array{0}, &length{0});
+    for (int i = 0; i < length{0}; ++i) {{
+%s
+        vec{0}.push_back(arg{0}_i);
+    }}
+    val arg{0} = val::array(vec{0});
+"""
 
 return_void = Template("""    ${napi_val} = nullptr;
 """)

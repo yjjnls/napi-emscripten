@@ -1,7 +1,7 @@
-export CC=clang 
+# export CC=clang 
 export CXX=clang++ 
-export LINKXX=clang++ 
-export LINK=clang
+# export LINKXX=clang++ 
+# export LINK=clang
 
 node-gyp clean 
 

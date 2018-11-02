@@ -139,43 +139,29 @@ class Gen:
                 if namespace in self.supplemental_file:
                     for material in self.supplemental_file[namespace]:
                         self.output_cxx_fp.write('\t' + material + '\n')
+
+            function_list = []
             for meta_info in self.classes.values():
                 for item in [meta_info['constructors'], meta_info['functions'], meta_info['properties'], meta_info['class_functions']]:
                     for overload_fun in item.values():
-                        for spec_fun in overload_fun:
-                            if not spec_fun == None and\
-                                    not spec_fun[3] == None and\
-                                    not spec_fun[2] == None and\
-                                    not '<' in spec_fun[2] and\
-                                    (namespace + '::') in spec_fun[2]:
-                                self.output_cxx_fp.write('\t' + 'extern %s %s(%s);\n' % (
-                                    spec_fun[0],
-                                    spec_fun[2].split('::')[1],
-                                    spec_fun[3]))
+                        function_list += overload_fun
             for meta_info in self.value_objects.values():
                 for item in [meta_info['properties']]:
                     for overload_fun in item.values():
-                        for spec_fun in overload_fun:
-                            if not spec_fun == None and\
-                                    not spec_fun[3] == None and\
-                                    not spec_fun[2] == None and\
-                                    not '<' in spec_fun[2] and\
-                                    (namespace + '::') in spec_fun[2]:
-                                self.output_cxx_fp.write('\t' + 'extern %s %s(%s);\n' % (
-                                    spec_fun[0],
-                                    spec_fun[2].split('::')[1],
-                                    spec_fun[3]))
+                        function_list += overload_fun
             for overload_fun in self.global_functions.values():
-                for spec_fun in overload_fun:
-                    if not spec_fun == None and\
-                            not spec_fun[3] == None and\
-                            not spec_fun[2] == None and\
-                            not '<' in spec_fun[2] and\
-                            (namespace + '::') in spec_fun[2]:
-                        self.output_cxx_fp.write('\t' + 'extern %s %s(%s);\n' % (
-                            spec_fun[0],
-                            spec_fun[2].split('::')[1],
-                            spec_fun[3]))
+                function_list += overload_fun
+
+            for spec_fun in function_list:
+                if not spec_fun == None and\
+                        not spec_fun[3] == None and\
+                        not spec_fun[2] == None and\
+                        not '<' in spec_fun[2] and\
+                        (namespace + '::') in spec_fun[2]:
+                    self.output_cxx_fp.write('\t' + 'extern %s %s(%s);\n' % (
+                        spec_fun[0].split(',')[0],
+                        spec_fun[2].split('::')[1],
+                        spec_fun[3]))
             self.output_cxx_fp.write('\n}  // namespace %s\nusing namespace %s;\n' % (namespace, namespace))
 
     # ****
@@ -284,7 +270,7 @@ class Gen:
                 args = ''
                 for i in range(arr['argc']):
                     if arr['argtype'] == 'double':
-                        arr_args += template.arr_args_double % (i, i, i, i, i, i)
+                        arr_args += template.arr_args[arr['argtype']].format(i)
 
                     args += 'arg{0}_%s' % i
                     if not i == arr['argc'] - 1:
@@ -301,12 +287,21 @@ class Gen:
                     return template.args_cxxtype % (vec['class_name'],
                                                     vec['cxxtype'])
         # val
-        if arg.split('::')[-1] == 'val':
-            # print arg
-            # if instance:
-            #     print instance['class_name']
-            return ""
-            return template.arg_val
+        if 'val' in arg:
+            val_type = arg.split(',')[-1]
+            if '[' in val_type:
+                searchObj = re.search('(\[)(.*)(\])', val_type)
+                if searchObj:
+                    val_type = searchObj.group(2)
+                if val_type in ['char', 'unsigned char', 'short', 'unsigned short',
+                                'int', 'unsigned int', 'float', 'double', 'long', 'size_t']:
+                    # 1.create vector<> 2.get_element from napi-type and push to vector 3. create val  val::array(vector)
+                    # get_value = template.arr_args[val_type] % ('i', 'i', 'i', 'i', 'i', 'i')
+                    get_value = template.arr_args[val_type].format('i')
+                    return template.args_val_array % (val_type, get_value)
+            #         print val_type
+            #         return "error\n"
+            # return template.arg_val
         # return ''
         print '\"parse_arg_type not supported type: [%s]\"\n' % arg
         return '\"parse_arg_type not supported type: [%s]\"\n' % arg
@@ -394,11 +389,8 @@ class Gen:
                     # return template.args_cxxtype % (vec['class_name'],
                     #                                 vec['cxxtype'])
         # return val
-        if arg.split('::')[-1] == 'val' and \
-                self.supplemental_file and \
-                cxx_fun_name in self.supplemental_file:
-
-            val_type = self.supplemental_file[cxx_fun_name]
+        if 'val' in arg:
+            val_type = arg.split(',')[-1]
             # return typedarray
             if '[' in val_type:
                 searchObj = re.search('(\[)(.*)(\])', val_type)
@@ -417,20 +409,19 @@ class Gen:
                     return "error"
             # return single type/instance
             else:
-                if val_type == 'float':
-                    get_data = '\tfloat array_data = cursor->w[0].f;\n\tassert(array_data);\n'
-                    get_data += '\tfloat &%s_data = array_data;\n' % (val_type.split('::')[-1])
+                if val_type == 'int':
+                    get_data = '\nint data = cursor->w[0].u;\n'
+                elif val_type == 'float':
+                    get_data = '\tfloat data = cursor->w[0].f;\n'
                 elif val_type == 'double':
-                    get_data = '\tdouble array_data = cursor->d;\n\tassert(array_data);\n'
-                    get_data += '\tdouble &%s_data = array_data;\n' % (val_type.split('::')[-1])
+                    get_data = '\tdouble data = cursor->d;\n'
                 else:
                     get_data = '\tvoid *array_data = (void *)cursor->w[0].p;\n\tassert(array_data);\n'
-                    get_data += '\t%s &%s_data = *((%s *)array_data);\n' % (val_type,
-                                                                            val_type.split('::')[-1], val_type)
+                    get_data += '\t%s &data = *((%s *)array_data);\n' % (val_type, val_type)
 
                 create_return_val = self.parse_return_type(instance,
                                                            val_type.split('::')[-1],
-                                                           cxx_value='%s_data' % val_type.split('::')[-1],
+                                                           cxx_value='data',
                                                            napi_value=napi_value)
                 return template.return_val_object.substitute(cxx_val=cxx_value,
                                                              val_type=val_type,
@@ -661,7 +652,7 @@ class Gen:
         for overload_fun in functions.items():
             js_fun_name = overload_fun[0]
             return_type = overload_fun[1][0][0]
-            self.output_cxx_fp.write(template.function_detail_start % (return_type,
+            self.output_cxx_fp.write(template.function_detail_start % (return_type.split(',')[0],
                                                                        js_fun_name,
                                                                        instance['cxxtype']))
             for spec_fun in overload_fun[1]:
@@ -689,7 +680,7 @@ class Gen:
             if return_type == 'void':
                 return_res = ''
             else:
-                return_res = '%s res = ' % return_type
+                return_res = '%s res = ' % return_type.split(',')[0]
 
             cxx_fun_name = overload_fun[1][0][2]
             return_val = self.parse_return_type(instance,
@@ -711,11 +702,11 @@ class Gen:
             varbile = prop[1][0][3]
             return_type = prop[1][0][0]
             if cxx_fun_name == None:
-                res = "%s res = %s;" % (return_type, 'target->%s' % varbile)
+                res = "%s res = %s;" % (return_type.split(',')[0], 'target->%s' % varbile)
             elif instance['cxxtype'] in cxx_fun_name:
-                res = "%s res = %s;" % (return_type, 'target->%s()' % cxx_fun_name)
+                res = "%s res = %s;" % (return_type.split(',')[0], 'target->%s()' % cxx_fun_name)
             else:
-                res = "%s res = %s;" % (return_type, '%s(*target)' % cxx_fun_name)
+                res = "%s res = %s;" % (return_type.split(',')[0], '%s(*target)' % cxx_fun_name)
 
             return_val = self.parse_return_type(instance,
                                                 return_type,
@@ -924,7 +915,7 @@ class Gen:
             overload_fun = func[1]
             self.napi_declaration += '\t\tNAPI_DECLARE_METHOD("%s", global_%s),\n' % (js_method, js_method)
             self.output_cxx_fp.write(template.global_func_start.substitute(fun_name='global_' + js_method,
-                                                                           return_type=return_type))
+                                                                           return_type=return_type.split(',')[0]))
             for spec_fun in overload_fun:
 
                 self.output_cxx_fp.write('  case %d: {\n' % len(spec_fun[1]))
@@ -948,7 +939,7 @@ class Gen:
             if return_type == 'void':
                 return_res = ''
             else:
-                return_res = '%s res = ' % return_type
+                return_res = '%s res = ' % return_type.split(',')[0]
 
             cxx_fun_name = func[1][0][2]
             return_val = self.parse_return_type(None,
@@ -961,10 +952,9 @@ class Gen:
             self.output_cxx_fp.write(template.global_func_end.substitute(fun_name='global_' + js_method,
                                                                          return_val=return_val,
                                                                          return_res=return_res))
-            # import sys
-            # sys.exit(1)
 
     # -------------------vectors----------------------------
+
     def parse_vectors(self, vectors):
         for vec in vectors:
             vec.cxxelemtype = vec.cxxelemtype.split(',')[0].strip()
@@ -983,7 +973,7 @@ class Gen:
                                         }
             fun_list = {}
             cxx_fun_name = vec.class_.functions['get'][0][0].lstrip('&')
-            fun_list['get'] = [('val', ['size_t'], cxx_fun_name, None)]
+            fun_list['get'] = [('val,' + vec.cxxelemtype, ['size_t'], cxx_fun_name, None)]
 
             cxx_fun_name = vec.class_.functions['set'][0][0].lstrip('&')
             fun_list['set'] = [('bool', ['size_t', 'const %s&' % vec.cxxelemtype], cxx_fun_name, None)]

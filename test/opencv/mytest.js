@@ -5,19 +5,33 @@ const cv = require('./plugin/opencv.js');
 
 const assert = require('assert');
 
-let mat1 = cv.ones(9, 9, cv.CV_8UC3);
-let mat2 = new cv.Mat();
+let data = new Uint8Array([0, 0, 0, 255, 0, 1, 2, 3]);
+let dataPtr = cv._malloc(8);
+console.log(dataPtr)
+console.log(typeof(dataPtr))
 
-cv.medianBlur(mat1, mat2, 3);
+let dataHeap = new Uint8Array(cv.HEAPU8.buffer, dataPtr, 8);
+dataHeap.set(new Uint8Array(data.buffer));
 
-// Verify result.
-let size = mat2.size();
-assert.equal(mat2.channels(), 3);
-assert.equal(size.height, 9);
-assert.equal(size.width, 9);
+let mat = new cv.Mat(8, 1, cv.CV_8UC1, dataPtr, 0);
 
-mat1 = null
-mat2 = null
+
+let unsignedCharView = new Uint8Array(data.buffer);
+let charView = new Int8Array(data.buffer);
+let shortView = new Int16Array(data.buffer);
+let unsignedShortView = new Uint16Array(data.buffer);
+let intView = new Int32Array(data.buffer);
+let float32View = new Float32Array(data.buffer);
+let float64View = new Float64Array(data.buffer);
+
+
+assert.deepEqual(unsignedCharView, mat.data);
+assert.deepEqual(charView, mat.data8S);
+assert.deepEqual(shortView, mat.data16S);
+assert.deepEqual(unsignedShortView, mat.data16U);
+assert.deepEqual(intView, mat.data32S);
+assert.deepEqual(float32View, mat.data32F);
+assert.deepEqual(float64View, mat.data64F);
 
 global.gc();
 
