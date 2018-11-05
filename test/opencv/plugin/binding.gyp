@@ -11,8 +11,8 @@
             "sources": ["../core_bindings.cpp",
                         "binding.cc"],
             "conditions": [
-                ["OS==\"linux\"", {"cflags": ["-std=c++11", "-w"],
-                                   "cflags_cc": ["-std=c++11", "-w"]
+                ["OS==\"linux\"", {"cflags": ["-O2", "-std=c++11", "-w"],
+                                   "cflags_cc": ["-O2", "-std=c++11", "-w"]
                                    }]
             ]
         }

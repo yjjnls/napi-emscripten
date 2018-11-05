@@ -72,8 +72,13 @@ uint8Array = new Uint8Array( buffer, byteOffset, length);
 `byteOffset` represents the offset (in bytes) of the Uint8Array from the start of its ArrayBuffer. 
 While in napi implementation, `cv.HEAPU8.buffer` and `cv._malloc` create different independent memories.
 
+https://github.com/kripken/emscripten/issues/7437
+
 2. 
-pointer data in val returned from register_vector `get` method is different from the one when the val is being created.
+cv.Mat.ones() has synax error in node.js
 
 3. 
-array in val
+gcc compile
+
+4. 
+return type of val( array of objects ) is ambigous. If the element type is basic type, int, float,etc, val should be transfered to napi typedarray(napi_int32_array, etc.).

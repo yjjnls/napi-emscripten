@@ -387,6 +387,7 @@ var HEAP,
     /** @type {Float64Array} */
     HEAPF64;
 
+buffer = Buffer.alloc(10240);
 Module['HEAP8'] = HEAP8 = new Int8Array(buffer);
 Module['HEAP16'] = HEAP16 = new Int16Array(buffer);
 Module['HEAP32'] = HEAP32 = new Int32Array(buffer);
@@ -396,6 +397,7 @@ Module['HEAPU32'] = HEAPU32 = new Uint32Array(buffer);
 Module['HEAPF32'] = HEAPF32 = new Float32Array(buffer);
 Module['HEAPF64'] = HEAPF64 = new Float64Array(buffer);
 
+Module['malloc'] = (num)=>{return HEAPU8.byteOffset+num}
 module.exports = {
     'Mat': cv.Mat,
     'Range': cv.Range,
@@ -412,7 +414,7 @@ module.exports = {
     'Moments': cv.Moments,
     'Exception': cv.Exception,
     //////////////////////////
-    '_malloc': cv._malloc,
+    '_malloc': Module['malloc'],
     //////////////////////////
     'eye': cv.eye,
     'ones': cv.ones,
