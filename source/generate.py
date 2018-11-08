@@ -20,6 +20,11 @@ class Gen:
 
         self.supplement = supplement['supplement']
         self.namespace = supplement['namespace']
+        self.namespace_name = []
+        for namespace in self.namespace:
+            searchObj = re.search('namespace (.*)\n',namespace)
+            if searchObj:
+                self.namespace_name.append( searchObj.group(1))        
         self.base_path = os.path.dirname(os.path.realpath(target))
 
         self.classes = {}
@@ -28,7 +33,6 @@ class Gen:
         self.global_functions = {}
         self.vectors = {}
         self.pattern = func_pattern
-        self.register_content = ''
         self.napi_declaration = ''
 
         if self.supplemental_file and \
@@ -57,13 +61,11 @@ class Gen:
         # self.output_js_fp = open(self.output_js, 'w+')
 
         #########################################################################
-        # node-gyp
-        # self.generate_gyp()
         # fixed function and macro
         supplement = ''
         for content in self.supplement:
             supplement += (content + '\n')
-        self.output_cxx_fp.write(template.bind_cxx_fixed % (supplement, self.register_content))
+        self.output_cxx_fp.write(template.bind_cxx_fixed % supplement)
 
         # namespace
         self.generate_namespace()
@@ -134,35 +136,7 @@ class Gen:
 
     def generate_namespace(self):
         for namespace in self.namespace:
-            self.output_cxx_fp.write('namespace %s {\n\n' % namespace)
-            if self.supplemental_file:
-                if namespace in self.supplemental_file:
-                    for material in self.supplemental_file[namespace]:
-                        self.output_cxx_fp.write('\t' + material + '\n')
-
-            function_list = []
-            for meta_info in self.classes.values():
-                for item in [meta_info['constructors'], meta_info['functions'], meta_info['properties'], meta_info['class_functions']]:
-                    for overload_fun in item.values():
-                        function_list += overload_fun
-            for meta_info in self.value_objects.values():
-                for item in [meta_info['properties']]:
-                    for overload_fun in item.values():
-                        function_list += overload_fun
-            for overload_fun in self.global_functions.values():
-                function_list += overload_fun
-
-            for spec_fun in function_list:
-                if not spec_fun == None and\
-                        not spec_fun[3] == None and\
-                        not spec_fun[2] == None and\
-                        not '<' in spec_fun[2] and\
-                        (namespace + '::') in spec_fun[2]:
-                    self.output_cxx_fp.write('\t' + 'extern %s %s(%s);\n' % (
-                        spec_fun[0].split(',')[0],
-                        spec_fun[2].split('::')[1],
-                        spec_fun[3]))
-            self.output_cxx_fp.write('\n}  // namespace %s\nusing namespace %s;\n' % (namespace, namespace))
+            self.output_cxx_fp.write(namespace);
 
     # ****
     def parse_func_line(self, line, cxx_type, bool_static=False, getter=True):
@@ -187,7 +161,7 @@ class Gen:
             fun_name = searchObj.group('fun_name')
             # args declation
             args_real = None
-            if fun_name.split('::')[0] in self.namespace:
+            if fun_name.split('::')[0] in self.namespace_name:
                 if not bool_static:
                     del args_list[0]
                 args_real = searchObj.group('args_list')
@@ -458,9 +432,6 @@ class Gen:
             # print '=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~= start'
             # print self.classes[obj.jstype].values()
             # print '=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~='
-
-        self.register_content += template.register_class
-        self.register_content += template.register_val
 
         # print '============================'
         # print self.classes['BackgroundSubtractorMOG2']
@@ -773,7 +744,6 @@ class Gen:
 
     # -------------------constant---------------------------
     def parse_constant(self, constants):
-        self.register_content += template.register_constant
         self.constants = constants
 
     def generate_constant(self):
@@ -785,7 +755,6 @@ class Gen:
 
     # -------------------objects----------------------------
     def parse_objects(self, objects):
-        self.register_content += template.register_object
         only_default_constructor = [fun.encode("utf-8") for fun in self.supplemental_file['only_default_constructor']]
         for obj in objects:
             # if not obj.jstype=='Size':
@@ -866,7 +835,6 @@ class Gen:
 
     # -------------------arrays----------------------------
     def parse_arrays(self, arrays):
-        self.register_content += template.register_array
         for arr in arrays:
             arr.cxxtype = arr.cxxtype.split(',')[0].strip()
             arg_type = arr.cxxtype
@@ -893,7 +861,6 @@ class Gen:
 
     # -------------------functions----------------------------
     def parse_global_functions(self, functions):
-        self.register_content += template.register_func
         for func in functions:
             js_method = func.js_func
             if self.global_functions.get(js_method) == None:

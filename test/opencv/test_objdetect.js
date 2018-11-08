@@ -108,7 +108,7 @@ QUnit.test('Cascade classification', function(assert) {
         // classifier.load(modelPath);
         // assert.equal(classifier.empty(), false);
 
-        // let image = cv.eye({height: 10, width: 10}, cv.CV_8UC3);
+        // let image = cv.Mat.eye({height: 10, width: 10}, cv.CV_8UC3);
         // let objects = new cv.RectVector();
         // let numDetections = new cv.IntVector();
         // const scaleFactor = 1.1;

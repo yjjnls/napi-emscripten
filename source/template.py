@@ -8,8 +8,7 @@ bind_gyp = """
                 "include"
             ],
             "libraries": [],
-            "sources": ["%s",
-                        "%s"],
+            "sources": ["%s"],
             "conditions": [
                 ["OS==\\"linux\\"", {"cflags": ["-frtti", "-w"],
                                    "cflags_cc": ["-frtti", "-w"]
@@ -48,187 +47,36 @@ using namespace emscripten::internal;
 // This is meant to be used inside napi_callback methods.
 #define NAPI_ASSERT(env, assertion, message)                             \\
   NAPI_ASSERT_BASE(env, assertion, message, NULL)
-extern "C" {
-%s
-}
-"""
-register_class = """
-    void _embind_register_class(
-        TYPEID classType,
-        TYPEID pointerType,
-        TYPEID constPointerType,
-        TYPEID baseClassType,
-        const char *getActualTypeSignature,
-        GenericFunction getActualType,
-        const char *upcastSignature,
-        GenericFunction upcast,
-        const char *downcastSignature,
-        GenericFunction downcast,
-        const char *className,
-        const char *destructorSignature,
-        GenericFunction destructor) {}
 
-    void _embind_register_class_constructor(
-        TYPEID classType,
-        unsigned argCount,
-        const TYPEID argTypes[],
-        const char *invokerSignature,
-        GenericFunction invoker,
-        GenericFunction constructor) {}
-
-    void _embind_register_class_function(
-        TYPEID classType,
-        const char *methodName,
-        unsigned argCount,
-        const TYPEID argTypes[],
-        const char *invokerSignature,
-        GenericFunction invoker,
-        void *context,
-        unsigned isPureVirtual) {}
-
-    void _embind_register_class_property(
-        TYPEID classType,
-        const char *fieldName,
-        TYPEID getterReturnType,
-        const char *getterSignature,
-        GenericFunction getter,
-        void *getterContext,
-        TYPEID setterArgumentType,
-        const char *setterSignature,
-        GenericFunction setter,
-        void *setterContext) {}
-
-    void _embind_register_class_class_function(
-        TYPEID classType,
-        const char *methodName,
-        unsigned argCount,
-        const TYPEID argTypes[],
-        const char *invokerSignature,
-        GenericFunction invoker,
-        GenericFunction method) {}
-
-    void _embind_register_class_class_property(
-        TYPEID classType,
-        const char *fieldName,
-        TYPEID fieldType,
-        const void *fieldContext,
-        const char *getterSignature,
-        GenericFunction getter,
-        const char *setterSignature,
-        GenericFunction setter) {}
-"""
-register_constant = """
-    void _embind_register_constant(
-        const char *name,
-        TYPEID constantType,
-        double value) {}
-"""
-register_object = """
-    void _embind_register_value_object(
-        TYPEID structType,
-        const char *fieldName,
-        const char *constructorSignature,
-        GenericFunction constructor,
-        const char *destructorSignature,
-        GenericFunction destructor) {}
-
-    void _embind_register_value_object_field(
-        TYPEID structType,
-        const char *fieldName,
-        TYPEID getterReturnType,
-        const char *getterSignature,
-        GenericFunction getter,
-        void *getterContext,
-        TYPEID setterArgumentType,
-        const char *setterSignature,
-        GenericFunction setter,
-        void *setterContext) {}
-    
-    void _embind_finalize_value_object(TYPEID structType) {}
-"""
-register_array = """
-    void _embind_register_value_array(
-        TYPEID tupleType,
-        const char *name,
-        const char *constructorSignature,
-        GenericFunction constructor,
-        const char *destructorSignature,
-        GenericFunction destructor) {}
-    
-    void _embind_register_value_array_element(
-        TYPEID tupleType,
-        TYPEID getterReturnType,
-        const char *getterSignature,
-        GenericFunction getter,
-        void *getterContext,
-        TYPEID setterArgumentType,
-        const char *setterSignature,
-        GenericFunction setter,
-        void *setterContext) {}
-
-    void _embind_finalize_value_array(TYPEID tupleType) {}
-"""
-register_val = """
-    EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv) {
-        return std::make_shared<_EM_VAL>((void *)argv);
+namespace emscripten {
+namespace internal {
+template <typename VectorType>
+struct VectorAccess
+{
+    static val get(
+        const VectorType &v,
+        typename VectorType::size_type index)
+    {
+        if (index < v.size()) {
+            return val(v[index]);
+        } else {
+            return val::undefined();
+        }
     }
-    void _emval_decref(EM_VAL value) {}
+
+    static bool set(
+        VectorType &v,
+        typename VectorType::size_type index,
+        const typename VectorType::value_type &value)
+    {
+        v[index] = value;
+        return true;
+    }
+};
+}  // namespace internal
+}  // namespace emscripten
 """
-# register_val = """
-#     EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv) {
-#         return (struct _EM_VAL*)argv;
-#     }
-#     void _emval_decref(EM_VAL value) {}
-#     EM_VAL _emval_new_array() {
 
-#         typedef std::vector<double> vec2d;
-#         typedef emscripten::memory_view<vec2d> memory_view2d;
-#         // todo: where to deallocate
-#         vec2d *vec = new vec2d();
-#         // std::shared_ptr<vec2d> vec = std::make_shared<vec2d>();
-#         // WireTypePack<vec2d *> *argv = new WireTypePack<vec2d *>(std::forward<vec2d *>(vec));
-#         memory_view2d data(vec->size(), vec);
-
-#         WireTypePack<memory_view2d> *argv = new WireTypePack<memory_view2d>(std::forward<memory_view2d>(data));
-
-#         return (struct _EM_VAL*)argv;
-#     }
-#     EM_METHOD_CALLER _emval_get_method_caller(
-#         unsigned argCount, // including return value
-#         const TYPEID argTypes[]) {
-#         return nullptr;
-#     }
-#     void _emval_call_void_method(
-#         EM_METHOD_CALLER caller,
-#         EM_VAL handle,
-#         const char* methodName,
-#         EM_VAR_ARGS argv) {
-
-#         typedef std::vector<double> vec2d;
-#         typedef emscripten::memory_view<vec2d> memory_view2d;
-#         WireTypePack<memory_view2d> *container = (WireTypePack<memory_view2d> *)handle;
-#         GenericWireType *container_cursor = (GenericWireType *)(EM_VAR_ARGS)*container;
-#         vec2d &vec = *(vec2d *)container_cursor->w[1].p;
-
-#         GenericWireType *data_cursor = (GenericWireType *)argv;
-#         // todo: how to know using cursor->w[0].u
-#         unsigned data = data_cursor->w[0].u;
-
-#         container_cursor->w[0].u++;
-#         printf("_emval_call_void_method: %p %s %d\n", &vec, methodName, data);
-#         vec.push_back((double)data);
-#         printf("------ %p %d\n",vec.data(), container_cursor->w[0].u);
-#     }
-# """
-register_func = """
-    void _embind_register_function(
-        const char *name,
-        unsigned argCount,
-        const TYPEID argTypes[],
-        const char *signature,
-        GenericFunction invoker,
-        GenericFunction function) {}
-"""
 class_declaration = Template("""
 /////////////////////////////////${jstype}///////////////////////////////////////
 class ${name}
@@ -620,7 +468,7 @@ napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
     napi_unwrap(env, _this, reinterpret_cast<void **>(&obj));
 
     ////////////////////////////////////////////////////////////////////////
-    ${type} *target = obj->target_;
+    ${type} *target = obj ? obj->target_ : nullptr;
     ${return_res}fun_${fun_name}_factory(target, env, argc, args);
     ////////////////////////////////////////////////////////////////////////
 ${return_val}

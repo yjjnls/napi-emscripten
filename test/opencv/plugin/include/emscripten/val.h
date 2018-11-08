@@ -90,7 +90,7 @@ namespace emscripten {
             typedef const void* EM_VAR_ARGS;
 
             void _emval_incref(EM_VAL value);
-            void _emval_decref(EM_VAL value);
+            void _emval_decref(EM_VAL value){}
 
             void _emval_run_destructors(EM_DESTRUCTORS handle);
 
@@ -98,7 +98,9 @@ namespace emscripten {
             EM_VAL _emval_new_object();
             EM_VAL _emval_new_cstring(const char*);
 
-            EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv);
+            EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv) {
+                return std::make_shared<_EM_VAL>((void *)argv);
+            }
 
             EM_VAL _emval_new(
                 EM_VAL value,

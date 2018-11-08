@@ -323,270 +323,6 @@ namespace binding_utils
         return cv::getBuildInformation();
     }
 }
-namespace Wrappers
-{
-    void split_wrapper(const cv::Mat& arg1, std::vector<cv::Mat>& arg2) {
-        return cv::split(arg1, arg2);
-    }
-
-    void calcHist_wrapper(const std::vector<cv::Mat>& arg1, const emscripten::val& arg2, const cv::Mat& arg3, cv::Mat& arg4, const emscripten::val& arg5, const emscripten::val& arg6, bool arg7) {
-        return cv::calcHist(arg1, emscripten::vecFromJSArray<int>(arg2), arg3, arg4, emscripten::vecFromJSArray<int>(arg5), emscripten::vecFromJSArray<float>(arg6), arg7);
-    }
-    
-    void calcHist_wrapper_1(const std::vector<cv::Mat>& arg1, const emscripten::val& arg2, const cv::Mat& arg3, cv::Mat& arg4, const emscripten::val& arg5, const emscripten::val& arg6) {
-        return cv::calcHist(arg1, emscripten::vecFromJSArray<int>(arg2), arg3, arg4, emscripten::vecFromJSArray<int>(arg5), emscripten::vecFromJSArray<float>(arg6));
-    }
-
-    void cvtColor_wrapper(const cv::Mat& arg1, cv::Mat& arg2, int arg3, int arg4) {
-        return cv::cvtColor(arg1, arg2, arg3, arg4);
-    }
-    
-    void cvtColor_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, int arg3) {
-        return cv::cvtColor(arg1, arg2, arg3);
-    }
-    
-    void equalizeHist_wrapper(const cv::Mat& arg1, cv::Mat& arg2) {
-        return cv::equalizeHist(arg1, arg2);
-    }
-
-    double threshold_wrapper(const cv::Mat& arg1, cv::Mat& arg2, double arg3, double arg4, int arg5) {
-        return cv::threshold(arg1, arg2, arg3, arg4, arg5);
-    }
-
-    void adaptiveThreshold_wrapper(const cv::Mat& arg1, cv::Mat& arg2, double arg3, int arg4, int arg5, int arg6, double arg7) {
-        return cv::adaptiveThreshold(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-    }
-
-    Moments moments_wrapper(const cv::Mat& arg1, bool arg2) {
-        return cv::moments(arg1, arg2);
-    }
-    
-    Moments moments_wrapper_1(const cv::Mat& arg1) {
-        return cv::moments(arg1);
-    }    
-
-    double contourArea_wrapper(const cv::Mat& arg1, bool arg2) {
-        return cv::contourArea(arg1, arg2);
-    }
-    
-    double contourArea_wrapper_1(const cv::Mat& arg1) {
-        return cv::contourArea(arg1);
-    }
-
-    void blur_wrapper(const cv::Mat& arg1, cv::Mat& arg2, Size arg3, Point arg4, int arg5) {
-        return cv::blur(arg1, arg2, arg3, arg4, arg5);
-    }
-    
-    void blur_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, Size arg3, Point arg4) {
-        return cv::blur(arg1, arg2, arg3, arg4);
-    }
-    
-    void blur_wrapper_2(const cv::Mat& arg1, cv::Mat& arg2, Size arg3) {
-        return cv::blur(arg1, arg2, arg3);
-    }
-
-    void GaussianBlur_wrapper(const cv::Mat& arg1, cv::Mat& arg2, Size arg3, double arg4, double arg5, int arg6) {
-        return cv::GaussianBlur(arg1, arg2, arg3, arg4, arg5, arg6);
-    }
-    
-    void GaussianBlur_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, Size arg3, double arg4, double arg5) {
-        return cv::GaussianBlur(arg1, arg2, arg3, arg4, arg5);
-    }
-    
-    void GaussianBlur_wrapper_2(const cv::Mat& arg1, cv::Mat& arg2, Size arg3, double arg4) {
-        return cv::GaussianBlur(arg1, arg2, arg3, arg4);
-    }
-
-    void medianBlur_wrapper(const cv::Mat& arg1, cv::Mat& arg2, int arg3) {
-        return cv::medianBlur(arg1, arg2, arg3);
-    }
-
-    void transpose_wrapper(const cv::Mat& arg1, cv::Mat& arg2) {
-        return cv::transpose(arg1, arg2);
-    }
-
-    void bilateralFilter_wrapper(const cv::Mat& arg1, cv::Mat& arg2, int arg3, double arg4, double arg5, int arg6) {
-        return cv::bilateralFilter(arg1, arg2, arg3, arg4, arg5, arg6);
-    }
-    
-    void bilateralFilter_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, int arg3, double arg4, double arg5) {
-        return cv::bilateralFilter(arg1, arg2, arg3, arg4, arg5);
-    }
-    void watershed_wrapper(const cv::Mat& arg1, cv::Mat& arg2) {
-        return cv::watershed(arg1, arg2);
-    }
-
-    void vconcat_wrapper(const std::vector<cv::Mat>& arg1, cv::Mat& arg2) {
-        return cv::vconcat(arg1, arg2);
-    }
-
-    void distanceTransform_wrapper(const cv::Mat& arg1, cv::Mat& arg2, int arg3, int arg4, int arg5) {
-        return cv::distanceTransform(arg1, arg2, arg3, arg4, arg5);
-    }
-    
-    void distanceTransform_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, int arg3, int arg4) {
-        return cv::distanceTransform(arg1, arg2, arg3, arg4);
-    }
-    
-    void distanceTransformWithLabels_wrapper(const cv::Mat& arg1, cv::Mat& arg2, cv::Mat& arg3, int arg4, int arg5, int arg6) {
-        return cv::distanceTransform(arg1, arg2, arg3, arg4, arg5, arg6);
-    }
-    
-    void distanceTransformWithLabels_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, cv::Mat& arg3, int arg4, int arg5) {
-        return cv::distanceTransform(arg1, arg2, arg3, arg4, arg5);
-    }
-    void integral_wrapper(const cv::Mat& arg1, cv::Mat& arg2, int arg3) {
-        return cv::integral(arg1, arg2, arg3);
-    }
-    
-    void integral_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2) {
-        return cv::integral(arg1, arg2);
-    }
-    void integral2_wrapper(const cv::Mat& arg1, cv::Mat& arg2, cv::Mat& arg3, int arg4, int arg5) {
-        return cv::integral(arg1, arg2, arg3, arg4, arg5);
-    }
-    
-    void integral2_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, cv::Mat& arg3, int arg4) {
-        return cv::integral(arg1, arg2, arg3, arg4);
-    }
-    
-    void integral2_wrapper_2(const cv::Mat& arg1, cv::Mat& arg2, cv::Mat& arg3) {
-        return cv::integral(arg1, arg2, arg3);
-    }
-
-    void hconcat_wrapper(const std::vector<cv::Mat>& arg1, cv::Mat& arg2) {
-        return cv::hconcat(arg1, arg2);
-    }
-
-    void groupRectangles_wrapper(std::vector<Rect>& arg1, std::vector<int>& arg2, int arg3, double arg4) {
-        return cv::groupRectangles(arg1, arg2, arg3, arg4);
-    }
-    
-    void groupRectangles_wrapper_1(std::vector<Rect>& arg1, std::vector<int>& arg2, int arg3) {
-        return cv::groupRectangles(arg1, arg2, arg3);
-    }
-
-
-    bool CascadeClassifier_load_wrapper(cv::CascadeClassifier& arg0 , const std::string& arg1) {
-        return arg0.load(arg1);
-    }
-    
-    void CascadeClassifier_detectMultiScale2_wrapper(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, double arg4, int arg5, int arg6, Size arg7, Size arg8) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-    }
-    
-    void CascadeClassifier_detectMultiScale2_wrapper_1(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, double arg4, int arg5, int arg6, Size arg7) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-    }
-    
-    void CascadeClassifier_detectMultiScale2_wrapper_2(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, double arg4, int arg5, int arg6) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6);
-    }
-    
-    void CascadeClassifier_detectMultiScale2_wrapper_3(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, double arg4, int arg5) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5);
-    }
-    
-    void CascadeClassifier_detectMultiScale2_wrapper_4(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, double arg4) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4);
-    }
-    
-    void CascadeClassifier_detectMultiScale2_wrapper_5(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3) {
-        return arg0.detectMultiScale(arg1, arg2, arg3);
-    }
-    
-    void CascadeClassifier_detectMultiScale3_wrapper(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4, double arg5, int arg6, int arg7, Size arg8, Size arg9, bool arg10) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-    }
-    
-    void CascadeClassifier_detectMultiScale3_wrapper_1(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4, double arg5, int arg6, int arg7, Size arg8, Size arg9) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
-    }
-    
-    void CascadeClassifier_detectMultiScale3_wrapper_2(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4, double arg5, int arg6, int arg7, Size arg8) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-    }
-    
-    void CascadeClassifier_detectMultiScale3_wrapper_3(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4, double arg5, int arg6, int arg7) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-    }
-    
-    void CascadeClassifier_detectMultiScale3_wrapper_4(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4, double arg5, int arg6) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6);
-    }
-    
-    void CascadeClassifier_detectMultiScale3_wrapper_5(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4, double arg5) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5);
-    }
-    
-    void CascadeClassifier_detectMultiScale3_wrapper_6(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4);
-    }
-    
-    void CascadeClassifier_detectMultiScale_wrapper(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, double arg3, int arg4, int arg5, Size arg6, Size arg7) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-    }
-    
-    void CascadeClassifier_detectMultiScale_wrapper_1(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, double arg3, int arg4, int arg5, Size arg6) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6);
-    }
-    
-    void CascadeClassifier_detectMultiScale_wrapper_2(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, double arg3, int arg4, int arg5) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5);
-    }
-    
-    void CascadeClassifier_detectMultiScale_wrapper_3(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, double arg3, int arg4) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4);
-    }
-    
-    void CascadeClassifier_detectMultiScale_wrapper_4(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, double arg3) {
-        return arg0.detectMultiScale(arg1, arg2, arg3);
-    }
-    
-    void CascadeClassifier_detectMultiScale_wrapper_5(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2) {
-        return arg0.detectMultiScale(arg1, arg2);
-    }
-
-    bool HOGDescriptor_load_wrapper(cv::HOGDescriptor& arg0 , const std::string& arg1, const std::string& arg2) {
-        return arg0.load(arg1, arg2);
-    }
-    
-    bool HOGDescriptor_load_wrapper_1(cv::HOGDescriptor& arg0 , const std::string& arg1) {
-        return arg0.load(arg1);
-    }
-    
-    void HOGDescriptor_setSVMDetector_wrapper(cv::HOGDescriptor& arg0 , const cv::Mat& arg1) {
-        return arg0.setSVMDetector(arg1);
-    }
-    
-    void HOGDescriptor_detectMultiScale_wrapper(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3, double arg4, Size arg5, Size arg6, double arg7, double arg8, bool arg9) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
-    }
-    
-    void HOGDescriptor_detectMultiScale_wrapper_1(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3, double arg4, Size arg5, Size arg6, double arg7, double arg8) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-    }
-    
-    void HOGDescriptor_detectMultiScale_wrapper_2(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3, double arg4, Size arg5, Size arg6, double arg7) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-    }
-    
-    void HOGDescriptor_detectMultiScale_wrapper_3(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3, double arg4, Size arg5, Size arg6) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6);
-    }
-    
-    void HOGDescriptor_detectMultiScale_wrapper_4(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3, double arg4, Size arg5) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5);
-    }
-    
-    void HOGDescriptor_detectMultiScale_wrapper_5(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3, double arg4) {
-        return arg0.detectMultiScale(arg1, arg2, arg3, arg4);
-    }
-    
-    void HOGDescriptor_detectMultiScale_wrapper_6(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3) {
-        return arg0.detectMultiScale(arg1, arg2, arg3);
-    }
-}
 
 EMSCRIPTEN_BINDINGS(binding_utils)
 {
@@ -853,6 +589,272 @@ EMSCRIPTEN_BINDINGS(binding_utils)
     constant("INT_MAX", INT_MAX);
 
 }
+
+namespace Wrappers
+{
+    void split_wrapper(const cv::Mat& arg1, std::vector<cv::Mat>& arg2) {
+        return cv::split(arg1, arg2);
+    }
+
+    void calcHist_wrapper(const std::vector<cv::Mat>& arg1, const emscripten::val& arg2, const cv::Mat& arg3, cv::Mat& arg4, const emscripten::val& arg5, const emscripten::val& arg6, bool arg7) {
+        return cv::calcHist(arg1, emscripten::vecFromJSArray<int>(arg2), arg3, arg4, emscripten::vecFromJSArray<int>(arg5), emscripten::vecFromJSArray<float>(arg6), arg7);
+    }
+    
+    void calcHist_wrapper_1(const std::vector<cv::Mat>& arg1, const emscripten::val& arg2, const cv::Mat& arg3, cv::Mat& arg4, const emscripten::val& arg5, const emscripten::val& arg6) {
+        return cv::calcHist(arg1, emscripten::vecFromJSArray<int>(arg2), arg3, arg4, emscripten::vecFromJSArray<int>(arg5), emscripten::vecFromJSArray<float>(arg6));
+    }
+
+    void cvtColor_wrapper(const cv::Mat& arg1, cv::Mat& arg2, int arg3, int arg4) {
+        return cv::cvtColor(arg1, arg2, arg3, arg4);
+    }
+    
+    void cvtColor_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, int arg3) {
+        return cv::cvtColor(arg1, arg2, arg3);
+    }
+    
+    void equalizeHist_wrapper(const cv::Mat& arg1, cv::Mat& arg2) {
+        return cv::equalizeHist(arg1, arg2);
+    }
+
+    double threshold_wrapper(const cv::Mat& arg1, cv::Mat& arg2, double arg3, double arg4, int arg5) {
+        return cv::threshold(arg1, arg2, arg3, arg4, arg5);
+    }
+
+    void adaptiveThreshold_wrapper(const cv::Mat& arg1, cv::Mat& arg2, double arg3, int arg4, int arg5, int arg6, double arg7) {
+        return cv::adaptiveThreshold(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+    }
+
+    Moments moments_wrapper(const cv::Mat& arg1, bool arg2) {
+        return cv::moments(arg1, arg2);
+    }
+    
+    Moments moments_wrapper_1(const cv::Mat& arg1) {
+        return cv::moments(arg1);
+    }    
+
+    double contourArea_wrapper(const cv::Mat& arg1, bool arg2) {
+        return cv::contourArea(arg1, arg2);
+    }
+    
+    double contourArea_wrapper_1(const cv::Mat& arg1) {
+        return cv::contourArea(arg1);
+    }
+
+    void blur_wrapper(const cv::Mat& arg1, cv::Mat& arg2, Size arg3, Point arg4, int arg5) {
+        return cv::blur(arg1, arg2, arg3, arg4, arg5);
+    }
+    
+    void blur_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, Size arg3, Point arg4) {
+        return cv::blur(arg1, arg2, arg3, arg4);
+    }
+    
+    void blur_wrapper_2(const cv::Mat& arg1, cv::Mat& arg2, Size arg3) {
+        return cv::blur(arg1, arg2, arg3);
+    }
+
+    void GaussianBlur_wrapper(const cv::Mat& arg1, cv::Mat& arg2, Size arg3, double arg4, double arg5, int arg6) {
+        return cv::GaussianBlur(arg1, arg2, arg3, arg4, arg5, arg6);
+    }
+    
+    void GaussianBlur_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, Size arg3, double arg4, double arg5) {
+        return cv::GaussianBlur(arg1, arg2, arg3, arg4, arg5);
+    }
+    
+    void GaussianBlur_wrapper_2(const cv::Mat& arg1, cv::Mat& arg2, Size arg3, double arg4) {
+        return cv::GaussianBlur(arg1, arg2, arg3, arg4);
+    }
+
+    void medianBlur_wrapper(const cv::Mat& arg1, cv::Mat& arg2, int arg3) {
+        return cv::medianBlur(arg1, arg2, arg3);
+    }
+
+    void transpose_wrapper(const cv::Mat& arg1, cv::Mat& arg2) {
+        return cv::transpose(arg1, arg2);
+    }
+
+    void bilateralFilter_wrapper(const cv::Mat& arg1, cv::Mat& arg2, int arg3, double arg4, double arg5, int arg6) {
+        return cv::bilateralFilter(arg1, arg2, arg3, arg4, arg5, arg6);
+    }
+    
+    void bilateralFilter_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, int arg3, double arg4, double arg5) {
+        return cv::bilateralFilter(arg1, arg2, arg3, arg4, arg5);
+    }
+    void watershed_wrapper(const cv::Mat& arg1, cv::Mat& arg2) {
+        return cv::watershed(arg1, arg2);
+    }
+
+    void vconcat_wrapper(const std::vector<cv::Mat>& arg1, cv::Mat& arg2) {
+        return cv::vconcat(arg1, arg2);
+    }
+
+    void distanceTransform_wrapper(const cv::Mat& arg1, cv::Mat& arg2, int arg3, int arg4, int arg5) {
+        return cv::distanceTransform(arg1, arg2, arg3, arg4, arg5);
+    }
+    
+    void distanceTransform_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, int arg3, int arg4) {
+        return cv::distanceTransform(arg1, arg2, arg3, arg4);
+    }
+    
+    void distanceTransformWithLabels_wrapper(const cv::Mat& arg1, cv::Mat& arg2, cv::Mat& arg3, int arg4, int arg5, int arg6) {
+        return cv::distanceTransform(arg1, arg2, arg3, arg4, arg5, arg6);
+    }
+    
+    void distanceTransformWithLabels_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, cv::Mat& arg3, int arg4, int arg5) {
+        return cv::distanceTransform(arg1, arg2, arg3, arg4, arg5);
+    }
+    void integral_wrapper(const cv::Mat& arg1, cv::Mat& arg2, int arg3) {
+        return cv::integral(arg1, arg2, arg3);
+    }
+    
+    void integral_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2) {
+        return cv::integral(arg1, arg2);
+    }
+    void integral2_wrapper(const cv::Mat& arg1, cv::Mat& arg2, cv::Mat& arg3, int arg4, int arg5) {
+        return cv::integral(arg1, arg2, arg3, arg4, arg5);
+    }
+    
+    void integral2_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2, cv::Mat& arg3, int arg4) {
+        return cv::integral(arg1, arg2, arg3, arg4);
+    }
+    
+    void integral2_wrapper_2(const cv::Mat& arg1, cv::Mat& arg2, cv::Mat& arg3) {
+        return cv::integral(arg1, arg2, arg3);
+    }
+
+    void hconcat_wrapper(const std::vector<cv::Mat>& arg1, cv::Mat& arg2) {
+        return cv::hconcat(arg1, arg2);
+    }
+
+    void groupRectangles_wrapper(std::vector<Rect>& arg1, std::vector<int>& arg2, int arg3, double arg4) {
+        return cv::groupRectangles(arg1, arg2, arg3, arg4);
+    }
+    
+    void groupRectangles_wrapper_1(std::vector<Rect>& arg1, std::vector<int>& arg2, int arg3) {
+        return cv::groupRectangles(arg1, arg2, arg3);
+    }
+
+
+    bool CascadeClassifier_load_wrapper(cv::CascadeClassifier& arg0 , const std::string& arg1) {
+        return arg0.load(arg1);
+    }
+    
+    void CascadeClassifier_detectMultiScale2_wrapper(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, double arg4, int arg5, int arg6, Size arg7, Size arg8) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+    }
+    
+    void CascadeClassifier_detectMultiScale2_wrapper_1(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, double arg4, int arg5, int arg6, Size arg7) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+    }
+    
+    void CascadeClassifier_detectMultiScale2_wrapper_2(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, double arg4, int arg5, int arg6) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6);
+    }
+    
+    void CascadeClassifier_detectMultiScale2_wrapper_3(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, double arg4, int arg5) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5);
+    }
+    
+    void CascadeClassifier_detectMultiScale2_wrapper_4(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, double arg4) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4);
+    }
+    
+    void CascadeClassifier_detectMultiScale2_wrapper_5(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3) {
+        return arg0.detectMultiScale(arg1, arg2, arg3);
+    }
+    
+    void CascadeClassifier_detectMultiScale3_wrapper(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4, double arg5, int arg6, int arg7, Size arg8, Size arg9, bool arg10) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+    }
+    
+    void CascadeClassifier_detectMultiScale3_wrapper_1(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4, double arg5, int arg6, int arg7, Size arg8, Size arg9) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+    }
+    
+    void CascadeClassifier_detectMultiScale3_wrapper_2(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4, double arg5, int arg6, int arg7, Size arg8) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+    }
+    
+    void CascadeClassifier_detectMultiScale3_wrapper_3(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4, double arg5, int arg6, int arg7) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+    }
+    
+    void CascadeClassifier_detectMultiScale3_wrapper_4(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4, double arg5, int arg6) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6);
+    }
+    
+    void CascadeClassifier_detectMultiScale3_wrapper_5(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4, double arg5) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5);
+    }
+    
+    void CascadeClassifier_detectMultiScale3_wrapper_6(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<int>& arg3, std::vector<double>& arg4) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4);
+    }
+    
+    void CascadeClassifier_detectMultiScale_wrapper(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, double arg3, int arg4, int arg5, Size arg6, Size arg7) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+    }
+    
+    void CascadeClassifier_detectMultiScale_wrapper_1(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, double arg3, int arg4, int arg5, Size arg6) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6);
+    }
+    
+    void CascadeClassifier_detectMultiScale_wrapper_2(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, double arg3, int arg4, int arg5) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5);
+    }
+    
+    void CascadeClassifier_detectMultiScale_wrapper_3(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, double arg3, int arg4) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4);
+    }
+    
+    void CascadeClassifier_detectMultiScale_wrapper_4(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, double arg3) {
+        return arg0.detectMultiScale(arg1, arg2, arg3);
+    }
+    
+    void CascadeClassifier_detectMultiScale_wrapper_5(cv::CascadeClassifier& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2) {
+        return arg0.detectMultiScale(arg1, arg2);
+    }
+
+    bool HOGDescriptor_load_wrapper(cv::HOGDescriptor& arg0 , const std::string& arg1, const std::string& arg2) {
+        return arg0.load(arg1, arg2);
+    }
+    
+    bool HOGDescriptor_load_wrapper_1(cv::HOGDescriptor& arg0 , const std::string& arg1) {
+        return arg0.load(arg1);
+    }
+    
+    void HOGDescriptor_setSVMDetector_wrapper(cv::HOGDescriptor& arg0 , const cv::Mat& arg1) {
+        return arg0.setSVMDetector(arg1);
+    }
+    
+    void HOGDescriptor_detectMultiScale_wrapper(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3, double arg4, Size arg5, Size arg6, double arg7, double arg8, bool arg9) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+    }
+    
+    void HOGDescriptor_detectMultiScale_wrapper_1(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3, double arg4, Size arg5, Size arg6, double arg7, double arg8) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+    }
+    
+    void HOGDescriptor_detectMultiScale_wrapper_2(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3, double arg4, Size arg5, Size arg6, double arg7) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+    }
+    
+    void HOGDescriptor_detectMultiScale_wrapper_3(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3, double arg4, Size arg5, Size arg6) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5, arg6);
+    }
+    
+    void HOGDescriptor_detectMultiScale_wrapper_4(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3, double arg4, Size arg5) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4, arg5);
+    }
+    
+    void HOGDescriptor_detectMultiScale_wrapper_5(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3, double arg4) {
+        return arg0.detectMultiScale(arg1, arg2, arg3, arg4);
+    }
+    
+    void HOGDescriptor_detectMultiScale_wrapper_6(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3) {
+        return arg0.detectMultiScale(arg1, arg2, arg3);
+    }
+}
+
 EMSCRIPTEN_BINDINGS(testBinding) {
 
     function("split", select_overload<void(const cv::Mat&, std::vector<cv::Mat>&)>(&Wrappers::split_wrapper));

@@ -79,7 +79,7 @@ QUnit.module('Image Processing', {});
 QUnit.test('test_imgProc', function(assert) {
     // calcHist
     {
-        // let vec1 = new cv.ones(new cv.Size(20, 20), cv.CV_8UC1); // eslint-disable-line new-cap
+        // let vec1 = new cv.Mat.ones(new cv.Size(20, 20), cv.CV_8UC1); // eslint-disable-line new-cap
         // let source = new cv.MatVector();
         // source.push_back(vec1);
         // let channels = [0];
@@ -174,7 +174,7 @@ QUnit.test('test_segmentation', function(assert) {
 
     // adaptiveThreshold
     {
-        let source = cv.zeros(1, 5, cv.CV_8UC1);
+        let source = cv.Mat.zeros(1, 5, cv.CV_8UC1);
         let sourceView = source.data;
         sourceView[0] = 50;
         sourceView[1] = 150;
@@ -252,7 +252,7 @@ QUnit.test('test_min_enclosing', function(assert) {
 QUnit.test('test_filter', function(assert) {
     // blur
     {
-        let mat1 = cv.ones(5, 5, cv.CV_8UC3);
+        let mat1 = cv.Mat.ones(5, 5, cv.CV_8UC3);
         let mat2 = new cv.Mat();
 
         cv.blur(mat1, mat2, {height: 3, width: 3}, {x: -1, y: -1}, cv.BORDER_DEFAULT);
@@ -285,7 +285,7 @@ QUnit.test('test_filter', function(assert) {
 
     // GaussianBlur
     {
-        let mat1 = cv.ones(7, 7, cv.CV_8UC1);
+        let mat1 = cv.Mat.ones(7, 7, cv.CV_8UC1);
         let mat2 = new cv.Mat();
 
         cv.GaussianBlur(mat1, mat2, new cv.Size(3, 3), 0, 0, // eslint-disable-line new-cap
@@ -300,7 +300,7 @@ QUnit.test('test_filter', function(assert) {
 
     // medianBlur
     {
-        let mat1 = cv.ones(9, 9, cv.CV_8UC3);
+        let mat1 = cv.Mat.ones(9, 9, cv.CV_8UC3);
         let mat2 = new cv.Mat();
 
         cv.medianBlur(mat1, mat2, 3);
@@ -314,7 +314,7 @@ QUnit.test('test_filter', function(assert) {
 
     // Transpose
     {
-        let mat1 = cv.eye(9, 9, cv.CV_8UC3);
+        let mat1 = cv.Mat.eye(9, 9, cv.CV_8UC3);
         let mat2 = new cv.Mat();
 
         cv.transpose(mat1, mat2);
@@ -328,7 +328,7 @@ QUnit.test('test_filter', function(assert) {
 
     // bilateralFilter
     {
-        let mat1 = cv.ones(11, 11, cv.CV_8UC3);
+        let mat1 = cv.Mat.ones(11, 11, cv.CV_8UC3);
         let mat2 = new cv.Mat();
 
         cv.bilateralFilter(mat1, mat2, 3, 6, 1.5, cv.BORDER_DEFAULT);
@@ -353,7 +353,7 @@ QUnit.test('test_filter', function(assert) {
 
     // Watershed
     {
-        let mat = cv.ones(11, 11, cv.CV_8UC3);
+        let mat = cv.Mat.ones(11, 11, cv.CV_8UC3);
         let out = new cv.Mat(11, 11, cv.CV_32SC1);
 
         cv.watershed(mat, out);
@@ -371,9 +371,9 @@ QUnit.test('test_filter', function(assert) {
 
     // Concat
     {
-        let mat = cv.ones({height: 10, width: 5}, cv.CV_8UC3);
-        let mat2 = cv.eye({height: 10, width: 5}, cv.CV_8UC3);
-        let mat3 = cv.eye({height: 10, width: 5}, cv.CV_8UC3);
+        let mat = cv.Mat.ones({height: 10, width: 5}, cv.CV_8UC3);
+        let mat2 = cv.Mat.eye({height: 10, width: 5}, cv.CV_8UC3);
+        let mat3 = cv.Mat.eye({height: 10, width: 5}, cv.CV_8UC3);
 
 
         let out = new cv.Mat();
@@ -407,7 +407,7 @@ QUnit.test('test_filter', function(assert) {
 
     // distanceTransform letiants
     {
-        let mat = cv.ones(11, 11, cv.CV_8UC1);
+        let mat = cv.Mat.ones(11, 11, cv.CV_8UC1);
         let out = new cv.Mat(11, 11, cv.CV_32FC1);
         let labels = new cv.Mat(11, 11, cv.CV_32FC1);
         const maskSize = 3;
@@ -636,7 +636,7 @@ QUnit.test('test_filter', function(assert) {
 
     // Integral letiants
     {
-        let mat = cv.eye({height: 100, width: 100}, cv.CV_8UC3);
+        let mat = cv.Mat.eye({height: 100, width: 100}, cv.CV_8UC3);
         let sum = new cv.Mat();
         let sqSum = new cv.Mat();
         let title = new cv.Mat();
@@ -669,7 +669,7 @@ QUnit.test('test_filter', function(assert) {
 
     // Mean, meanSTDev
     {
-        let mat = cv.eye({height: 100, width: 100}, cv.CV_8UC3);
+        let mat = cv.Mat.eye({height: 100, width: 100}, cv.CV_8UC3);
         let sum = new cv.Mat();
         let sqSum = new cv.Mat();
         let title = new cv.Mat();

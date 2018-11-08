@@ -1,5 +1,5 @@
 # export CC=clang 
-export CXX=clang++ 
+# export CXX=clang++ 
 # export CXX=g++-5
 # export LINKXX=clang++ 
 # export LINK=clang

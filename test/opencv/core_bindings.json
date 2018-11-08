@@ -11,13 +11,6 @@
     "&binding_utils::matData<int>": "select_overload<val(const cv::Mat&)>(&binding_utils::matData<int>)",
     "&binding_utils::matData<float>": "select_overload<val(const cv::Mat&)>(&binding_utils::matData<float>)",
     "&binding_utils::matData<double>": "select_overload<val(const cv::Mat&)>(&binding_utils::matData<double>)",
-    "binding_utils": [
-        "template <typename T>extern val matData(const cv::Mat &mat);",
-        "template <typename T>extern val matPtr(const cv::Mat &mat, int i);",
-        "template <typename T>extern val matPtr(const cv::Mat &mat, int i, int j);",
-        "class MinMaxLoc\n     {\n     public:\n         double minVal;\n         double maxVal;\n         Point minLoc;\n         Point maxLoc;\n     };",
-        "class Circle\n     {\n     public:\n         Point2f center;\n         float radius;\n     };"
-    ],
     "value_objects": {
         "alias": {
             "Rect": "Rect_<int>",

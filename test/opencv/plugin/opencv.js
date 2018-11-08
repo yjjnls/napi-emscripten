@@ -397,9 +397,302 @@ Module['HEAPU32'] = HEAPU32 = new Uint32Array(buffer);
 Module['HEAPF32'] = HEAPF32 = new Float32Array(buffer);
 Module['HEAPF64'] = HEAPF64 = new Float64Array(buffer);
 
-Module['malloc'] = (num)=>{return HEAPU8.byteOffset+num}
+Module['malloc'] = (num) => { return HEAPU8.byteOffset + num }
+
+class Mat {
+    constructor(arg0, arg1, arg2, arg3, arg4) {
+        switch (arguments.length) {
+            case 0: return new cv.Mat();
+            case 1: return new cv.Mat(arg0);
+            case 2: return new cv.Mat(arg0, arg1);
+            case 3: return new cv.Mat(arg0, arg1, arg2);
+            case 4: return new cv.Mat(arg0, arg1, arg2, arg3);
+            case 5: return new cv.Mat(arg0, arg1, arg2, arg3, arg4);
+        }
+        // return this.mat
+    }
+    // unwrap(arg) {
+    //     if (arg instanceof Mat)
+    //         return arg.mat;
+    //     else
+    //         return arg;
+    // }
+    // delete() {
+    //     return this.mat.delete();
+    // }
+    // isDeleted() {
+    //     return this.mat.isDeleted();
+    // }
+    static ones(arg0, arg1, arg2) {
+        switch (arguments.length) {
+            case 2: return new Mat(cv.ones(arg0, arg1)); break;
+            case 3: return new Mat(cv.ones(arg0, arg1, arg2)); break;
+        }
+    }
+    static eye(arg0, arg1, arg2) {
+        switch (arguments.length) {
+            case 2: return new Mat(cv.eye(arg0, arg1)); break;
+            case 3: return new Mat(cv.eye(arg0, arg1, arg2)); break;
+        }
+    }
+    static zeros(arg0, arg1, arg2) {
+        switch (arguments.length) {
+            case 2: return new Mat(cv.zeros(arg0, arg1)); break;
+            case 3: return new Mat(cv.zeros(arg0, arg1, arg2)); break;
+        }
+    }
+    // get rows() {
+    //     return this.mat.rows;
+    // }
+    // set rows(data) {
+    //     this.mat.rows = data;
+    // }
+    // get cols() {
+    //     return this.mat.cols;
+    // }
+    // set cols(data) {
+    //     this.mat.cols = data;
+    // }
+    // get matSize() {
+    //     return this.mat.matSize;
+    // }
+    // get step() {
+    //     return this.mat.step;
+    // }
+    // get data() {
+    //     return this.mat.data;
+    // }
+    // get data8S() {
+    //     return this.mat.data8S;
+    // }
+    // get data16U() {
+    //     return this.mat.data16U;
+    // }
+    // get data16S() {
+    //     return this.mat.data16S;
+    // }
+    // get data32F() {
+    //     return this.mat.data32F;
+    // }
+    // get data64F() {
+    //     return this.mat.data64F;
+    // }
+
+    // elemSize() {
+    //     return this.mat.elemSize();
+    // }
+    // elemSize1() {
+    //     return this.mat.elemSize1();
+    // }
+    // channels() {
+    //     return this.mat.channels();
+    // }
+    // convertTo(arg0, arg1, arg2, arg3) {
+    //     switch (arguments.length) {
+    //         case 2: return this.mat.convertTo(arg0.mat, arg1); break;
+    //         case 3: return this.mat.convertTo(arg0.mat, arg1, arg2); break;
+    //         case 4: return this.mat.convertTo(arg0.mat, arg1, arg2, arg3); break;
+    //     }
+    // }
+    // total() {
+    //     return this.mat.total();
+    // }
+    // row(arg0) {
+    //     return this.mat.row(arg0);
+    // }
+    // create(arg0, arg1, arg2) {
+    //     switch (arguments.length) {
+    //         case 2: return this.mat.create(arg0, arg1); break;
+    //         case 3: return this.mat.create(arg0, arg1, arg2); break;
+    //     }
+    // }
+    // rowRange(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.rowRange(arg0); break;
+    //         case 2: return this.mat.rowRange(arg0, arg1); break;
+    //     }
+    // }
+    // copyTo(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.copyTo(arg0.mat); break;
+    //         case 2: return this.mat.copyTo(arg0.mat, arg1.mat); break;
+    //     }
+    // }
+    // type() {
+    //     return this.mat.type();
+    // }
+    // empty() {
+    //     return this.mat.empty();
+    // }
+    // colRange(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.colRange(arg0); break;
+    //         case 2: return this.mat.colRange(arg0, arg1); break;
+    //     }
+    // }
+    // step1(arg0) {
+    //     return this.mat.step1(arg0);
+    // }
+    // clone() {
+    //     return this.mat.clone();
+    // }
+    // depth() {
+    //     return this.mat.depth();
+    // }
+    // col(arg0) {
+    //     return this.mat.col(arg0);
+    // }
+    // dot(arg0) {
+    //     return this.mat.dot(arg0.mat);
+    // }
+    // mul(arg0, arg1) {
+    //     return this.mat.mul(arg0.mat, arg1);
+    // }
+    // inv(arg0) {
+    //     return this.mat.inv(arg0);
+    // }
+    // t() {
+    //     return this.mat.t();
+    // }
+    // roi(arg0) {
+    //     return this.mat.roi(arg0);
+    // }
+    // diag(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 0: return this.mat.diag(); break;
+    //         case 1: return this.mat.diag(arg0); break;
+    //     }
+    // }
+    // isContinuous() {
+    //     return this.mat.isContinuous();
+    // }
+    // setTo(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.setTo(arg0); break;
+    //         case 2: return this.mat.setTo(arg0, arg1); break;
+    //     }
+    // }
+    // size() {
+    //     return this.mat.size();
+    // }
+    // ptr(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.ptr(arg0); break;
+    //         case 2: return this.mat.ptr(arg0, arg1); break;
+    //     }
+    // }
+    // ucharPtr(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.ucharPtr(arg0); break;
+    //         case 2: return this.mat.ucharPtr(arg0, arg1); break;
+    //     }
+    // }
+    // charPtr(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.charPtr(arg0); break;
+    //         case 2: return this.mat.charPtr(arg0, arg1); break;
+    //     }
+    // }
+    // shortPtr(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.shortPtr(arg0); break;
+    //         case 2: return this.mat.shortPtr(arg0, arg1); break;
+    //     }
+    // }
+    // ushortPtr(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.ushortPtr(arg0); break;
+    //         case 2: return this.mat.ushortPtr(arg0, arg1); break;
+    //     }
+    // }
+    // intPtr(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.intPtr(arg0); break;
+    //         case 2: return this.mat.intPtr(arg0, arg1); break;
+    //     }
+    // }
+    // floatPtr(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.floatPtr(arg0); break;
+    //         case 2: return this.mat.floatPtr(arg0, arg1); break;
+    //     }
+    // }
+    // doublePtr(arg0, arg1) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.doublePtr(arg0); break;
+    //         case 2: return this.mat.doublePtr(arg0, arg1); break;
+    //     }
+    // }
+    // charAt(arg0, arg1, arg2) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.charAt(arg0); break;
+    //         case 2: return this.mat.charAt(arg0, arg1); break;
+    //         case 3: return this.mat.charAt(arg0, arg1, arg2); break;
+    //     }
+    // }
+    // ucharAt(arg0, arg1, arg2) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.ucharAt(arg0); break;
+    //         case 2: return this.mat.ucharAt(arg0, arg1); break;
+    //         case 3: return this.mat.ucharAt(arg0, arg1, arg2); break;
+    //     }
+    // }
+    // shortAt(arg0, arg1, arg2) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.shortAt(arg0); break;
+    //         case 2: return this.mat.shortAt(arg0, arg1); break;
+    //         case 3: return this.mat.shortAt(arg0, arg1, arg2); break;
+    //     }
+    // }
+    // ushortAt(arg0, arg1, arg2) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.ushortAt(arg0); break;
+    //         case 2: return this.mat.ushortAt(arg0, arg1); break;
+    //         case 3: return this.mat.ushortAt(arg0, arg1, arg2); break;
+    //     }
+    // }
+    // intAt(arg0, arg1, arg2) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.intAt(arg0); break;
+    //         case 2: return this.mat.intAt(arg0, arg1); break;
+    //         case 3: return this.mat.intAt(arg0, arg1, arg2); break;
+    //     }
+    // }
+    // floatAt(arg0, arg1, arg2) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.floatAt(arg0); break;
+    //         case 2: return this.mat.floatAt(arg0, arg1); break;
+    //         case 3: return this.mat.floatAt(arg0, arg1, arg2); break;
+    //     }
+    // }
+    // doubleAt(arg0, arg1, arg2) {
+    //     switch (arguments.length) {
+    //         case 1: return this.mat.doubleAt(arg0); break;
+    //         case 2: return this.mat.doubleAt(arg0, arg1); break;
+    //         case 3: return this.mat.doubleAt(arg0, arg1, arg2); break;
+    //     }
+    // }
+}
+
+class HOGDescriptor {
+    constructor(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
+        switch (arguments.length) {
+            case 0: return new cv.HOGDescriptor();
+            case 1: return new cv.HOGDescriptor(arg0);
+            case 12: return new cv.HOGDescriptor(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+        }
+    }
+
+    static getDefaultPeopleDetector() {
+        return cv.getDefaultPeopleDetector();
+    }
+    static getDaimlerPeopleDetector() {
+        return cv.getDaimlerPeopleDetector();
+    }
+}
 module.exports = {
-    'Mat': cv.Mat,
+    // 'Mat': cv.Mat,
+    'Mat': Mat,
     'Range': cv.Range,
     'TermCriteria': cv.TermCriteria,
     'Size': cv.Size,
@@ -475,6 +768,9 @@ module.exports = {
     'HEAPF32': Module['HEAPF32'],
     'HEAPF64': Module['HEAPF64'],
     //////////////////////////
+    // 'split': (arg0, arg1) => {
+    //     return cv.split(arg0.mat, arg1)
+    // },
     'split': cv.split,
     'calcHist': cv.calcHist,
     'cvtColor': cv.cvtColor,
@@ -503,6 +799,6 @@ module.exports = {
     "BORDER_DEFAULT": cv.BORDER_DEFAULT,
     'groupRectangles': cv.groupRectangles,
     'CascadeClassifier': cv.CascadeClassifier,
-    'HOGDescriptor': cv.HOGDescriptor
+    'HOGDescriptor': HOGDescriptor
 
 }

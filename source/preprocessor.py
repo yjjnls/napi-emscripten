@@ -23,23 +23,35 @@ class Preprocessor:
         searchObj = re.findall('#include(.*)\n', self.data)
         self.include = []
         if searchObj:
-            self.include = ['#include%s' % file for file in searchObj]
+            for file in searchObj:
+                if '<emscripten/bind.h>' in file:
+                    self.include.append('#include <emscripten/val.h>')
+                else:
+                    self.include.append('#include%s' % file)
+
         searchObj = re.findall('using namespace (.*)\n', self.data)
         self.namespace_declaration = []
         if searchObj:
             self.namespace_declaration = ['using namespace %s' % namespace for namespace in searchObj]
-        searchObj = re.findall('\nnamespace (.*)\n', self.data)
+
+        searchObj = re.findall('\nnamespace (.*)', self.data)
         self.namespace = []
-        if searchObj:
-            self.namespace = [namespace.rstrip(' {') for namespace in searchObj]
+        # if searchObj:
+        #     self.namespace = [namespace.rstrip(' {') for namespace in searchObj]
         pattern = re.compile(Preprocessor.RE, flags=re.DOTALL)
         start = 0
         pos = []
+        namespace_pos = []
         while True:
+            start = self.data.find('\nnamespace', start + 1)
+            if start == -1:
+                break
+            namespace_pos.append(start)
             start = self.data.find('EMSCRIPTEN_BINDINGS', start + 1)
             if start == -1:
                 break
             pos.append(start)
+            namespace_pos.append(start - 1)
             start = self.data.find('}', start + 1)
             if start == -1:
                 break
@@ -50,6 +62,10 @@ class Preprocessor:
             if result == None:
                 break
             output += result.group('bindings_body')
+
+        for i in range(len(namespace_pos) / 2):
+            self.namespace.append(self.data[namespace_pos[2 * i]:namespace_pos[2 * i + 1]])
+
         self.napi_compile(output, {'supplement': self.include +
                                    self.namespace_declaration, 'namespace': self.namespace})
 

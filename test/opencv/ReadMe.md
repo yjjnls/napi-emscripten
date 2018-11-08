@@ -7,11 +7,11 @@ $ ./build.sh
 $ LD_LIBRARY_PATH=/usr/local/lib node tests.js
 ```
 ## supplement file
-1. functions in namespace binding_utils can't be static
+~~1. functions in namespace binding_utils can't be static~~
 
 2. declared value_objects should be noted in supplements wheather it has constructors with declared fields as args. 
 
-3. template function and class/struct declared in namespace should be noted in json
+~~3. template function and class/struct declared in namespace should be noted in json~~
 
 4. if jsmethod and cxxmethod are different in declartion, it should be noted
 ```cpp
