@@ -494,30 +494,24 @@ args_val_array = """\
     val arg{0} = val::array(vec{0});
 """
 
-return_void = Template("""    ${napi_val} = nullptr;
-""")
-return_bool = Template("""    napi_get_boolean(env, ${cxx_val}, &${napi_val});
-""")
-return_int = Template("""    napi_create_int32(env, (int32_t)${cxx_val}, &${napi_val});
-""")
-return_uint = Template("""    napi_create_uint32(env, (uint32_t)${cxx_val}, &${napi_val});
-""")
-return_long = Template("""    napi_create_int64(env, (int64_t)${cxx_val}, &${napi_val});
-""")
-return_double = Template("""    napi_create_double(env, (double)${cxx_val}, &${napi_val});
-""")
-return_string = Template("""    napi_create_string_utf8(env, ${cxx_val}.c_str(), ${cxx_val}.size(), &${napi_val});
-""")
-return_class = Template("""    napi_value cons;
-    napi_get_reference_value(env, ${class_domain}cons_ref(), &cons);
-    napi_new_instance(env, cons, 0, nullptr, &${napi_val});
+return_class = Template("""
+namespace emscripten {
+namespace internal {
+napi_value cpp2napi(const ${cxx_type} &arg)
+{
+    napi_value res;
+    napi_value cons;
+    napi_get_reference_value(global_env, ${class_name}::cons_ref(), &cons);
+    napi_new_instance(global_env, cons, 0, nullptr, &res);
     ${class_name} *p;
-    napi_unwrap(env, ${napi_val}, reinterpret_cast<void **>(&p));
-    p->update_target(${cxx_val});
+    napi_unwrap(global_env, res, reinterpret_cast<void **>(&p));
+    p->update_target(arg);
+    return res;
+}
+}  // namespace internal
+}  // namespace emscripten
 """)
-# return_obj = Template("""    napi_create_object(env, &${napi_val});
-# ${obj_detail}
-# """)
+
 return_obj = Template("""
 namespace emscripten {
 namespace internal {
@@ -531,12 +525,21 @@ ${obj_detail}
 }  // namespace internal
 }  // namespace emscripten
 """)
-return_array = Template("""    napi_create_array(env, &${napi_val});
-    for (int i = 0; i < argc; i++) {
-        napi_value value;
-        ${create_fun}(env, ${cxx_val}[i], &value);
-        napi_set_element(env, ${napi_val}, i, value);
+return_array = Template("""
+namespace emscripten {
+namespace internal {
+napi_value cpp2napi(const ${cxx_type} &arg)
+{
+    napi_value res;
+    napi_create_array(global_env, &res);
+    for (int i = 0; i < ${size}; i++) {
+        napi_value value = cpp2napi(arg[i]);
+        napi_set_element(global_env, res, i, value);
     }
+    return res;
+}
+}  // namespace internal
+}  // namespace emscripten
 """)
 arr_type = {
     'char': 'napi_int8_array',
@@ -594,6 +597,8 @@ ${create_return_val}
     delete argv;
     ${cxx_val}.clear_handle();
 """)
+
+# ###############################################################################################
 function_detail_start = """
 %s fun_%s_factory(%s *obj, napi_env env, size_t argc, napi_value *args)
 {
@@ -618,6 +623,25 @@ napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
     ////////////////////////////////////////////////////////////////////////
     ${type} *target = obj ? obj->target_ : nullptr;
     ${return_res}fun_${fun_name}_factory(target, env, argc, args);
+    ////////////////////////////////////////////////////////////////////////
+${return_val}
+}
+""")
+
+static_func_template = Template("""
+napi_value ${name}::${fun_name}(napi_env env, napi_callback_info info)
+{
+    size_t argc = 0;
+    napi_value _this;
+    napi_get_cb_info(env, info, &argc, nullptr, &_this, nullptr);
+    napi_value args[argc];
+    napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
+
+    ${name} *obj;
+    napi_unwrap(env, _this, reinterpret_cast<void **>(&obj));
+
+    ////////////////////////////////////////////////////////////////////////
+    ${return_res}fun_${fun_name}_factory(nullptr, env, argc, args);
     ////////////////////////////////////////////////////////////////////////
 ${return_val}
 }
@@ -707,21 +731,7 @@ napi_value generate_%s(napi_env env, napi_callback_info info)
     return result;
 }
 """
-vector_func = """
-napi_value generate_%s(napi_env env, napi_callback_info info)
-{
-    size_t argc = 0;
-    napi_value _this;
-    napi_get_cb_info(env, info, &argc, nullptr, &_this, nullptr);
-    napi_value args[argc];
-    napi_get_cb_info(env, info, &argc, args, &_this, nullptr);
 
-    auto data = new std::vector<%s>();
-    napi_value result;
-    napi_create_external(env, data, nullptr, nullptr, &result);
-    return result;
-}
-"""
 global_func_start = Template("""
 ${return_type} fun_${fun_name}_factory(napi_env env, size_t argc, napi_value *args)
 {

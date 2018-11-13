@@ -387,7 +387,7 @@ var HEAP,
     /** @type {Float64Array} */
     HEAPF64;
 
-buffer = Buffer.alloc(10240);
+buffer = Buffer.alloc(102400);
 Module['HEAP8'] = HEAP8 = new Int8Array(buffer);
 Module['HEAP16'] = HEAP16 = new Int16Array(buffer);
 Module['HEAP32'] = HEAP32 = new Int32Array(buffer);
@@ -707,7 +707,7 @@ module.exports = {
     'Moments': cv.Moments,
     'Exception': cv.Exception,
     //////////////////////////
-    '_malloc': Module['malloc'],
+    '_malloc': cv._malloc,
     //////////////////////////
     'eye': cv.eye,
     'ones': cv.ones,

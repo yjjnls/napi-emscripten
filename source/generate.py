@@ -76,6 +76,8 @@ class Gen:
             convert += 'napi_value cpp2napi(const %s &arg);\n' % instance['cxxtype']
         for instance in self.vectors.values():
             convert += 'napi_value cpp2napi(const %s &arg);\n' % instance['cxxtype']
+        for instance in self.value_arrays.values():
+            convert += 'napi_value cpp2napi(const %s &arg);\n' % instance['cxxtype']
 
         self.output_cxx_fp.write(template.fixed_function % convert)
 
@@ -293,89 +295,10 @@ class Gen:
     def parse_return_type(self, instance, arg, cxx_value='res', napi_value='result', cxx_fun_name=None, arg_name=None):
         arg = self.normalize_arg(arg)
 
-        if arg == 'void':
-            return "\t%s = cpp2napi();\n " % (napi_value)
-        if arg in ['bool', 'int', 'size_t', 'short', 'char', 'unsigned int', 'unsigned short', 'unsigned char', 'intptr_t', 'long', 'float', 'double', 'std::string', 'string']:
+        if not 'val' in arg:
+            if arg == 'void':
+                cxx_value = ''
             return "\t%s = cpp2napi(%s);\n " % (napi_value, cxx_value)
-        # if arg == 'void':
-        #     return template.return_void.substitute(napi_val=napi_value)
-        # if arg == 'bool':
-        #     return template.return_bool.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        # if arg in ['int', 'size_t', 'short', 'char']:
-        #     return template.return_int.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        # if arg in ['unsigned int', 'unsigned short', 'unsigned char']:
-        #     return template.return_uint.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        # if arg in ['intptr_t', 'long']:
-        #     return template.return_long.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        # if arg in ['float', 'double']:
-        #     return template.return_double.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        # if arg in ['std::string', 'string']:
-        #     return template.return_string.substitute(cxx_val=cxx_value, napi_val=napi_value)
-
-        if not instance == None:
-            cxx_type = instance['cxxtype'].split('::')[-1]
-            if cxx_type in arg:
-                # return the class instance itself
-                return template.return_class.substitute(cxx_val=cxx_value,
-                                                        napi_val=napi_value,
-                                                        class_domain='',
-                                                        class_name=instance['class_name'])
-
-        # return other class instance
-        for obj in self.classes.values():
-            if obj['cxxtype'].split('::')[-1] == arg.split('::')[-1]:
-                return template.return_class.substitute(cxx_val=cxx_value,
-                                                        napi_val=napi_value,
-                                                        class_domain=obj['class_name'] + '::',
-                                                        class_name=obj['class_name'])
-        # return object
-        for obj in self.value_objects.values():
-            arg_type = arg.split('::')[-1]
-            if arg_type == obj['cxxtype'].split('::')[-1]:
-                return "\t%s = cpp2napi(%s);\n " % (napi_value, cxx_value)
-                # fun = ''
-                # for prop in obj['properties'].items():
-                #     prop_name = prop[0]
-                #     prop_type = prop[1][0][0]
-                #     if not arg_name == None:
-                #         value_name = '%s_%s_val' % (arg_name, prop_name)
-                #     else:
-                #         value_name = '%s_val' % prop_name
-                #     fun += '\tnapi_value %s;\n' % value_name
-                #     if prop[1][0][2] == None:
-                #         get_val = cxx_value + '.' + prop[1][0][3]
-                #     else:
-                #         get_val = '%s(%s)' % (prop[1][0][2], cxx_value)
-
-                #     fun += self.parse_return_type(instance,
-                #                                   prop_type,
-                #                                   cxx_value=get_val,
-                #                                   napi_value=value_name,
-                #                                   arg_name=prop_name)
-
-                #     fun += '\tnapi_set_named_property(env, %s, "%s", %s);\n' % (napi_value, prop_name, value_name)
-                # return template.return_obj.substitute(napi_val=napi_value, obj_detail=fun)
-        # return value_array
-        for arr in self.value_arrays.values():
-            if arr['jstype'].split('::')[-1] == arg.split('::')[-1]:
-                if arr['argtype'] == 'double':
-                    return template.return_array.substitute(cxx_val=cxx_value,
-                                                            napi_val=napi_value,
-                                                            create_fun='napi_create_double')
-        # return vector
-        if 'vector' in arg:
-            searchObj = re.search('(<)(.*)(>)', arg)
-            if searchObj:
-                arg = searchObj.group(2)
-            arg = self.normalize_arg(arg)
-            for vec in self.vectors.values():
-                if arg.split('::')[-1] == vec['element_type'].split('::')[-1]:
-                    return template.return_class.substitute(cxx_val=cxx_value,
-                                                            napi_val=napi_value,
-                                                            class_domain=vec['class_name'] + '::',
-                                                            class_name=vec['class_name'])
-                    # return template.args_cxxtype % (vec['class_name'],
-                    #                                 vec['cxxtype'])
         # return val
         if 'val' in arg:
             val_type = arg.split(',')[-1]
@@ -637,7 +560,7 @@ class Gen:
         self.output_cxx_fp.write('/*-------------------  function  -------------------*/\n')
         self.generate_function_detail(instance, instance['functions'], detail)
 
-    def generate_function_detail(self, instance, functions, func_detail):
+    def generate_function_detail(self, instance, functions, func_detail, is_static=False):
         for overload_fun in functions.items():
             js_fun_name = overload_fun[0]
             return_type = overload_fun[1][0][0]
@@ -677,11 +600,17 @@ class Gen:
                                                 cxx_fun_name=cxx_fun_name)
             return_val = '\tnapi_value result;\n%s\n\treturn result;\n' % return_val
 
-            self.output_cxx_fp.write(template.func_template.substitute(name=instance['class_name'],
-                                                                       fun_name=overload_fun[0],
-                                                                       type=instance['cxxtype'],
-                                                                       return_res=return_res,
-                                                                       return_val=return_val))
+            if not is_static:
+                self.output_cxx_fp.write(template.func_template.substitute(name=instance['class_name'],
+                                                                           fun_name=overload_fun[0],
+                                                                           type=instance['cxxtype'],
+                                                                           return_res=return_res,
+                                                                           return_val=return_val))
+            else:
+                self.output_cxx_fp.write(template.static_func_template.substitute(name=instance['class_name'],
+                                                                                  fun_name=overload_fun[0],
+                                                                                  return_res=return_res,
+                                                                                  return_val=return_val))
 
     def generate_prop(self, instance):
         self.output_cxx_fp.write('/*-------------------  property  -------------------*/\n')
@@ -734,7 +663,7 @@ class Gen:
                 self.output_cxx_fp.write('\n\treturn {0}({1});\n'.format(fun_name, args))
 
         self.output_cxx_fp.write('/*-------------------  class function  -------------------*/\n')
-        self.generate_function_detail(instance, instance['class_functions'], detail)
+        self.generate_function_detail(instance, instance['class_functions'], detail, is_static=True)
 
     def generate_class_declartion(self):
         declartion = ''
@@ -760,7 +689,11 @@ class Gen:
             # class function implementation
             self.generate_class_function(instance)
 
+            self.output_cxx_fp.write(template.return_class.substitute(
+                cxx_type=instance['cxxtype'], class_name=instance['class_name']))
+
     # -------------------constant---------------------------
+
     def parse_constant(self, constants):
         self.constants = constants
 
@@ -889,6 +822,9 @@ class Gen:
             self.napi_declaration += '\t\tNAPI_DECLARE_METHOD("%s", generate_%s),\n' % (
                 arr['jstype'], arr['jstype'])
             self.output_cxx_fp.write(template.array_func % (arr['jstype'], arr['argc']))
+
+            self.output_cxx_fp.write(template.return_array.substitute(
+                cxx_type=arr['cxxtype'], size=arr['argc']))            
 
     # -------------------functions----------------------------
     def parse_global_functions(self, functions):
@@ -1019,3 +955,6 @@ class Gen:
             self.generate_constructor(instance)
             # function implementation
             self.generate_vector_function(instance)
+
+            self.output_cxx_fp.write(template.return_class.substitute(
+                cxx_type=instance['cxxtype'], class_name=instance['class_name']))
