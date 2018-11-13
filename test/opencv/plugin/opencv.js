@@ -799,6 +799,7 @@ module.exports = {
     "BORDER_DEFAULT": cv.BORDER_DEFAULT,
     'groupRectangles': cv.groupRectangles,
     'CascadeClassifier': cv.CascadeClassifier,
-    'HOGDescriptor': HOGDescriptor
+    'HOGDescriptor': HOGDescriptor,
+    'meanShift': cv.meanShift
 
 }

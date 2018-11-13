@@ -77,9 +77,11 @@ namespace emscripten {
             T container;
         };
         typedef std::shared_ptr<struct _EM_VAL> EM_VAL;
+        template<typename Arg>
+        void val_array_push(EM_VAL handle, Arg arg);
         // Implemented in JavaScript.  Don't call these directly.
-        extern "C"
-        {
+        // extern "C"
+        // {
             void _emval_register_symbol(const char*);
 
 
@@ -145,7 +147,7 @@ namespace emscripten {
             bool _emval_instanceof(EM_VAL object, EM_VAL constructor);
             bool _emval_in(EM_VAL item, EM_VAL object);
             bool _emval_delete(EM_VAL object, EM_VAL property);
-        }
+        // }
 
         template<const char* address>
         struct symbol_registrar {
@@ -345,8 +347,7 @@ namespace emscripten {
         // same with: = += -= *= /= %= <<= >>= >>>= &= ^= |=
 
         static val array() {
-            return val(std::make_shared<internal::_EM_VAL>(internal::_EMVAL_ARRAY));
-            // return val(internal::_emval_new_array());
+            return val(internal::_emval_new_array());
         }
 
         template<typename T>
@@ -541,40 +542,30 @@ namespace emscripten {
 
         //     return MethodCaller<ReturnValue, Args...>::call(handle, name, std::forward<Args>(args)...);
         // }
-        template <typename Vec, typename Arg>
-        void push(internal::GenericWireType *cursor, Vec &arr, Arg &arg)
-        {
-            arr.push_back(arg);
-            cursor->w[1].p = arr.data();
-            cursor->w[0].u = arr.size();
-            // printf("cursor: %p\t%p\n",cursor,cursor->w[1].p);
-        }
+        // template <typename Vec, typename Arg>
+        // void push(internal::GenericWireType *cursor, Vec &arr, Arg &arg)
+        // {
+        //     arr.push_back(arg);
+        //     cursor->w[1].p = arr.data();
+        //     cursor->w[0].u = arr.size();
+        //     // printf("cursor: %p\t%p\n",cursor,cursor->w[1].p);
+        // }
+
         template <typename ReturnValue, typename... Args>
         ReturnValue call(const char *name, Args &&... args)
         {
             using namespace internal;
 
             if (isArray()) {
-                using elem_type = typename std::common_type<Args...>::type;
-                typedef std::vector<elem_type> arr;
-                typedef emscripten::memory_view<elem_type> memory_view2arr;
-                if (isEmpty()) {
-                    _EM_VAL *val = new __EM_VAL<arr>(arr());
-                    val->type = _EMVAL_ARRAY;
-                    arr &p = static_cast<__EM_VAL<arr> *>(val)->container;
+                // using elem_type = typename std::common_type<Args...>::type;
+                // typedef std::vector<elem_type> arr;
+                // typedef emscripten::memory_view<elem_type> memory_view2arr;
+ 
+                // arr &array = static_cast<__EM_VAL<arr> *>(handle.get())->container;
+                // WireTypePack<memory_view2arr> *container = (WireTypePack<memory_view2arr> *)handle->data;
+                // GenericWireType *container_cursor = (GenericWireType *)(EM_VAR_ARGS)*container;
 
-                    // handle = std::make_shared<_EM_VAL>(val);
-                    handle = EM_VAL(val);
-
-                    memory_view2arr data(p.size(), (elem_type *)p.data());
-                    WireTypePack<memory_view2arr> *argv = new WireTypePack<memory_view2arr>(std::forward<memory_view2arr>(data));
-                    handle->data = argv;
-                }
-                arr &array = static_cast<__EM_VAL<arr> *>(handle.get())->container;
-                WireTypePack<memory_view2arr> *container = (WireTypePack<memory_view2arr> *)handle->data;
-                GenericWireType *container_cursor = (GenericWireType *)(EM_VAR_ARGS)*container;
-
-                std::initializer_list<int>{(push(container_cursor, array, std::forward<Args>(args)), 0)...};
+                std::initializer_list<int>{(val_array_push(handle, std::forward<Args>(args)), 0)...};
             }
         }
 

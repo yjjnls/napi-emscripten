@@ -986,3 +986,13 @@ QUnit.test('test_mat_diag', function(assert) {
         d2.delete();
     }
 });
+
+QUnit.test('test_array', function (assert) {
+    {
+        let mat = cv.Mat.ones(5, 5, cv.CV_8UC1);
+        let res = cv.meanShift(mat, { x: 1, y: 1, width: 2, height: 2 }, { type: 0, maxCount: 1, epsilon: 0.0001 })
+        assert.deepEqual(res, [0, { y: 1, x: 1, height: 2, width: 2 }]);
+        mat.delete();
+        mat = null;
+    }
+});

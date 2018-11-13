@@ -22,9 +22,9 @@ class Gen:
         self.namespace = supplement['namespace']
         self.namespace_name = []
         for namespace in self.namespace:
-            searchObj = re.search('namespace (.*)\n',namespace)
+            searchObj = re.search('namespace (.*)\n', namespace)
             if searchObj:
-                self.namespace_name.append( searchObj.group(1))        
+                self.namespace_name.append(searchObj.group(1))
         self.base_path = os.path.dirname(os.path.realpath(target))
 
         self.classes = {}
@@ -66,9 +66,18 @@ class Gen:
         for content in self.supplement:
             supplement += (content + '\n')
         self.output_cxx_fp.write(template.bind_cxx_fixed % supplement)
-
         # namespace
         self.generate_namespace()
+        #
+        convert = ''
+        for instance in self.classes.values():
+            convert += 'napi_value cpp2napi(const %s &arg);\n' % instance['cxxtype']
+        for instance in self.value_objects.values():
+            convert += 'napi_value cpp2napi(const %s &arg);\n' % instance['cxxtype']
+        for instance in self.vectors.values():
+            convert += 'napi_value cpp2napi(const %s &arg);\n' % instance['cxxtype']
+
+        self.output_cxx_fp.write(template.fixed_function % convert)
 
         napi_init_declaration = ''
         napi_create_declaration = ''
@@ -136,7 +145,7 @@ class Gen:
 
     def generate_namespace(self):
         for namespace in self.namespace:
-            self.output_cxx_fp.write(namespace);
+            self.output_cxx_fp.write(namespace)
 
     # ****
     def parse_func_line(self, line, cxx_type, bool_static=False, getter=True):
@@ -285,19 +294,23 @@ class Gen:
         arg = self.normalize_arg(arg)
 
         if arg == 'void':
-            return template.return_void.substitute(napi_val=napi_value)
-        if arg == 'bool':
-            return template.return_bool.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        if arg in ['int', 'size_t', 'short', 'char']:
-            return template.return_int.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        if arg in ['unsigned int', 'unsigned short', 'unsigned char']:
-            return template.return_uint.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        if arg in ['intptr_t', 'long']:
-            return template.return_long.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        if arg in ['float', 'double']:
-            return template.return_double.substitute(cxx_val=cxx_value, napi_val=napi_value)
-        if arg in ['std::string', 'string']:
-            return template.return_string.substitute(cxx_val=cxx_value, napi_val=napi_value)
+            return "\t%s = cpp2napi();\n " % (napi_value)
+        if arg in ['bool', 'int', 'size_t', 'short', 'char', 'unsigned int', 'unsigned short', 'unsigned char', 'intptr_t', 'long', 'float', 'double', 'std::string', 'string']:
+            return "\t%s = cpp2napi(%s);\n " % (napi_value, cxx_value)
+        # if arg == 'void':
+        #     return template.return_void.substitute(napi_val=napi_value)
+        # if arg == 'bool':
+        #     return template.return_bool.substitute(cxx_val=cxx_value, napi_val=napi_value)
+        # if arg in ['int', 'size_t', 'short', 'char']:
+        #     return template.return_int.substitute(cxx_val=cxx_value, napi_val=napi_value)
+        # if arg in ['unsigned int', 'unsigned short', 'unsigned char']:
+        #     return template.return_uint.substitute(cxx_val=cxx_value, napi_val=napi_value)
+        # if arg in ['intptr_t', 'long']:
+        #     return template.return_long.substitute(cxx_val=cxx_value, napi_val=napi_value)
+        # if arg in ['float', 'double']:
+        #     return template.return_double.substitute(cxx_val=cxx_value, napi_val=napi_value)
+        # if arg in ['std::string', 'string']:
+        #     return template.return_string.substitute(cxx_val=cxx_value, napi_val=napi_value)
 
         if not instance == None:
             cxx_type = instance['cxxtype'].split('::')[-1]
@@ -319,28 +332,29 @@ class Gen:
         for obj in self.value_objects.values():
             arg_type = arg.split('::')[-1]
             if arg_type == obj['cxxtype'].split('::')[-1]:
-                fun = ''
-                for prop in obj['properties'].items():
-                    prop_name = prop[0]
-                    prop_type = prop[1][0][0]
-                    if not arg_name == None:
-                        value_name = '%s_%s_val' % (arg_name, prop_name)
-                    else:
-                        value_name = '%s_val' % prop_name
-                    fun += '\tnapi_value %s;\n' % value_name
-                    if prop[1][0][2] == None:
-                        get_val = cxx_value + '.' + prop[1][0][3]
-                    else:
-                        get_val = '%s(%s)' % (prop[1][0][2], cxx_value)
+                return "\t%s = cpp2napi(%s);\n " % (napi_value, cxx_value)
+                # fun = ''
+                # for prop in obj['properties'].items():
+                #     prop_name = prop[0]
+                #     prop_type = prop[1][0][0]
+                #     if not arg_name == None:
+                #         value_name = '%s_%s_val' % (arg_name, prop_name)
+                #     else:
+                #         value_name = '%s_val' % prop_name
+                #     fun += '\tnapi_value %s;\n' % value_name
+                #     if prop[1][0][2] == None:
+                #         get_val = cxx_value + '.' + prop[1][0][3]
+                #     else:
+                #         get_val = '%s(%s)' % (prop[1][0][2], cxx_value)
 
-                    fun += self.parse_return_type(instance,
-                                                  prop_type,
-                                                  cxx_value=get_val,
-                                                  napi_value=value_name,
-                                                  arg_name=prop_name)
+                #     fun += self.parse_return_type(instance,
+                #                                   prop_type,
+                #                                   cxx_value=get_val,
+                #                                   napi_value=value_name,
+                #                                   arg_name=prop_name)
 
-                    fun += '\tnapi_set_named_property(env, %s, "%s", %s);\n' % (napi_value, prop_name, value_name)
-                return template.return_obj.substitute(napi_val=napi_value, obj_detail=fun)
+                #     fun += '\tnapi_set_named_property(env, %s, "%s", %s);\n' % (napi_value, prop_name, value_name)
+                # return template.return_obj.substitute(napi_val=napi_value, obj_detail=fun)
         # return value_array
         for arr in self.value_arrays.values():
             if arr['jstype'].split('::')[-1] == arg.split('::')[-1]:
@@ -366,17 +380,21 @@ class Gen:
         if 'val' in arg:
             val_type = arg.split(',')[-1]
             # return typedarray
-            if '[' in val_type:
+            if '[]' == val_type:
+                return template.return_val_array.substitute(cxx_val=cxx_value,
+                                                            napi_val=napi_value,
+                                                            val_type=val_type)
+            elif '[' in val_type:
                 searchObj = re.search('(\[)(.*)(\])', val_type)
                 if searchObj:
                     val_type = searchObj.group(2)
                 # array of basic type
                 if val_type in ['char', 'unsigned char', 'short', 'unsigned short',
                                 'int', 'unsigned int', 'float', 'double', 'long', 'size_t']:
-                    return template.return_val_array.substitute(cxx_val=cxx_value,
-                                                                napi_val=napi_value,
-                                                                val_type=val_type,
-                                                                array_type=template.arr_type[val_type])
+                    return template.return_val_typedarray.substitute(cxx_val=cxx_value,
+                                                                     napi_val=napi_value,
+                                                                     val_type=val_type,
+                                                                     array_type=template.arr_type[val_type])
                 else:
                     print "error  " + val_type
                     print cxx_fun_name
@@ -832,6 +850,19 @@ class Gen:
             self.generate_constructor(instance)
             # property implementation
             self.generate_prop(instance)
+
+            fun = ''
+            for prop in instance['properties'].items():
+                prop_name = prop[0]
+                prop_type = prop[1][0][0]
+                value_name = '%s_val' % prop_name
+                if prop[1][0][2] == None:
+                    fun += '\tnapi_value %s = cpp2napi(%s);\n' % (value_name, 'arg.' +
+                                                                  self.normalize_arg(prop[1][0][3]))
+                else:
+                    fun += '\tnapi_value %s = cpp2napi(%s(arg));\n' % (value_name, prop[1][0][2])
+                fun += '\tnapi_set_named_property(global_env, res, "%s", %s);\n' % (prop_name, value_name)
+            self.output_cxx_fp.write(template.return_obj.substitute(cxx_type=instance['cxxtype'], obj_detail=fun))
 
     # -------------------arrays----------------------------
     def parse_arrays(self, arrays):
