@@ -4,43 +4,27 @@ const bindingPath = require.resolve(`./plugin/opencv.js`);
 const cv = require('./plugin/opencv.js');
 
 const assert = require('assert');
+// let mat = cv.Mat.ones(5, 5, cv.CV_8UC1);
+// console.log(mat.step)
+// let res = cv.meanShift(mat, { x: 1, y: 1, width: 2, height: 2 }, { type: 0, maxCount: 1, epsilon: 0.0001 })
+// console.log(res)
 
-const R =7;
-const G =13;
-const B =29;
+console.log("---------1----------")
+let mat = new cv.Mat(2, 2, cv.CV_8UC4, [0, 1, 2, 3]);
+console.log("---------2----------")
 
-let mat = cv.Mat.ones(5, 5, cv.CV_8UC3);
-console.log("----------1-----------")
-let view = mat.data;
-console.log("----------2-----------")
-view[0] = R;
-view[1] = G;
-view[2] = B;
-
-console.log("----------3-----------")
-let bgrPlanes = new cv.MatVector();
-console.log("----------4-----------")
-cv.split(mat, bgrPlanes);
-console.log("----------5-----------")
-assert.equal(bgrPlanes.size(), 3);
-
-let rMat = bgrPlanes.get(0);
-view = rMat.data;
-assert.equal(view[0], R);
-
-let gMat = bgrPlanes.get(1);
-view = gMat.data;
-assert.equal(view[0], G);
-
-let bMat = bgrPlanes.get(2);
-view = bMat.data;
-assert.equal(view[0], B);
+for (let r = 0; r < mat.rows; r++) {
+    for (let c = 0; c < mat.cols; c++) {
+        let element = mat.ptr(r, c);
+        assert.equal(element[0], 0);
+        assert.equal(element[1], 1);
+        assert.equal(element[2], 2);
+        assert.equal(element[3], 3);
+    }
+}
+console.log("---------3----------")
 
 mat.delete();
-rMat.delete();
-gMat.delete();
-bgrPlanes.delete();
-bMat.delete();
 
 global.gc();
 

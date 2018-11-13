@@ -143,12 +143,12 @@ Napi class will own a pointer pointing to c++ instance. This instance is dynamic
 
 - [x] synax in js class instance   
 cv.Mat.ones() has synax error in node.js
-==>set Mat as napi_function
 
 - [x] gcc compile   
-==>remove corebinding.cpp from project
 
 - [ ] return val   
 return type of val( array of objects ) is ambigous. If the element type is basic type, int, float,etc, val should be transfered to napi typedarray(napi_int32_array, etc.).
 
     ==>use napi_array
+
+- [ ] run emscripten tests

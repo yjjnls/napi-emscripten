@@ -76,6 +76,128 @@ struct VectorAccess
 }  // namespace internal
 }  // namespace emscripten
 """
+fixed_function = """
+namespace emscripten {
+namespace internal {
+EM_VAL _emval_new_array()
+{
+    typedef std::vector<napi_value> arr;
+    typedef emscripten::memory_view<napi_value> memory_view2arr;
+    _EM_VAL *val = new __EM_VAL<arr>(arr());
+    val->type = _EMVAL_ARRAY;
+    arr &p = static_cast<__EM_VAL<arr> *>(val)->container;
+
+    // handle = std::make_shared<_EM_VAL>(val);
+    EM_VAL handle = EM_VAL(val);
+
+    memory_view2arr data(p.size(), (napi_value *)p.data());
+    WireTypePack<memory_view2arr> *argv = new WireTypePack<memory_view2arr>(std::forward<memory_view2arr>(data));
+    handle->data = argv;
+
+    return handle;
+}
+static napi_env global_env = nullptr;
+template <typename Arg>
+napi_value cpp2napi(Arg arg)
+{
+    printf("cpp2napi type not supported!\\n");
+    return nullptr;
+}
+napi_value cpp2napi()
+{
+    return nullptr;
+}
+napi_value cpp2napi(bool arg)
+{
+    napi_value res;
+    napi_get_boolean(global_env, arg, &res);
+    return res;
+}
+napi_value cpp2napi(char arg)
+{
+    napi_value res;
+    napi_create_int32(global_env, (int32_t)arg, &res);
+    return res;
+}
+napi_value cpp2napi(unsigned char arg)
+{
+    napi_value res;
+    napi_create_uint32(global_env, (uint32_t)arg, &res);
+    return res;
+}
+napi_value cpp2napi(short arg)
+{
+    napi_value res;
+    napi_create_int32(global_env, (int32_t)arg, &res);
+    return res;
+}
+napi_value cpp2napi(unsigned short arg)
+{
+    napi_value res;
+    napi_create_uint32(global_env, (uint32_t)arg, &res);
+    return res;
+}
+napi_value cpp2napi(int arg)
+{
+    napi_value res;
+    napi_create_int32(global_env, arg, &res);
+    return res;
+}
+napi_value cpp2napi(unsigned int arg)
+{
+    napi_value res;
+    napi_create_uint32(global_env, arg, &res);
+    return res;
+}
+napi_value cpp2napi(size_t arg)
+{
+    napi_value res;
+    napi_create_int64(global_env, arg, &res);
+    return res;
+}
+napi_value cpp2napi(long arg)
+{
+    napi_value res;
+    napi_create_int64(global_env, arg, &res);
+    return res;
+}
+napi_value cpp2napi(float arg)
+{
+    napi_value res;
+    napi_create_double(global_env, (double)arg, &res);
+    return res;
+}
+napi_value cpp2napi(double arg)
+{
+    napi_value res;
+    napi_create_double(global_env, arg, &res);
+    return res;
+}
+napi_value cpp2napi(const std::string &arg)
+{
+    napi_value res;
+    napi_create_string_utf8(global_env, arg.c_str(), arg.size(), &res);
+    return res;
+}
+%s
+template <typename Arg>
+void val_array_push(EM_VAL handle, Arg arg)
+{
+    typedef std::vector<napi_value> arr;
+    typedef emscripten::memory_view<napi_value> memory_view2arr;
+
+    arr &array = static_cast<__EM_VAL<arr> *>(handle.get())->container;
+    WireTypePack<memory_view2arr> *container = (WireTypePack<memory_view2arr> *)handle->data;
+    GenericWireType *container_cursor = (GenericWireType *)(EM_VAR_ARGS)*container;
+
+    napi_value res = cpp2napi(arg);
+    array.push_back(res);
+    container_cursor->w[1].p = array.data();
+    container_cursor->w[0].u = array.size();
+}
+}  // namespace internal
+}  // namespace emscripten
+"""
 
 class_declaration = Template("""
 /////////////////////////////////${jstype}///////////////////////////////////////
@@ -250,6 +372,7 @@ ${declare_function}
 napi_init = Template("""
 napi_value Init(napi_env env, napi_value exports)
 {
+    global_env = env;
 ${init}
     napi_property_descriptor desc[] = {
 ${declaration}
@@ -392,8 +515,21 @@ return_class = Template("""    napi_value cons;
     napi_unwrap(env, ${napi_val}, reinterpret_cast<void **>(&p));
     p->update_target(${cxx_val});
 """)
-return_obj = Template("""    napi_create_object(env, &${napi_val});
+# return_obj = Template("""    napi_create_object(env, &${napi_val});
+# ${obj_detail}
+# """)
+return_obj = Template("""
+namespace emscripten {
+namespace internal {
+napi_value cpp2napi(const ${cxx_type} &arg)
+{
+    napi_value res;
+    napi_create_object(global_env, &res);
 ${obj_detail}
+    return res;
+}
+}  // namespace internal
+}  // namespace emscripten
 """)
 return_array = Template("""    napi_create_array(env, &${napi_val});
     for (int i = 0; i < argc; i++) {
@@ -414,7 +550,7 @@ arr_type = {
     'long': 'napi_bigint64_array',
     'size_t': 'napi_biguint64_array'
 }
-return_val_array = Template("""    WireTypePack<${val_type}> *argv = (WireTypePack<${val_type}> *)${cxx_val}.get_handle()->data;
+return_val_typedarray = Template("""    WireTypePack<${val_type}> *argv = (WireTypePack<${val_type}> *)${cxx_val}.get_handle()->data;
     GenericWireType *cursor = (GenericWireType *)(EM_VAR_ARGS)*argv;
     size_t array_length = cursor->w[0].u;
     void *array_data = (void *)cursor->w[1].p;
@@ -432,6 +568,18 @@ return_val_array = Template("""    WireTypePack<${val_type}> *argv = (WireTypePa
                            output_buffer,
                            0,
                            &${napi_val});
+    delete argv;
+    ${cxx_val}.clear_handle();
+""")
+return_val_array = Template("""    WireTypePack<napi_value> *argv = (WireTypePack<napi_value> *)${cxx_val}.get_handle()->data;
+    GenericWireType *cursor = (GenericWireType *)(EM_VAR_ARGS)*argv;
+    size_t array_length = cursor->w[0].u;
+    napi_value *array_data = (napi_value *)cursor->w[1].p;
+
+    napi_create_array(env, &${napi_val});
+    for (int i = 0; i < array_length; ++i) {
+        napi_set_element(env, ${napi_val}, i, array_data[i]);
+    }
     delete argv;
     ${cxx_val}.clear_handle();
 """)

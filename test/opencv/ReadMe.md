@@ -28,7 +28,8 @@ $ LD_LIBRARY_PATH=/usr/local/lib node tests.js
 
 5. `val` is commonly JsArray format, it can be napi typedarray, object, number, string or others. It shoud noted according to their function name. In function args, val usually is array type. While in function return type, it can not only be array but also be single number, string or object.
 
-
+if val is array, you can note that `val,[int]`, this means it returns an array of int, it's typed array.
+if val uses val::array() and call("push",...), it may be an array of different types, so it should note `val,[]`.
 
 
 ## notes
