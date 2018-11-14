@@ -71,7 +71,7 @@ namespace emscripten {
         struct __EM_VAL : public _EM_VAL
         {
             __EM_VAL(const T &c)
-                : _EM_VAL(),container(c)
+                : _EM_VAL(), container(c)
             {
             }
             T container;
@@ -91,7 +91,7 @@ namespace emscripten {
             typedef double EM_GENERIC_WIRE_TYPE;
             typedef const void* EM_VAR_ARGS;
 
-            void _emval_incref(EM_VAL value);
+            void _emval_incref(EM_VAL value){}
             void _emval_decref(EM_VAL value){}
 
             void _emval_run_destructors(EM_DESTRUCTORS handle);
@@ -346,25 +346,50 @@ namespace emscripten {
         // exposing void, comma, and conditional is unnecessary
         // same with: = += -= *= /= %= <<= >>= >>>= &= ^= |=
 
+        static val undefined() {
+            return val(std::make_shared<internal::_EM_VAL>(internal::_EMVAL_UNDEFINED));
+        }
+
         static val array() {
             return val(internal::_emval_new_array());
         }
 
         template<typename T>
         static val array(const std::vector<T> vec) {
-            val new_array = array();
-            for(auto it = vec.begin(); it != vec.end(); it++)
-                new_array.call<void>("push", *it);
-            return new_array;
+            val res = undefined();
+
+            using namespace emscripten::internal;
+            // it's clear this is a typed array
+            typedef std::vector<T> arr;
+            typedef emscripten::memory_view<T> memory_view2arr;
+            // copy and store vec
+            _EM_VAL *val = new __EM_VAL<arr>(vec);
+            arr &p = static_cast<__EM_VAL<arr> *>(val)->container;
+
+            EM_VAL handle = EM_VAL(val);
+
+            memory_view2arr data(p.size(), (T *)p.data());
+            WireTypePack<memory_view2arr> *argv =
+                new WireTypePack<memory_view2arr>(std::forward<memory_view2arr>(data));
+            handle->data = argv;
+
+            res.handle = handle;
+            return res;
+            // res->handle = handle;
+            // return val(handle);
+
+
+            // val new_array = array();
+            // for(auto it = vec.begin(); it != vec.end(); it++)
+            //     new_array.call<void>("push", *it);
+            // return new_array;
         }
 
         static val object() {
             return val(internal::_emval_new_object());
         }
 
-        static val undefined() {
-            return val(std::make_shared<internal::_EM_VAL>(internal::_EMVAL_UNDEFINED));
-        }
+
 
         static val null() {
             return val(std::make_shared<internal::_EM_VAL>(internal::_EMVAL_NULL));
@@ -663,16 +688,31 @@ namespace emscripten {
         };
     }
 
+    // template<typename T>
+    // std::vector<T> vecFromJSArray(val v) {
+    //     auto l = v["length"].as<unsigned>();
+
+    //     std::vector<T> rv;
+    //     for(unsigned i = 0; i < l; ++i) {
+    //         rv.push_back(v[i].as<T>());
+    //     }
+
+    //     return rv;
+    // };
+
     template<typename T>
     std::vector<T> vecFromJSArray(val v) {
-        auto l = v["length"].as<unsigned>();
+        using namespace emscripten::internal;
+        typedef std::vector<T> arr;
+        typedef emscripten::memory_view<T> memory_view2arr;
 
-        std::vector<T> rv;
-        for(unsigned i = 0; i < l; ++i) {
-            rv.push_back(v[i].as<T>());
-        }
+        arr array = static_cast<__EM_VAL<arr> *>(v.get_handle().get())->container;
 
-        return rv;
+        WireTypePack<memory_view2arr> *argv = (WireTypePack<memory_view2arr> *)v.get_handle()->data;
+        delete argv;
+        v.clear_handle();
+
+        return array;
     };
 }
 

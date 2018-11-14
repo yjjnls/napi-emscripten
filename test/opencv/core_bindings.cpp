@@ -853,6 +853,76 @@ namespace Wrappers
     void HOGDescriptor_detectMultiScale_wrapper_6(cv::HOGDescriptor& arg0 , const cv::Mat& arg1, std::vector<Rect>& arg2, std::vector<double>& arg3) {
         return arg0.detectMultiScale(arg1, arg2, arg3);
     }
+
+    void min_wrapper(const cv::Mat& arg1, const cv::Mat& arg2, cv::Mat& arg3) {
+        return cv::min(arg1, arg2, arg3);
+    }
+    void max_wrapper(const cv::Mat& arg1, const cv::Mat& arg2, cv::Mat& arg3) {
+        return cv::max(arg1, arg2, arg3);
+    }
+    
+    void bitwise_and_wrapper(const cv::Mat& arg1, const cv::Mat& arg2, cv::Mat& arg3, const cv::Mat& arg4) {
+        return cv::bitwise_and(arg1, arg2, arg3, arg4);
+    }
+    
+    void bitwise_and_wrapper_1(const cv::Mat& arg1, const cv::Mat& arg2, cv::Mat& arg3) {
+        return cv::bitwise_and(arg1, arg2, arg3);
+    }
+    
+    void bitwise_not_wrapper(const cv::Mat& arg1, cv::Mat& arg2, const cv::Mat& arg3) {
+        return cv::bitwise_not(arg1, arg2, arg3);
+    }
+    
+    void bitwise_not_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2) {
+        return cv::bitwise_not(arg1, arg2);
+    }
+    
+    void bitwise_or_wrapper(const cv::Mat& arg1, const cv::Mat& arg2, cv::Mat& arg3, const cv::Mat& arg4) {
+        return cv::bitwise_or(arg1, arg2, arg3, arg4);
+    }
+    
+    void bitwise_or_wrapper_1(const cv::Mat& arg1, const cv::Mat& arg2, cv::Mat& arg3) {
+        return cv::bitwise_or(arg1, arg2, arg3);
+    }
+    
+    void bitwise_xor_wrapper(const cv::Mat& arg1, const cv::Mat& arg2, cv::Mat& arg3, const cv::Mat& arg4) {
+        return cv::bitwise_xor(arg1, arg2, arg3, arg4);
+    }
+    
+    void bitwise_xor_wrapper_1(const cv::Mat& arg1, const cv::Mat& arg2, cv::Mat& arg3) {
+        return cv::bitwise_xor(arg1, arg2, arg3);
+    }
+
+    void absdiff_wrapper(const cv::Mat& arg1, const cv::Mat& arg2, cv::Mat& arg3) {
+        return cv::absdiff(arg1, arg2, arg3);
+    }
+    void add_wrapper(const cv::Mat& arg1, const cv::Mat& arg2, cv::Mat& arg3, const cv::Mat& arg4, int arg5) {
+        return cv::add(arg1, arg2, arg3, arg4, arg5);
+    }
+    
+    void add_wrapper_1(const cv::Mat& arg1, const cv::Mat& arg2, cv::Mat& arg3, const cv::Mat& arg4) {
+        return cv::add(arg1, arg2, arg3, arg4);
+    }
+    
+    void add_wrapper_2(const cv::Mat& arg1, const cv::Mat& arg2, cv::Mat& arg3) {
+        return cv::add(arg1, arg2, arg3);
+    }
+    
+    void addWeighted_wrapper(const cv::Mat& arg1, double arg2, const cv::Mat& arg3, double arg4, double arg5, cv::Mat& arg6, int arg7) {
+        return cv::addWeighted(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+    }
+    
+    void addWeighted_wrapper_1(const cv::Mat& arg1, double arg2, const cv::Mat& arg3, double arg4, double arg5, cv::Mat& arg6) {
+        return cv::addWeighted(arg1, arg2, arg3, arg4, arg5, arg6);
+    }
+
+    double invert_wrapper(const cv::Mat& arg1, cv::Mat& arg2, int arg3) {
+        return cv::invert(arg1, arg2, arg3);
+    }
+    
+    double invert_wrapper_1(const cv::Mat& arg1, cv::Mat& arg2) {
+        return cv::invert(arg1, arg2);
+    }
 }
 
 EMSCRIPTEN_BINDINGS(testBinding) {
@@ -901,6 +971,41 @@ EMSCRIPTEN_BINDINGS(testBinding) {
     function("groupRectangles", select_overload<void(std::vector<Rect>&, std::vector<int>&, int, double)>(&Wrappers::groupRectangles_wrapper));
 
     function("groupRectangles", select_overload<void(std::vector<Rect>&, std::vector<int>&, int)>(&Wrappers::groupRectangles_wrapper_1));
+
+    function("min", select_overload<void(const cv::Mat&, const cv::Mat&, cv::Mat&)>(&Wrappers::min_wrapper));
+
+    function("max", select_overload<void(const cv::Mat&, const cv::Mat&, cv::Mat&)>(&Wrappers::max_wrapper));
+
+    function("bitwise_and", select_overload<void(const cv::Mat&, const cv::Mat&, cv::Mat&, const cv::Mat&)>(&Wrappers::bitwise_and_wrapper));
+
+    function("bitwise_and", select_overload<void(const cv::Mat&, const cv::Mat&, cv::Mat&)>(&Wrappers::bitwise_and_wrapper_1));
+
+    function("bitwise_not", select_overload<void(const cv::Mat&, cv::Mat&, const cv::Mat&)>(&Wrappers::bitwise_not_wrapper));
+
+    function("bitwise_not", select_overload<void(const cv::Mat&, cv::Mat&)>(&Wrappers::bitwise_not_wrapper_1));
+
+    function("bitwise_or", select_overload<void(const cv::Mat&, const cv::Mat&, cv::Mat&, const cv::Mat&)>(&Wrappers::bitwise_or_wrapper));
+
+    function("bitwise_or", select_overload<void(const cv::Mat&, const cv::Mat&, cv::Mat&)>(&Wrappers::bitwise_or_wrapper_1));
+
+    function("bitwise_xor", select_overload<void(const cv::Mat&, const cv::Mat&, cv::Mat&, const cv::Mat&)>(&Wrappers::bitwise_xor_wrapper));
+
+    function("bitwise_xor", select_overload<void(const cv::Mat&, const cv::Mat&, cv::Mat&)>(&Wrappers::bitwise_xor_wrapper_1));
+
+    function("absdiff", select_overload<void(const cv::Mat&, const cv::Mat&, cv::Mat&)>(&Wrappers::absdiff_wrapper));
+    function("add", select_overload<void(const cv::Mat&, const cv::Mat&, cv::Mat&, const cv::Mat&, int)>(&Wrappers::add_wrapper));
+
+    function("add", select_overload<void(const cv::Mat&, const cv::Mat&, cv::Mat&, const cv::Mat&)>(&Wrappers::add_wrapper_1));
+
+    function("add", select_overload<void(const cv::Mat&, const cv::Mat&, cv::Mat&)>(&Wrappers::add_wrapper_2));
+
+    function("addWeighted", select_overload<void(const cv::Mat&, double, const cv::Mat&, double, double, cv::Mat&, int)>(&Wrappers::addWeighted_wrapper));
+
+    function("addWeighted", select_overload<void(const cv::Mat&, double, const cv::Mat&, double, double, cv::Mat&)>(&Wrappers::addWeighted_wrapper_1));
+
+    function("invert", select_overload<double(const cv::Mat&, cv::Mat&, int)>(&Wrappers::invert_wrapper));
+
+    function("invert", select_overload<double(const cv::Mat&, cv::Mat&)>(&Wrappers::invert_wrapper_1));
 
     emscripten::class_<cv::CascadeClassifier >("CascadeClassifier")
         .function("load", select_overload<bool(cv::CascadeClassifier&,const std::string&)>(&Wrappers::CascadeClassifier_load_wrapper))

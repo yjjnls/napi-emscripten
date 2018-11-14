@@ -118,7 +118,7 @@ QUnit.test('test_mat_creation', function(assert) {
     {
         // 10 * 10 and one channel
         let data = cv._malloc(10 * 10 * 1);
-        let mat = new cv.Mat(10, 10, cv.CV_8UC1, data, 0);
+        let mat = new cv.Mat(10, 10, cv.CV_8UC1, data + cv.address, 0);
 
         assert.equal(mat.type(), cv.CV_8UC1);
         assert.equal(mat.depth(), cv.CV_8U);
@@ -751,115 +751,115 @@ QUnit.test('test_mat_miscs', function(assert) {
 
 
 QUnit.test('test mat access', function(assert) {
-    // // test memory view
-    // {
-    //     let data = new Uint8Array([0, 0, 0, 255, 0, 1, 2, 3]);
-    //     let dataPtr = cv._malloc(8);
+    // test memory view
+    {
+        let data = new Uint8Array([0, 0, 0, 255, 0, 1, 2, 3]);
+        let dataPtr = cv._malloc(8);
 
-    //     let dataHeap = new Uint8Array(cv.HEAPU8.buffer, dataPtr, 8);
-    //     dataHeap.set(new Uint8Array(data.buffer));
+        let dataHeap = new Uint8Array(cv.HEAPU8.buffer, dataPtr, 8);
+        dataHeap.set(new Uint8Array(data.buffer));
 
-    //     let mat = new cv.Mat(8, 1, cv.CV_8UC1, dataPtr, 0);
-
-
-    //     let unsignedCharView = new Uint8Array(data.buffer);
-    //     let charView = new Int8Array(data.buffer);
-    //     let shortView = new Int16Array(data.buffer);
-    //     let unsignedShortView = new Uint16Array(data.buffer);
-    //     let intView = new Int32Array(data.buffer);
-    //     let float32View = new Float32Array(data.buffer);
-    //     let float64View = new Float64Array(data.buffer);
+        let mat = new cv.Mat(8, 1, cv.CV_8UC1, dataPtr + cv.address, 0);
 
 
-    //     assert.deepEqual(unsignedCharView, mat.data);
-    //     assert.deepEqual(charView, mat.data8S);
-    //     assert.deepEqual(shortView, mat.data16S);
-    //     assert.deepEqual(unsignedShortView, mat.data16U);
-    //     assert.deepEqual(intView, mat.data32S);
-    //     assert.deepEqual(float32View, mat.data32F);
-    //     assert.deepEqual(float64View, mat.data64F);
-    // }
+        let unsignedCharView = new Uint8Array(data.buffer);
+        let charView = new Int8Array(data.buffer);
+        let shortView = new Int16Array(data.buffer);
+        let unsignedShortView = new Uint16Array(data.buffer);
+        let intView = new Int32Array(data.buffer);
+        let float32View = new Float32Array(data.buffer);
+        let float64View = new Float64Array(data.buffer);
 
-    // // test ucharAt(i)
-    // {
-    //     let data = new Uint8Array([0, 0, 0, 255, 0, 1, 2, 3]);
-    //     let dataPtr = cv._malloc(8);
 
-    //     let dataHeap = new Uint8Array(cv.HEAPU8.buffer, dataPtr, 8);
-    //     dataHeap.set(new Uint8Array(data.buffer));
+        assert.deepEqual(unsignedCharView, mat.data);
+        assert.deepEqual(charView, mat.data8S);
+        assert.deepEqual(shortView, mat.data16S);
+        assert.deepEqual(unsignedShortView, mat.data16U);
+        assert.deepEqual(intView, mat.data32S);
+        assert.deepEqual(float32View, mat.data32F);
+        assert.deepEqual(float64View, mat.data64F);
+    }
 
-    //     let mat = new cv.Mat(8, 1, cv.CV_8UC1, dataPtr, 0);
+    // test ucharAt(i)
+    {
+        let data = new Uint8Array([0, 0, 0, 255, 0, 1, 2, 3]);
+        let dataPtr = cv._malloc(8);
 
-    //     assert.equal(mat.ucharAt(0), 0);
-    //     assert.equal(mat.ucharAt(1), 0);
-    //     assert.equal(mat.ucharAt(2), 0);
-    //     assert.equal(mat.ucharAt(3), 255);
-    //     assert.equal(mat.ucharAt(4), 0);
-    //     assert.equal(mat.ucharAt(5), 1);
-    //     assert.equal(mat.ucharAt(6), 2);
-    //     assert.equal(mat.ucharAt(7), 3);
-    // }
+        let dataHeap = new Uint8Array(cv.HEAPU8.buffer, dataPtr, 8);
+        dataHeap.set(new Uint8Array(data.buffer));
 
-    // // test ushortAt(i)
-    // {
-    //     let data = new Uint16Array([0, 1000, 65000, 255, 0, 1, 2, 3]);
-    //     let dataPtr = cv._malloc(16);
+        let mat = new cv.Mat(8, 1, cv.CV_8UC1, dataPtr + cv.address, 0);
 
-    //     let dataHeap = new Uint16Array(cv.HEAPU8.buffer, dataPtr, 8);
-    //     dataHeap.set(new Uint16Array(data.buffer));
+        assert.equal(mat.ucharAt(0), 0);
+        assert.equal(mat.ucharAt(1), 0);
+        assert.equal(mat.ucharAt(2), 0);
+        assert.equal(mat.ucharAt(3), 255);
+        assert.equal(mat.ucharAt(4), 0);
+        assert.equal(mat.ucharAt(5), 1);
+        assert.equal(mat.ucharAt(6), 2);
+        assert.equal(mat.ucharAt(7), 3);
+    }
 
-    //     let mat = new cv.Mat(8, 1, cv.CV_16SC1, dataPtr, 0);
+    // test ushortAt(i)
+    {
+        let data = new Uint16Array([0, 1000, 65000, 255, 0, 1, 2, 3]);
+        let dataPtr = cv._malloc(16);
 
-    //     assert.equal(mat.ushortAt(0), 0);
-    //     assert.equal(mat.ushortAt(1), 1000);
-    //     assert.equal(mat.ushortAt(2), 65000);
-    //     assert.equal(mat.ushortAt(3), 255);
-    //     assert.equal(mat.ushortAt(4), 0);
-    //     assert.equal(mat.ushortAt(5), 1);
-    //     assert.equal(mat.ushortAt(6), 2);
-    //     assert.equal(mat.ushortAt(7), 3);
-    // }
+        let dataHeap = new Uint16Array(cv.HEAPU8.buffer, dataPtr, 8);
+        dataHeap.set(new Uint16Array(data.buffer));
 
-    // // test intAt(i)
-    // {
-    //     let data = new Int32Array([0, -1000, 65000, 255, -2000000, -1, 2, 3]);
-    //     let dataPtr = cv._malloc(32);
+        let mat = new cv.Mat(8, 1, cv.CV_16SC1, dataPtr + cv.address, 0);
 
-    //     let dataHeap = new Int32Array(cv.HEAPU32.buffer, dataPtr, 8);
-    //     dataHeap.set(new Int32Array(data.buffer));
+        assert.equal(mat.ushortAt(0), 0);
+        assert.equal(mat.ushortAt(1), 1000);
+        assert.equal(mat.ushortAt(2), 65000);
+        assert.equal(mat.ushortAt(3), 255);
+        assert.equal(mat.ushortAt(4), 0);
+        assert.equal(mat.ushortAt(5), 1);
+        assert.equal(mat.ushortAt(6), 2);
+        assert.equal(mat.ushortAt(7), 3);
+    }
 
-    //     let mat = new cv.Mat(8, 1, cv.CV_32SC1, dataPtr, 0);
+    // test intAt(i)
+    {
+        let data = new Int32Array([0, -1000, 65000, 255, -2000000, -1, 2, 3]);
+        let dataPtr = cv._malloc(32);
 
-    //     assert.equal(mat.intAt(0), 0);
-    //     assert.equal(mat.intAt(1), -1000);
-    //     assert.equal(mat.intAt(2), 65000);
-    //     assert.equal(mat.intAt(3), 255);
-    //     assert.equal(mat.intAt(4), -2000000);
-    //     assert.equal(mat.intAt(5), -1);
-    //     assert.equal(mat.intAt(6), 2);
-    //     assert.equal(mat.intAt(7), 3);
-    // }
+        let dataHeap = new Int32Array(cv.HEAPU32.buffer, dataPtr, 8);
+        dataHeap.set(new Int32Array(data.buffer));
 
-    // // test floatAt(i)
-    // {
-    //     const EPSILON = 0.001;
-    //     let data = new Float32Array([0, -10.5, 650.001, 255, -20.1, -1.2, 2, 3.5]);
-    //     let dataPtr = cv._malloc(32);
+        let mat = new cv.Mat(8, 1, cv.CV_32SC1, dataPtr + cv.address, 0);
 
-    //     let dataHeap = new Float32Array(cv.HEAPU32.buffer, dataPtr, 8);
-    //     dataHeap.set(new Float32Array(data.buffer));
+        assert.equal(mat.intAt(0), 0);
+        assert.equal(mat.intAt(1), -1000);
+        assert.equal(mat.intAt(2), 65000);
+        assert.equal(mat.intAt(3), 255);
+        assert.equal(mat.intAt(4), -2000000);
+        assert.equal(mat.intAt(5), -1);
+        assert.equal(mat.intAt(6), 2);
+        assert.equal(mat.intAt(7), 3);
+    }
 
-    //     let mat = new cv.Mat(8, 1, cv.CV_32FC1, dataPtr, 0);
+    // test floatAt(i)
+    {
+        const EPSILON = 0.001;
+        let data = new Float32Array([0, -10.5, 650.001, 255, -20.1, -1.2, 2, 3.5]);
+        let dataPtr = cv._malloc(32);
 
-    //     assert.equal(Math.abs(mat.floatAt(0)-0) < EPSILON, true);
-    //     assert.equal(Math.abs(mat.floatAt(1)+10.5) < EPSILON, true);
-    //     assert.equal(Math.abs(mat.floatAt(2)-650.001) < EPSILON, true);
-    //     assert.equal(Math.abs(mat.floatAt(3)-255) < EPSILON, true);
-    //     assert.equal(Math.abs(mat.floatAt(4)+20.1) < EPSILON, true);
-    //     assert.equal(Math.abs(mat.floatAt(5)+1.2) < EPSILON, true);
-    //     assert.equal(Math.abs(mat.floatAt(6)-2) < EPSILON, true);
-    //     assert.equal(Math.abs(mat.floatAt(7)-3.5) < EPSILON, true);
-    // }
+        let dataHeap = new Float32Array(cv.HEAPU32.buffer, dataPtr, 8);
+        dataHeap.set(new Float32Array(data.buffer));
+
+        let mat = new cv.Mat(8, 1, cv.CV_32FC1, dataPtr + cv.address, 0);
+
+        assert.equal(Math.abs(mat.floatAt(0)-0) < EPSILON, true);
+        assert.equal(Math.abs(mat.floatAt(1)+10.5) < EPSILON, true);
+        assert.equal(Math.abs(mat.floatAt(2)-650.001) < EPSILON, true);
+        assert.equal(Math.abs(mat.floatAt(3)-255) < EPSILON, true);
+        assert.equal(Math.abs(mat.floatAt(4)+20.1) < EPSILON, true);
+        assert.equal(Math.abs(mat.floatAt(5)+1.2) < EPSILON, true);
+        assert.equal(Math.abs(mat.floatAt(6)-2) < EPSILON, true);
+        assert.equal(Math.abs(mat.floatAt(7)-3.5) < EPSILON, true);
+    }
 
     // test intAt(i,j)
     {

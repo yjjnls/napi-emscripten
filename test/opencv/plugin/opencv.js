@@ -387,7 +387,9 @@ var HEAP,
     /** @type {Float64Array} */
     HEAPF64;
 
-buffer = Buffer.alloc(102400);
+var ref = require('ref');
+var buffer = new ArrayBuffer(1024 * 1024 * 100);
+const address = Buffer.from(buffer).address();
 Module['HEAP8'] = HEAP8 = new Int8Array(buffer);
 Module['HEAP16'] = HEAP16 = new Int16Array(buffer);
 Module['HEAP32'] = HEAP32 = new Int32Array(buffer);
@@ -396,18 +398,18 @@ Module['HEAPU16'] = HEAPU16 = new Uint16Array(buffer);
 Module['HEAPU32'] = HEAPU32 = new Uint32Array(buffer);
 Module['HEAPF32'] = HEAPF32 = new Float32Array(buffer);
 Module['HEAPF64'] = HEAPF64 = new Float64Array(buffer);
-
-Module['malloc'] = (num) => { return HEAPU8.byteOffset + num }
+var malloc_offset = 0;
+// Module['malloc'] = (num) => { return HEAPU8.byteOffset + num }
 
 class Mat {
-    constructor(arg0, arg1, arg2, arg3, arg4) {
+    constructor() {
         switch (arguments.length) {
             case 0: return new cv.Mat();
-            case 1: return new cv.Mat(arg0);
-            case 2: return new cv.Mat(arg0, arg1);
-            case 3: return new cv.Mat(arg0, arg1, arg2);
-            case 4: return new cv.Mat(arg0, arg1, arg2, arg3);
-            case 5: return new cv.Mat(arg0, arg1, arg2, arg3, arg4);
+            case 1: return new cv.Mat(arguments[0]);
+            case 2: return new cv.Mat(arguments[0], arguments[1]);
+            case 3: return new cv.Mat(arguments[0], arguments[1], arguments[2]);
+            case 4: return new cv.Mat(arguments[0], arguments[1], arguments[2], arguments[3]);
+            case 5: return new cv.Mat(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]);
         }
         // return this.mat
     }
@@ -423,22 +425,22 @@ class Mat {
     // isDeleted() {
     //     return this.mat.isDeleted();
     // }
-    static ones(arg0, arg1, arg2) {
+    static ones() {
         switch (arguments.length) {
-            case 2: return new Mat(cv.ones(arg0, arg1)); break;
-            case 3: return new Mat(cv.ones(arg0, arg1, arg2)); break;
+            case 2: return new Mat(cv.ones(arguments[0], arguments[1])); break;
+            case 3: return new Mat(cv.ones(arguments[0], arguments[1], arguments[2])); break;
         }
     }
-    static eye(arg0, arg1, arg2) {
+    static eye() {
         switch (arguments.length) {
-            case 2: return new Mat(cv.eye(arg0, arg1)); break;
-            case 3: return new Mat(cv.eye(arg0, arg1, arg2)); break;
+            case 2: return new Mat(cv.eye(arguments[0], arguments[1])); break;
+            case 3: return new Mat(cv.eye(arguments[0], arguments[1], arguments[2])); break;
         }
     }
-    static zeros(arg0, arg1, arg2) {
+    static zeros() {
         switch (arguments.length) {
-            case 2: return new Mat(cv.zeros(arg0, arg1)); break;
-            case 3: return new Mat(cv.zeros(arg0, arg1, arg2)); break;
+            case 2: return new Mat(cv.zeros(arguments[0], arguments[1])); break;
+            case 3: return new Mat(cv.zeros(arguments[0], arguments[1], arguments[2])); break;
         }
     }
     // get rows() {
@@ -675,11 +677,11 @@ class Mat {
 }
 
 class HOGDescriptor {
-    constructor(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
+    constructor() {
         switch (arguments.length) {
             case 0: return new cv.HOGDescriptor();
-            case 1: return new cv.HOGDescriptor(arg0);
-            case 12: return new cv.HOGDescriptor(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+            case 1: return new cv.HOGDescriptor(arguments[0]);
+            case 12: return new cv.HOGDescriptor(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6], arguments[7], arguments[8], arguments[9], arguments[10], arguments[10]);
         }
     }
 
@@ -690,7 +692,29 @@ class HOGDescriptor {
         return cv.getDaimlerPeopleDetector();
     }
 }
+
+class _RotatedRect {
+    constructor() {
+        switch (arguments.length) {
+            case 0: return new cv.RotatedRect();
+            case 3: return new cv.RotatedRect(arguments[0], arguments[1], arguments[2]);
+        }
+    }
+    static points(arg0) {
+        return cv.rotatedRectPoints(arg0);
+    }
+}
 module.exports = {
+    //////////////////////////
+    // '_malloc': cv._malloc,
+    '_malloc': (size) => {
+        var buf = Buffer.from(HEAPU8.buffer, malloc_offset, size);
+        malloc_offset += Math.ceil(size / 8) * 8;
+        return buf.address() - address;
+    },
+    'address': address,
+    '_free': () => { },
+    //////////////////////////
     // 'Mat': cv.Mat,
     'Mat': Mat,
     'Range': cv.Range,
@@ -701,14 +725,11 @@ module.exports = {
     'Point2f': cv.Point2f,
     'Rect': cv.Rect,
     'Rect2f': cv.Rect2f,
-    'RotatedRect': cv.RotatedRect,
+    'RotatedRect': _RotatedRect,
     'MinMaxLoc': cv.MinMaxLoc,
     'Circle': cv.Circle,
     'Moments': cv.Moments,
     'Exception': cv.Exception,
-    //////////////////////////
-    '_malloc': cv._malloc,
-    //////////////////////////
     'eye': cv.eye,
     'ones': cv.ones,
     'zeros': cv.zeros,
@@ -768,9 +789,6 @@ module.exports = {
     'HEAPF32': Module['HEAPF32'],
     'HEAPF64': Module['HEAPF64'],
     //////////////////////////
-    // 'split': (arg0, arg1) => {
-    //     return cv.split(arg0.mat, arg1)
-    // },
     'split': cv.split,
     'calcHist': cv.calcHist,
     'cvtColor': cv.cvtColor,
@@ -800,6 +818,16 @@ module.exports = {
     'groupRectangles': cv.groupRectangles,
     'CascadeClassifier': cv.CascadeClassifier,
     'HOGDescriptor': HOGDescriptor,
-    'meanShift': cv.meanShift
+    'meanShift': cv.meanShift,
+    'min': cv.min,
+    'max': cv.max,
+    'bitwise_not': cv.bitwise_not,
+    'bitwise_and': cv.bitwise_and,
+    'bitwise_or': cv.bitwise_or,
+    'bitwise_xor': cv.bitwise_xor,
+    'absdiff': cv.absdiff,
+    'add': cv.add,
+    'addWeighted': cv.addWeighted,
+    'invert': cv.invert
 
 }
