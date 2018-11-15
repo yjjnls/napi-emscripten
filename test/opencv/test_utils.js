@@ -225,16 +225,16 @@ QUnit.test('test_rotated_rect', function(assert) {
         assert.equal(rect.size.height, 0);
         assert.equal(rect.size.width, 0);
 
-        // let points = cv.RotatedRect.points(rect);
+        let points = cv.RotatedRect.points(rect);
 
-        // assert.equal(points[0].x, 0);
-        // assert.equal(points[0].y, 0);
-        // assert.equal(points[1].x, 0);
-        // assert.equal(points[1].y, 0);
-        // assert.equal(points[2].x, 0);
-        // assert.equal(points[2].y, 0);
-        // assert.equal(points[3].x, 0);
-        // assert.equal(points[3].y, 0);
+        assert.equal(points[0].x, 0);
+        assert.equal(points[0].y, 0);
+        assert.equal(points[1].x, 0);
+        assert.equal(points[1].y, 0);
+        assert.equal(points[2].x, 0);
+        assert.equal(points[2].y, 0);
+        assert.equal(points[3].x, 0);
+        assert.equal(points[3].y, 0);
     }
 
     {
@@ -246,9 +246,9 @@ QUnit.test('test_rotated_rect', function(assert) {
         assert.equal(rect.size.height, 100);
         assert.equal(rect.size.width, 50);
 
-        // let points = cv.RotatedRect.points(rect);
+        let points = cv.RotatedRect.points(rect);
 
-        // assert.equal(points[0].x, cv.RotatedRect.boundingRect2f(rect).x);
-        // assert.equal(points[1].y, cv.RotatedRect.boundingRect2f(rect).y);
+        assert.equal(points[0].x, cv.RotatedRect.boundingRect2f(rect).x);
+        assert.equal(points[1].y, cv.RotatedRect.boundingRect2f(rect).y);
     }
 });

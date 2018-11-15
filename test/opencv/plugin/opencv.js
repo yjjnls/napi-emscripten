@@ -703,6 +703,9 @@ class _RotatedRect {
     static points(arg0) {
         return cv.rotatedRectPoints(arg0);
     }
+    static boundingRect2f(arg0) {
+        return cv.rotatedRectBoundingRect2f(arg0);
+    };
 }
 module.exports = {
     //////////////////////////

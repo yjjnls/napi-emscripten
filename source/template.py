@@ -195,6 +195,77 @@ void val_array_push(EM_VAL handle, Arg arg)
     container_cursor->w[1].p = array.data();
     container_cursor->w[0].u = array.size();
 }
+
+template <typename T>
+void napi2cpp(napi_value arg, T *&res)
+{
+    printf("napi2cpp type not supported!\\n");
+    return;
+}
+void napi2cpp(napi_value arg, bool &res)
+{
+    napi_get_value_bool(global_env, arg, &res);
+}
+void napi2cpp(napi_value arg, char &res)
+{
+    napi_get_value_int32(global_env, arg, (int32_t *)&res);
+}
+void napi2cpp(napi_value arg, unsigned char &res)
+{
+    napi_get_value_uint32(global_env, arg, (uint32_t *)&res);
+}
+void napi2cpp(napi_value arg, short &res)
+{
+    napi_get_value_int32(global_env, arg, (int32_t *)&res);
+}
+void napi2cpp(napi_value arg, unsigned short &res)
+{
+    napi_get_value_uint32(global_env, arg, (uint32_t *)&res);
+}
+void napi2cpp(napi_value arg, int &res)
+{
+    napi_get_value_int32(global_env, arg, &res);
+}
+void napi2cpp(napi_value arg, unsigned int &res)
+{
+    napi_get_value_uint32(global_env, arg, &res);
+}
+void napi2cpp(napi_value arg, size_t &res)
+{
+    napi_get_value_int64(global_env, arg, (int64_t *)&res);
+}
+void napi2cpp(napi_value arg, long &res)
+{
+    napi_get_value_int64(global_env, arg, (int64_t *)&res);
+}
+void napi2cpp(napi_value arg, float &res)
+{
+    double data;
+    napi_get_value_double(global_env, arg, &data);
+    res = data;
+}
+void napi2cpp(napi_value arg, double &res)
+{
+    napi_get_value_double(global_env, arg, &res);
+}
+void napi2cpp(napi_value arg, std::string &res)
+{
+    size_t strlen;
+    napi_get_value_string_utf8(global_env, arg, NULL, 0, &strlen);
+    res.resize(strlen + 1, 0);
+    size_t len;
+    napi_get_value_string_utf8(global_env, arg, (char *)res.c_str(), strlen + 1, &len);
+}
+void napi2cpp(napi_value arg, String &res)
+{
+    size_t strlen;
+    napi_get_value_string_utf8(global_env, arg, NULL, 0, &strlen);
+    std::string data = std::string(strlen + 1, 0);
+    size_t len;
+    napi_get_value_string_utf8(global_env, arg, (char *)res.c_str(), strlen + 1, &len);
+    res = data;
+}
+%s
 }  // namespace internal
 }  // namespace emscripten
 """
@@ -434,25 +505,35 @@ args_string = """\
     size_t res{0};
     napi_get_value_string_utf8(env, args[{0}], (char *)arg{0}.c_str(), strlen{0} + 1, &res{0});
 """
-args_cxxtype = """\
-    // arg{0}
-    %s *p{0} = nullptr;
-    napi_unwrap(env, args[{0}], reinterpret_cast<void **>(&p{0}));
-    %s &arg{0} = *(p{0}->target());
-"""
-args_obj = """\
-    // arg{0}
-    napi_valuetype valuetype{0};
-    napi_typeof(env, args[{0}], &valuetype{0});
-    NAPI_ASSERT(env, valuetype{0} == napi_object, "Passing arg is not object!");
-    napi_value cons{0};
-    napi_get_reference_value(env, %s::cons_ref(), &cons{0});
-    napi_value value{0};
-    napi_new_instance(env, cons{0}, 0, nullptr, &value{0});
-    %s *p{0} = nullptr;
-    napi_unwrap(env, value{0}, reinterpret_cast<void **>(&p{0}));
-%s    %s &arg{0} = *(p{0}->target());
-"""
+# args_cxxtype = """\
+#     // arg{0}
+#     %s *p{0} = nullptr;
+#     napi_unwrap(env, args[{0}], reinterpret_cast<void **>(&p{0}));
+#     %s &arg{0} = *(p{0}->target());
+# """
+args_cxxtype = Template("""
+namespace emscripten {
+namespace internal {
+void napi2cpp(napi_value arg, ${cxx_type} *&res)
+{
+    ${class_name} *p = nullptr;
+    napi_unwrap(global_env, arg, reinterpret_cast<void **>(&p));
+    res = p->target();
+}
+}  // namespace internal
+}  // namespace emscripten
+""")
+
+args_obj = Template("""\
+namespace emscripten {
+namespace internal {
+void napi2cpp(napi_value arg, ${cxx_type} &res)
+{
+${obj_detail}    
+}
+}  // namespace internal
+}  // namespace emscripten
+""")
 args_array = """\
     // arg{0}
     napi_value array{0} = args[{0}];

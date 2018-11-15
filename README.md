@@ -151,4 +151,5 @@ return type of val( array of objects ) is ambigous. If the element type is basic
 
 
 - [ ] new cv.Mat.ones
-- [ ] cv.RotatedRect.points(rect);
+
+- [x] cv.RotatedRect.points(rect);
