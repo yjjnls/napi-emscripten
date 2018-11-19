@@ -4,9 +4,9 @@
         {
             "target_name": "plugin",
             "include_dirs": [
-                "./../../../include"
+                "./../../../../include"
             ],
-            "libraries": ["-lopencv_core", "-lopencv_imgproc", "-lopencv_objdetect", "-lopencv_video", "-lopencv_dnn"],
+            "libraries": ["-llept", "-ltesseract"],
             # "link_settings": {"libraries": ["-L<(oci_lib_dir)/lib"]},
             "sources": ["binding.cc"],
             "conditions": [

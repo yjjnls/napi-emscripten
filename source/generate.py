@@ -24,7 +24,7 @@ class Gen:
         for namespace in self.namespace:
             searchObj = re.search('namespace (.*)\n', namespace)
             if searchObj:
-                self.namespace_name.append(searchObj.group(1))
+                self.namespace_name.append(searchObj.group(1).rstrip(' {'))
         self.base_path = os.path.dirname(os.path.realpath(target))
 
         self.classes = {}
@@ -148,7 +148,7 @@ class Gen:
 
         if self.object_alias and arg in self.object_alias:
             arg = self.object_alias[arg].encode("utf-8")
-        return arg
+        return arg.strip()
 
     def generate_namespace(self):
         for namespace in self.namespace:
@@ -674,7 +674,10 @@ class Gen:
 
     # -------------------objects----------------------------
     def parse_objects(self, objects):
-        only_default_constructor = [fun.encode("utf-8") for fun in self.supplemental_file['only_default_constructor']]
+        if self.supplemental_file and 'only_default_constructor' in self.supplemental_file:
+            only_default_constructor = [fun.encode("utf-8") for fun in self.supplemental_file['only_default_constructor']]
+        else:
+            only_default_constructor = None
         for obj in objects:
             # if not obj.jstype=='Size':
             #     continue

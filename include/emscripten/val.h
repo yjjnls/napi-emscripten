@@ -4,6 +4,7 @@
 #error Including <emscripten/val.h> requires building with -std=c++11 or newer!
 #else
 
+#include <assert.h>
 #include <stdint.h> // uintptr_t
 #include <emscripten/wire.h>
 #include <array>

@@ -9,6 +9,8 @@ var ref = require('ref');
 
 let rect = new cv.RotatedRect({x: 100, y: 100}, {height: 100, width: 50}, 30);
 
+console.log(rect)
+
 assert.equal(rect.center.x, 100);
 assert.equal(rect.center.y, 100);
 assert.equal(rect.angle, 30);
