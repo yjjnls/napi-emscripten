@@ -40,7 +40,7 @@ EMSCRIPTEN_BINDINGS(binding_utils)
         .constructor<>()
         .function("Init", select_overload<int(tesseract::TessBaseAPI &, const std::string &, const std::string &)>(&binding_utils::Init))
         .function("SetImage", select_overload<void(tesseract::TessBaseAPI &, intptr_t)>(&binding_utils::SetImage))
-        .function("GetUTF8Text", select_overload<std::string()>(&::tesseract::TessBaseAPI::GetUTF8Text))
+        .function("GetUTF8Text", select_overload<std::string(tesseract::TessBaseAPI &)>(&binding_utils::GetUTF8Text))
         .function("End", select_overload<void()>(&::tesseract::TessBaseAPI::End));
 
     function("pixRead", select_overload<intptr_t(const std::string &)>(&binding_utils::wrapper_pixRead));

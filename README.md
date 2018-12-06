@@ -150,6 +150,6 @@ cv.Mat.ones() has synax error in node.js
 return type of val( array of objects ) is ambigous. If the element type is basic type, int, float,etc, val should be transfered to napi typedarray(napi_int32_array, etc.).
 
 
-- [ ] new cv.Mat.ones
+- [x] new cv.Mat.ones
 
 - [x] cv.RotatedRect.points(rect);
