@@ -1,17 +1,87 @@
 # napi-emscripten
-Implementation of webassembly code interfaces based on node.js c++ napi-addon.
+Implementation of webassembly code interfaces based on [node.js c++ napi-addon](https://nodejs.org/dist/latest-v11.x/docs/api/n-api.html).
+
+Webassembly code is generated using [`emscripten`](https://kripken.github.io/emscripten-site/docs/introducing_emscripten/about_emscripten.html)  , which could be invoked by front end or node.js. However, it may not be such efficient as native node.js addon and has some limitations in using. Here we use native node.js addon to implement it **with the same webassembly interfaces**. **Hence, the js application code will be the same as webassembly, but owns more efficiency.**
 
 ## Principle
-* webassembly  
-`c/c++ source code` + `binding.cpp` ---> bitcode ---> webassembly code(`.wasm`, `.js`) <--- node.js/html   
-                              
-* napi  
-`c/c++ source code` + `binding.cpp` ---> plugin.cpp ---> node addon(`.node`) <--- node.js/html   
-                                    
-Webassembly code is generated using `emscripten`, which could be invoked by front end or node.js. However, it may not be such efficient as native node.js addon and has some limitations in using. Here we use native node.js addon to implement it with the same webassembly interfaces. It generates a wrapping c++ code declaring napi method and classes, according to the source code, binding.cpp and supplemental materials by python. Then the code will be built into node addon foramt(.node). A glue js code is also required when invoked by node.js. **Hence, the js application code will be the same as webassembly, but owns more efficiency.**
+### Emscripten
+Emscripten is an Open Source LLVM to JavaScript compiler. With emscripten, we mostly compile C and C++ code into JavaScript, avoiding the high cost of porting code manually.
+
+[Emscripten Compiler Frontend (emcc)](https://kripken.github.io/emscripten-site/docs/tools_reference/emcc.html#emccdoc) acts as a drop-in replacement for a standard compiler like *gcc*.
+
+![](https://kripken.github.io/emscripten-site/_images/EmscriptenToolchain.png)
+
+There are several ways to [connect C/C++ code and JavaScript](https://kripken.github.io/emscripten-site/docs/porting/connecting_cpp_and_javascript/Interacting-with-code.html#interacting-with-code). [WebIDL Binder](https://kripken.github.io/emscripten-site/docs/porting/connecting_cpp_and_javascript/WebIDL-Binder.html) and [Embind](https://kripken.github.io/emscripten-site/docs/porting/connecting_cpp_and_javascript/embind.html) are the main two tools for porting C++ code, allowing C++ code entities to be used in a natural manner from JavaScript. They could also dela with `name-mangled C++ functions`.
+
+Both tools create bindings between C++ and JavaScript, but they operate at different levels, and use very different approaches for defining the binding:
+
+*   Embind declares bindings within the C/C++ file.
+*   WebIDL-Binder declares the binding in a separate file. This is run through the binder tool to create "glue" code that is then compiled with the project.
+
+Here, we choose `Embind` for porting C++ projects. There's usually a `binding.cpp` additional to the project, using `EMSCRIPTEN_BINDINGS()` blocks to create bindings for functions, classes, value types, pointers (including both raw and smart pointers), enums, and constants.
+
+### N-API
+The `binding.cpp` is also used here to define the interfaces for calling C++ from JavaScript. It will be parsed to structed information to generate the C++ wrapping code. The the C++ wrapping code will be compiled to a node plugin module using `node-gyp`. Then JavaScript code could use the functions and classes in the module. A glue js code may also be required. The main principle is shown as below:
+
+![](https://www.draw.io/?lightbox=1&highlight=0000FF&edit=_blank&layers=1&nav=1&title=napi-emscripten1.html#R1Vpdk5owFP01PuoABsTHXd1tp%2B12OrOd2e5jhCykRcKGuGp%2FfW9MEAlaP0YFfYHcJJdwz7kn4Y6d%2Fmi6%2BMRxFj%2BxkCQdxwoXnf644ziOZbtwkZalsniWrwwRp6Ey2aXhmf4l2mhp64yGJK8MFIwlgmZVY8DSlASiYsOcs3l12BtLqk%2FNcERqhucAJ3XrCw1FrKy%2BMyjtnwmN4uLJtjdUPVNcDNZvksc4ZPMNU%2F%2Bh0x9xxoS6my5GJJHBK%2BKi5j3u6F0vjJNUHDLh7c%2FTu%2F%2BSP95Poq9iOPpI3XHS1V4%2BcDLTL9xxvAT83b8xcAurFksdCu99xoqObr4C6g4G2H62KDtliHFQnfBtFtAQQ8%2BIpTkDbxujvUheewEsuxdkmbzgYgUTXvTnbMbBqUQ5JPXuwgKz1aoLs1N5AYezWRoSGQ4buucxFeQ5U6udA3vBFotport1YAgXZLEz4vYaR0gAwqZE8CUMKSb4GnrN%2Fb7vqfa8ZJKN9Jh4g0WetmFN3mjtusQXbjTER8DttALuCU1DmkYK8HZC1x0Y0FlWw9D1WwGdDHYG2Bm52Db4apnXOHzuFviMIJE0vJM7FrSCBOc5DapxgXfny1%2FQsIrGq2z0XNlcUPGrGAf3ZY96DAlr25wRS1iKUtm96iEwj4jYR9U6Nhuxd7eEvrBxkmBBP6rL3YaHfsIPRlf835G5LjIgVa%2BpZ23ul6Yjp%2BoIDQ1HKg41Ryt6rF%2F7dMZ4Z094lZzZUsQsPTRzIQdFlYacwBPwZDVAMjGTAViFxL3vuGOw4JlgahWrCTihUQr3CXmTrmRiUzhg3WmzYDL%2Fc5AD0JWfsjHuovPIwNAxVADVVGCwhYnOpURg0AoNn7JwlpBe2mL9di1Dv72m9du%2FrH4frtJ71XfQpPoiEzhTNA9VX2RXHUHyXlV9h0fhnbKUGGBfY0NudKPtGxvt2u%2FRUO%2FjzIWhLpjWbqx3COaVsDbP06ceqhrH%2BvwFD7Vlyt20Gy0P%2FqC96XMVsgbG9lw%2FWA2vebCy21HYINM84DQTZH28LotUMcEh4dIvTUh%2Bu0Us5Dd9FLO3lULap9dOo4Jtfry6wxsVbNSKzP4CGWtFcgntLnyZH07IbTxbz1%2FHOAXA7wBa73feVtw8v7qjosYLlva2YsWpX7zrRr1iadVEOMR5vA79ORVZM7HdX9ADZAiuifChyj0YGo7sKyv3OUsmt0UgtWk1xSDP93pe%2BTOExfNOo5Nn8BLZVs%2FefAy6LruOK9DsKcgpQhX82jwjllx71Vy7GLvQLcjT%2F8llfuCdTC4XXYZc0Cz%2FcaGGl%2F9b6T%2F8Aw%3D%3D)
+
+```
+graph TB
+id0(binding.cpp)
+id1("napi-emscripten") 
+id2(wrapping code)
+id3(".c/.cpp/.a (source code)")
+id4("emscripten header files")
+id5("node-gyp")
+id6("module.node")
+id7("Js glue code")
+id8("Node.js")
+id0-->id1
+id1-->id2
+id2-->id5
+id3-->id5
+id4-->id5
+id5-->id6
+id8-.->id6
+id8-.->id7
+id7-.->id6
+```
 
 ## Details
-### Code analysis
+### Type conversion
+The generated wrapped code declares the napi-addon properties and methods that defined in the `binding.cpp`. Hence the 
+
+
+| C++ type            | JavaScript type                                                  |
+| ------------------- | ---------------------------------------------------------------- |
+| void                | undefined                                                        |
+| bool                | true or false                                                    |
+| char                | Number                                                           |
+| signed char         | Number                                                           |
+| unsigned char       | Number                                                           |
+| short               | Number                                                           |
+| unsigned short      | Number                                                           |
+| int                 | Number                                                           |
+| unsigned int        | Number                                                           |
+| long                | Number                                                           |
+| unsigned long       | Number                                                           |
+| float               | Number                                                           |
+| double              | Number                                                           |
+| std::string         | ArrayBuffer, Uint8Array, Uint8ClampedArray, Int8Array, or String |
+| **emscripten::val** | **anything**                                                     |
+| class               | class, object, array                                             |
+| pointer             | Number                                                           |
+| char \*             | String                                                           |
+|||
+
+
+### Val implementation
+
+### Code generation
+
+1.大致流程
+2.流程图
+
 Besides the origin c++ source code, a `binding.cpp` is required when generating webassembly code. Types declared in `binding.cpp` will be included in webassembly code and could be invoked by js eventually. For example, `class Mat` is declared in the binding.cpp of opencv:
 ```c
 emscripten::class_<cv::Mat>("Mat")
