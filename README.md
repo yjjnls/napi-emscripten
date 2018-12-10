@@ -20,8 +20,8 @@ Webassembly code is generated using [`emscripten`](https://kripken.github.io/ems
   - [Type conversion](#type-conversion)
   - [Memory manager](#memory-manager)
   - [Val implementation](#val-implementation)
-  - [How to get started](#how-to-get-started)
-  - [Probelms left](#probelms-left)
+- [How to get started](#how-to-get-started)
+- [Probelms left](#probelms-left)
 
 
 ## Principle
@@ -222,6 +222,45 @@ The table below describes the correspondence between emscripten declartion and J
 | constant                 | Number                                       | global function |
 | vector                   | array                                        | class           |
 
+For the convenience of generating code, two template functions are used here to do the type conversion.
+
+```cpp
+template <typename Arg>
+napi_value cpp2napi(Arg arg)
+
+template <typename T>
+void napi2cpp(napi_value arg, T *&res);
+```
+
+Every type will owns two function instances of the templates above. The converting functions of basic types are generated in the fix code. And those of every type defined in `EMSCRIPTEN_BINDINGS()` are generated along with the wrapping code. For example, the template specialization for `cv::Mat` is as belows:
+
+```cpp
+namespace emscripten {
+namespace internal {
+napi_value cpp2napi(const cv::Mat &arg)
+{
+    napi_value res;
+    napi_value cons;
+    napi_get_reference_value(global_env, class_Mat::cons_ref(), &cons);
+    napi_new_instance(global_env, cons, 0, nullptr, &res);
+    class_Mat *p;
+    napi_unwrap(global_env, res, reinterpret_cast<void **>(&p));
+    p->update_target(arg);
+    return res;
+}
+
+void napi2cpp(napi_value arg, cv::Mat *&res)
+{
+    class_Mat *p = nullptr;
+    napi_unwrap(global_env, arg, reinterpret_cast<void **>(&p));
+    res = p->target();
+}
+}  // namespace internal
+}  // namespace emscripten
+
+```
+**Noted that `emscripten::val` doesn't use the template functions to do conversion.**
+
 ## Memory manager
 1. value created in js code  
 The jvm will manage the memory, when there's no reference to the variable, it will be released.
@@ -236,11 +275,21 @@ Napi class will own a pointer pointing to c++ instance. This instance is dynamic
 
 
 ---
-## How to get started
+# How to get started
+*   python 2.7 is required.
+*   assuming that opencv lib is installed in `/usr/local/lib`
 
 
+```sh
+cd test/opencv
+python test.py
+./build.sh
+npm install
+LD_LIBRARY_PATH=/usr/local/lib node tests.js
+
+```
 ---
-## Probelms left
+# Probelms left
 ~~obtain additional information and generate project file~~
 
 - [ ] memory access   

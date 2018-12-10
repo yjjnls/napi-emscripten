@@ -256,7 +256,7 @@ void napi2cpp(napi_value arg, std::string &res)
     size_t len;
     napi_get_value_string_utf8(global_env, arg, (char *)res.c_str(), strlen + 1, &len);
 }
-#ifdef String
+#ifdef opencv_String
 void napi2cpp(napi_value arg, String &res)
 {
     size_t strlen;
