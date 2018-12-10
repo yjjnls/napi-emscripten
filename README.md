@@ -3,6 +3,27 @@ Implementation of webassembly code interfaces based on [node.js c++ napi-addon](
 
 Webassembly code is generated using [`emscripten`](https://kripken.github.io/emscripten-site/docs/introducing_emscripten/about_emscripten.html)  , which could be invoked by front end or node.js. However, it may not be such efficient as native node.js addon and has some limitations in using. Here we use native node.js addon to implement it **with the same webassembly interfaces**. **Hence, the js application code will be the same as webassembly, but owns more efficiency.**
 
+- [napi-emscripten](#napi-emscripten)
+  - [Principle](#principle)
+    - [Emscripten](#emscripten)
+    - [N-API](#n-api)
+  - [Code generation](#code-generation)
+    - [Code parsing](#code-parsing)
+    - [Wrapping code](#wrapping-code)
+      - [class](#class)
+      - [value_object](#value_object)
+      - [value_array](#value_array)
+      - [constant](#constant)
+      - [global function](#global-function)
+      - [vector](#vector)
+      - [val](#val)
+  - [Type conversion](#type-conversion)
+  - [Memory manager](#memory-manager)
+  - [Val implementation](#val-implementation)
+  - [How to get started](#how-to-get-started)
+  - [Probelms left](#probelms-left)
+
+
 ## Principle
 ### Emscripten
 Emscripten is an Open Source LLVM to JavaScript compiler. With emscripten, we mostly compile C and C++ code into JavaScript, avoiding the high cost of porting code manually.
@@ -25,9 +46,9 @@ The `binding.cpp` is also used here to define the interfaces for calling C++ fro
 
 ![](img/napi-emscripten1.jpg)
 
+---
 
-## Details
-### Code generation
+## Code generation
 Besides the origin c++ source code, a `binding.cpp` is required when generating the wrapping code. The flow path is shown as below:
 1. Copy the content outside the block `EMSCRIPTEN_BINDINGS` in `binding.cpp` to wrapping code.
 2. Generate the fixed part using template.
@@ -35,7 +56,7 @@ Besides the origin c++ source code, a `binding.cpp` is required when generating 
 4. **Generate code for declared classes, value_objects, value_arrays, functions contants and so on.**
 5. Generate the napi declartions for the types generated in step 4.
 
-#### Code parsing
+### Code parsing
 Python module `ply` is used here to parse c++ synax and obtain type declation information in the `binding.cpp`. It collects the information of registered class, object, array, function, constant, vector and so on.
 
 For example, `class Mat` is declared in the binding.cpp of opencv:
@@ -69,20 +90,20 @@ For example:
 
 This is a declartion of three overload functions of 'convertTo'. And it will be parsed to the stuct below:
 ```python
-{'convertTo':[('void',['Mat&', 'int'],'binding_utils::convertTo','const Mat&, Mat&, int'),
-              ('void',['Mat&', 'int', 'double'],'binding_utils::convertTo','const Mat&, Mat&, int, double'),
-              ('void',['Mat&', 'int', 'double', 'double'],'binding_utils::convertTo','const Mat&, Mat&, int, double, double')]}
+{'convertTo':[('void',['Mat&', 'int'],'binding_utils::convertTo',None),
+              ('void',['Mat&', 'int', 'double'],'binding_utils::convertTo',None),
+              ('void',['Mat&', 'int', 'double', 'double'],'binding_utils::convertTo',None)]}
 ```
 
 Key `convertTo` is the js name of the function and value is the list of three overload function information. 
 *   `'void'`: return type
 *   `['Mat&', 'int']`: args list, c++ code will parse args js code passed in according to this list
 *   `'binding_utils::convertTo'`: function name
-*   `'const Mat&, Mat&, int'`: additional information, default is None
+*   `None`: additional information, default is None
 
 Class constructor, member function, properity, static function, global function and other types will all parse to this format. The detail is shown below.
 
-#### Wrapping code
+### Wrapping code
 Generally, a wrapping class named `class_Mat` will be generated for `cv::Mat`. Its members and functions are shown as below:
 
 ![](img/napi-emscripten2.jpg)
@@ -115,7 +136,7 @@ console.log(mat.elemSize);
 Other declared types in `binding.cpp` are processed similarly and described in details as below.
 
 
-##### class
+#### class
 Registered classes are defined as c++ classes in the warpping code, and they are declared with `napi_define_class` as wrapped js classes.   
 
 For example, a class named `class_Mat` is corresponding to `cv::Mat` in the source code. 
@@ -127,7 +148,7 @@ For example, a class named `class_Mat` is corresponding to `cv::Mat` in the sour
 *   As function argument: unwrap from the napi_value to get `cv::Mat`. 
 *   As return type: create a napi instance containing `cv::Mat` the c++ returned.
 
-##### value_object
+#### value_object
 Registered value_objects are also defined as napi class type in the warpping code, but they represent js objects.
 
 For example, a class named `object_Range` is corresponding to `cv::Range`. And it's almostly the same as register classes.
@@ -137,20 +158,20 @@ For example, a class named `object_Range` is corresponding to `cv::Range`. And i
 *   As return type: create a napi object and set all the properities as fields defined.
 *   As function argument: crate a napi instance of `cv::Range` and set all the properities extracted from napi_value.
 
-##### value_array
+#### value_array
 Registered value_arrays are defined as napi_array type in the warpping code, and declared as a global napi method for invoking.
 *   It has fixed length as defined in declaration.
 *   In source code, its type is a class but not really an array.
 *   As return type: create a napi_array and set all the elements.
 *   As function argument: get all elements from the napi_array and create the class instance.
 
-##### constant
+#### constant
 Contants are defined as global napi properities in the warpping code and the properity functions return the constant value in source code.
 
-##### global function
+#### global function
 Similar to constant, global function are also global napi properities.
 
-##### vector
+#### vector
 Register vectors are defined as napi classes in the warpping code.
 
 For example, a class named `vecMatVector` is corresponding to `MatVector`.
@@ -160,7 +181,7 @@ For example, a class named `vecMatVector` is corresponding to `MatVector`.
 *   As function argument: unwrap from the napi_value to get `std::vector<cv::Mat>`. 
 *   As return type: create a napi instance containing `cv::Mat` the c++ returned.
 
-##### val
+#### val
 `val` is the common type implementation in emscripten, which can represents various js types, such as undefined, number, string, array, etc. And it's not expilictly registered in `binding.cpp`. Hence, you should expilictly note the real type it represents.
 
 `val` now is mostly used as array, unlike vector, it represents the raw array. 
@@ -170,7 +191,7 @@ For example, a class named `vecMatVector` is corresponding to `MatVector`.
 If `val` represents a single type, get the value/buffer and operate as types memtioned above.
 
 
-### Type conversion
+## Type conversion
 The generated wrapped code declares the napi-addon properties and methods that defined in the `binding.cpp`. Basic types in c++, such as char, int, float, double, string and so on could be transfered between js and c++. As these types have already been declared [napi_valuetype](https://nodejs.org/dist/latest-v11.x/docs/api/n-api.html#n_api_napi_valuetype). But other types defined in `binding.cpp` should also be transfered to napi type.
 
 The table below describes the correspondence between emscripten declartion and Js type.
@@ -190,9 +211,9 @@ The table below describes the correspondence between emscripten declartion and J
 | float                    | Number                                       | float           |
 | double                   | Number                                       | double          |
 | std::string              | ArrayBuffer, Uint8Array Int8Array, or String | std::string     |
-| intptr_t                 | Number(memory address)                       | pointer         |
+| intptr_t                 | Number (memory address)                      | pointer         |
 |                          |                                              |                 |
-| **emscripten::val**      | **anything**                                 |                 |
+| **`emscripten::val`**    | **`anything`**                               |                 |
 |                          |                                              |                 |
 | emscripten::class        | wrapped object                               | class           |
 | emscripten::value_object | object                                       | class           |
@@ -201,12 +222,7 @@ The table below describes the correspondence between emscripten declartion and J
 | constant                 | Number                                       | global function |
 | vector                   | array                                        | class           |
 
-
-
-
-
-
-### Memory manager
+## Memory manager
 1. value created in js code  
 The jvm will manage the memory, when there's no reference to the variable, it will be released.
 
@@ -216,12 +232,14 @@ All the returned values are `napi_value`, that means jvm will also release them.
 3. variable created in c++   
 Napi class will own a pointer pointing to c++ instance. This instance is dynamicly allocated, but it will be released when the desrtuctor function invoked.
 
-### Val implementation
-todo
+## Val implementation
 
+
+---
 ## How to get started
-todo
 
+
+---
 ## Probelms left
 ~~obtain additional information and generate project file~~
 

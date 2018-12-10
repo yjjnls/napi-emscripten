@@ -1,0 +1,15 @@
+{
+  "name": "napi-emscripten-test-opencv",
+  "version": "0.0.1",
+  "description": "```sh $ npm install node-qunit",
+  "main": "tests.js",
+  "scripts": {
+    "test": "node tests.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-qunit": "latest",
+    "ref": "^1.3.5"
+  }
+}

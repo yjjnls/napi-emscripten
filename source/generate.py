@@ -180,7 +180,7 @@ class Gen:
             if fun_name.split('::')[0] in self.namespace_name:
                 if not bool_static:
                     del args_list[0]
-                args_real = searchObj.group('args_list')
+                # args_real = searchObj.group('args_list')
             # val type supplement
             if val_type:
                 i = 0
@@ -761,8 +761,9 @@ class Gen:
                 prop_name = prop[0]
                 prop_type = prop[1][0][0]
                 value_name = '%s_val' % prop_name
-                prop_cxx_val = self.normalize_arg(prop[1][0][3])
+                # print prop[1]
                 if prop[1][0][2] == None:
+                    prop_cxx_val = self.normalize_arg(prop[1][0][3])
                     cpp2napi += '\tnapi_value %s = cpp2napi(%s);\n' % (value_name, 'arg.' + prop_cxx_val)
                     # ----------------
                     napi2cpp += '\n\tnapi_value {prop_name};\n'.format(prop_name=prop_name)
