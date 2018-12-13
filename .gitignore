@@ -4,3 +4,4 @@ package-lock.json
 build
 *binding.cc
 *core_binding.js
+.vscode

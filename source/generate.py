@@ -25,7 +25,7 @@ class Gen:
             searchObj = re.search('namespace (.*)\n', namespace)
             if searchObj:
                 self.namespace_name.append(searchObj.group(1).rstrip(' {'))
-        self.base_path = os.path.dirname(os.path.realpath(target))
+        self.base_path = os.getcwd()#os.path.dirname(os.path.realpath(target))
 
         self.classes = {}
         self.value_objects = {}

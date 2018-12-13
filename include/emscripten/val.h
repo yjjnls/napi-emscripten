@@ -9,6 +9,7 @@
 #include <emscripten/wire.h>
 #include <array>
 #include <vector>
+#include <algorithm>
 
 
 namespace emscripten {
@@ -29,6 +30,7 @@ namespace emscripten {
             _EMVAL_NUMBER = 6,
             _EMVAL_STRING = 7,
             _EMVAL_OBJECT = 8,
+            _EMVAL_FUNCTION = 9
 
         };
         struct _EM_VAL
@@ -258,7 +260,6 @@ namespace emscripten {
 
         template<typename ElementType>
         inline void writeGenericWireType(GenericWireType*& cursor, const memory_view<ElementType>& wt) {
-            // printf("size: %d \ndata: %p\n",wt.size,wt.data);
             cursor->w[0].u = wt.size;
             cursor->w[1].p = wt.data;
             ++cursor;
@@ -364,10 +365,10 @@ namespace emscripten {
             typedef std::vector<T> arr;
             typedef emscripten::memory_view<T> memory_view2arr;
             // copy and store vec
-            _EM_VAL *val = new __EM_VAL<arr>(vec);
-            arr &p = static_cast<__EM_VAL<arr> *>(val)->container;
+            _EM_VAL *value = new __EM_VAL<arr>(vec);
+            arr &p = static_cast<__EM_VAL<arr> *>(value)->container;
 
-            EM_VAL handle = EM_VAL(val);
+            EM_VAL handle = EM_VAL(value);
 
             memory_view2arr data(p.size(), (T *)p.data());
             WireTypePack<memory_view2arr> *argv =
@@ -384,6 +385,32 @@ namespace emscripten {
             // for(auto it = vec.begin(); it != vec.end(); it++)
             //     new_array.call<void>("push", *it);
             // return new_array;
+        }
+        template <typename T>
+        operator T() const
+        {
+            T &p = static_cast<internal::__EM_VAL<T> *>(handle.get())->container;
+            return p;
+        }
+        // operator std::function<void(int)>() const{
+    
+        //     std::function<void(int)> &p = static_cast<__EM_VAL<std::function<void(int)>> *>(handle.get())->container;
+        //     return p;
+        // }
+        template <typename T>
+        static val func(T fun)
+        {
+            using namespace emscripten::internal;
+            val res = undefined();
+
+            _EM_VAL *value = new __EM_VAL<T>(fun);
+            // T &p = static_cast<__EM_VAL<T> *>(value)->container;
+
+            EM_VAL handle = EM_VAL(value);
+
+            res.handle = handle;
+            res.handle->type == internal::_EMVAL_FUNCTION;
+            return res;
         }
 
         static val object() {
@@ -423,7 +450,7 @@ namespace emscripten {
                 argv);            
         }
 
-        val() = delete;
+        // val() = delete;
 
         explicit val(const char* v)
             : handle(internal::_emval_new_cstring(v))

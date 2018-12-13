@@ -271,6 +271,7 @@ All the returned values are `napi_value`, that means jvm will also release them.
 3. variable created in c++   
 Napi class will own a pointer pointing to c++ instance. This instance is dynamicly allocated, but it will be released when the desrtuctor function invoked.
 
+created variables should be deleted explicitly, as [emscripten described](http://kripken.github.io/emscripten-site/docs/porting/connecting_cpp_and_javascript/embind.html#memory-management).
 ## Val implementation
 
 
