@@ -386,17 +386,35 @@ namespace emscripten {
             //     new_array.call<void>("push", *it);
             // return new_array;
         }
-        template <typename T>
-        operator T() const
-        {
-            T &p = static_cast<internal::__EM_VAL<T> *>(handle.get())->container;
-            return p;
-        }
+        // template <typename T>
+        // operator T() 
+        // {
+        //     using namespace emscripten::internal;
+        //     T &p = static_cast<__EM_VAL<T> *>(handle.get())->container;
+        //     return p;
+        // }
+        // template<typename... Args>
+        // operator std::function<void(Args&&... args)>() const {
+        //     using namespace emscripten::internal;
+        //     using T = std::function<void(Args&&... args)>;
+        //     T &p = static_cast<__EM_VAL<T> *>(handle.get())->container;
+        //     // return p;
+        //     // return internalCall(internal::_emval_call, std::forward<Args>(args)...);
+        // }
         // operator std::function<void(int)>() const{
+        //     using namespace emscripten::internal;
     
         //     std::function<void(int)> &p = static_cast<__EM_VAL<std::function<void(int)>> *>(handle.get())->container;
         //     return p;
         // }
+
+        template <typename T>
+        T functor() const
+        {
+            using namespace emscripten::internal;
+            T &p = static_cast<__EM_VAL<T> *>(handle.get())->container;
+            return p;
+        }
         template <typename T>
         static val func(T fun)
         {
@@ -450,7 +468,7 @@ namespace emscripten {
                 argv);            
         }
 
-        // val() = delete;
+        val() = delete;
 
         explicit val(const char* v)
             : handle(internal::_emval_new_cstring(v))

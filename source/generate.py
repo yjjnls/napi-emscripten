@@ -25,7 +25,7 @@ class Gen:
             searchObj = re.search('namespace (.*)\n', namespace)
             if searchObj:
                 self.namespace_name.append(searchObj.group(1).rstrip(' {'))
-        self.base_path = os.getcwd()#os.path.dirname(os.path.realpath(target))
+        self.base_path = os.getcwd()  # os.path.dirname(os.path.realpath(target))
 
         self.classes = {}
         self.value_objects = {}
@@ -240,6 +240,7 @@ class Gen:
         # val
         if 'val' in arg:
             val_type = arg.split(',')[-1]
+            # array
             if '[' in val_type:
                 searchObj = re.search('(\[)(.*)(\])', val_type)
                 if searchObj:
@@ -250,6 +251,27 @@ class Gen:
                     # get_value = template.arr_args[val_type] % ('i', 'i', 'i', 'i', 'i', 'i')
                     get_value = template.arr_args[val_type].format('i')
                     return template.args_val_array % (val_type, get_value)
+            # function pointer
+            if 'std::function' in val_type:
+                searchObj = re.search('std::function<(.*)[(](.*)[)]>', val_type)
+                if searchObj:
+                    cb_args = searchObj.group(2).split(',')
+                    cb_type = searchObj.group(0)
+                    args_declare = []
+                    args_transfer = []
+                    i = 0
+                    for arg in cb_args:
+                        args_declare.append('%s value%d' % (arg.strip(), i))
+                        args_transfer.append('cpp2napi(value%d)' % i)
+                        i += 1
+                    # print template.args_val_function % (cb_type,
+                    #                                      ', '.join(args_declare),
+                    #                                      i,
+                    #                                      ', '.join(args_transfer))
+                    return template.args_val_function % (cb_type,
+                                                         ', '.join(args_declare),
+                                                         i,
+                                                         ', '.join(args_transfer))
             #         print val_type
             #         return "error\n"
             # return template.arg_val
@@ -675,7 +697,8 @@ class Gen:
     # -------------------objects----------------------------
     def parse_objects(self, objects):
         if self.supplemental_file and 'only_default_constructor' in self.supplemental_file:
-            only_default_constructor = [fun.encode("utf-8") for fun in self.supplemental_file['only_default_constructor']]
+            only_default_constructor = [fun.encode("utf-8")
+                                        for fun in self.supplemental_file['only_default_constructor']]
         else:
             only_default_constructor = None
         for obj in objects:

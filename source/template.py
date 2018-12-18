@@ -576,7 +576,17 @@ args_val_array = """\
     }}
     val arg{0} = val::array(vec{0});
 """
-
+args_val_function = """\
+	// arg{0}
+	napi_value cb = args[{0}];
+    %s fun = [cb, env](%s) {{
+        napi_value global;
+        napi_get_global(env, &global);
+        napi_value argv[%d] = {{%s}};
+        napi_call_function(env, global, cb, sizeof(argv) / sizeof(argv[0]), argv, NULL);
+    }};
+    val arg{0} = val::func(fun);
+"""
 return_class = Template("""
 namespace emscripten {
 namespace internal {

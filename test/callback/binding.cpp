@@ -1,20 +1,31 @@
 
-#include <algorithm>
+#include <functional>
 #include <emscripten/bind.h>
 
 using namespace emscripten;
 
 
 namespace binding_utils {
+#ifdef NAPI_VERSION
+template<typename T> 
+T specialization(const emscripten::val &callback)
+{
+    return callback.functor<T>();
+}
+#else
+template<typename T> 
+emscripten::val specialization(const emscripten::val &callback)
+{
+    return callback;
+}
+#endif
 void increase(int num, std::function<void(int)> cb)
 {
     cb(num + 1);
 }
 void calculate(int param1, const emscripten::val &callback)
 {
-    // std::function<void(int)> cb = callback;
-    increase(param1, callback);
-    // callback(param1);
+    increase(param1, specialization<std::function<void(int)>>(callback));
 }
 }  // namespace binding_utils
 

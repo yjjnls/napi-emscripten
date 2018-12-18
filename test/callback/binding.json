@@ -1,5 +1,5 @@
 {
-    "select_overload<void(int, emscripten::val)>(&binding_utils::calculate)": [
-        "val,function"
+    "select_overload<void(int, const emscripten::val &)>(&binding_utils::calculate)": [
+        "val,std::function<void(int)>"
     ]
 }
