@@ -7,13 +7,13 @@ using namespace emscripten;
 
 namespace binding_utils {
 #ifdef NAPI_VERSION
-template<typename T> 
+template <typename T>
 T specialization(const emscripten::val &callback)
 {
     return callback.functor<T>();
 }
 #else
-template<typename T> 
+template <typename T>
 emscripten::val specialization(const emscripten::val &callback)
 {
     return callback;
