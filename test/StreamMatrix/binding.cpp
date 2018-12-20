@@ -230,10 +230,10 @@ EMSCRIPTEN_BINDINGS(binding_utils)
         .constructor<>()
         // common function
         .function("Initialize", select_overload<void(StreamMatrix &, const emscripten::val &)>(&inding_utils::Initialize))
-        .function("Terminate", select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::Terminate)
-        .function("DestroyApp",select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::DestroyApp))
-        .function("StartUpApp",select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::StartUpApp))
-        .function("StopApp",select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::StopApp))
+        .function("Terminate", select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::Terminate))
+        .function("Destroy",select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::DestroyApp))
+        .function("StartUp",select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::StartUpApp))
+        .function("Stop",select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::StopApp))
         // test server
         .function("CreateRtspTestServer", select_overload<void(StreamMatrix &, const std::string &, int, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateRtspTestServer))
         // livestream

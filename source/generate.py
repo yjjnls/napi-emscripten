@@ -136,6 +136,8 @@ class Gen:
 
     # -------------------namespace---------------------------
     def normalize_arg(self, arg):
+        if 'val' in arg:
+            return arg
         pattern = re.compile('(const)\s*(.*)(&)', flags=re.DOTALL)
         searchObj = pattern.search(arg)
         if searchObj:
@@ -239,7 +241,8 @@ class Gen:
                     return "\t// arg{0}\n\t%s *p{0} = nullptr;\n\tnapi2cpp(args[{0}], p{0});\n\t%s &arg{0} = *p{0};\n" % (vec['cxxtype'], vec['cxxtype'])
         # val
         if 'val' in arg:
-            val_type = arg.split(',')[-1]
+            # val_type = arg.split(',')[-1]
+            val_type = arg
             # array
             if '[' in val_type:
                 searchObj = re.search('(\[)(.*)(\])', val_type)
