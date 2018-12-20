@@ -1,10 +1,13 @@
 #ifndef STREAM_MATRIX_FRAMEWORK_COMMON_HPP
 #define STREAM_MATRIX_FRAMEWORK_COMMON_HPP
 
+#include <gst/gst.h>
 #include <vector>
 #include <list>
 #include <map>
+#include <string>
 #include <functional>
+#include <algorithm>
 #include <utils/nlohmann/json.hpp>
 
 typedef std::function<void(int code, const std::string &data)> callback;
@@ -30,7 +33,8 @@ enum TestServerType
 enum AnalyzerType
 {
     kRtsp = 0,
-    kWebrtc
+    kWebrtcRecv,
+    kWebrtcSendRecv
 };
 
 enum EndpointType
