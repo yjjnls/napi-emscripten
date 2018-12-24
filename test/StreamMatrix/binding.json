@@ -1,5 +1,5 @@
 {
-    "select_overload<void(StreamMatrix &, const emscripten::val &)>(&inding_utils::Initialize)": [
+    "select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::Initialize)": [
         "val,std::function<void(int, const std::string &)>"
     ],
     "select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::Terminate)": [
@@ -58,6 +58,9 @@
     ],
     "select_overload<void(StreamMatrix &, const emscripten::val &, const emscripten::val &)>(&binding_utils::SetNotification)": [
         "val,std::function<void(const std::string &, const std::string &)>",
+        "val,std::function<void(int, const std::string &)>"
+    ],
+    "select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::GetVersion)": [
         "val,std::function<void(int, const std::string &)>"
     ]
 }

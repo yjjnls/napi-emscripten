@@ -258,17 +258,17 @@ void CreateWebrtcAnalyzer(StreamMatrix &obj,
                           const std::string &launch,
                           const emscripten::val &cb)
 {
-   nlohmann::json meta;
+    nlohmann::json meta;
     meta["action"] = "create";
     nlohmann::json param;
     param["type"] = kAnalyzer;
     param["id"] = id;
-    param["protocal"] = AnalyzerType::kWebrtc;
+    param["protocal"] = AnalyzerType::kWebrtcSendRecv;
     param["signal_bridge"] = signal_bridge;
     param["connection_id"] = connection_id;
     param["launch"] = launch;
     param["role"] = (role == "Offer" ? WebrtcRole::kOffer : WebrtcRole::kAnswer);
-    
+
     obj.Call(meta, param, CALLBACK(cb));
 }
 
@@ -276,8 +276,13 @@ void SetNotification(StreamMatrix &obj,
                      const emscripten::val &notify,
                      const emscripten::val &cb)
 {
-    obj.SetNotification(specialization<std::function<notify_fn>>(notify),
-                        specialization<std::function<callback>>(cb));
+    obj.SetNotification(specialization<notify_fn>(notify), specialization<callback>(cb));
+}
+void GetVersion(StreamMatrix &obj, const emscripten::val &cb)
+{
+    nlohmann::json meta;
+    meta["action"] = "version";
+    obj.Call(meta, nlohmann::json(), CALLBACK(cb));
 }
 }  // namespace binding_utils
 
@@ -285,32 +290,33 @@ EMSCRIPTEN_BINDINGS(binding_utils)
 {
     emscripten::class_<StreamMatrix>("StreamMatrix")
         .constructor<>()
-        // common function
-        .function("Initialize", select_overload<void(StreamMatrix &, const emscripten::val &)>(&inding_utils::Initialize))
+
+        .function("Initialize", select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::Initialize))
         .function("Terminate", select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::Terminate))
         .function("Destroy", select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::DestroyApp))
         .function("StartUp", select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::StartUpApp))
         .function("Stop", select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::StopApp))
-        // test server
+
         .function("CreateRtspTestServer", select_overload<void(StreamMatrix &, const std::string &, int, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateRtspTestServer))
-        // livestream
+
         .function("CreateLiveStream", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateLiveStream))
         .function("AddRtspAudience", select_overload<void(StreamMatrix &, const std::string &, int, const std::string &, const emscripten::val &)>(&binding_utils::AddRtspAudience))
         .function("AddWebrtcAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddWebrtcAudience))
         .function("AddHlsAudience", select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::AddHlsAudience))
         .function("RemoveAudience", select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveAudience))
-        // multipoints
+
         .function("CreateMultiPoints", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateMultiPoints))
         .function("AddMember", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddMember))
         .function("RemoveMember", select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveMember))
         .function("SetSpeaker", select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::SetSpeaker))
-        // playback
+
         .function("CreatePlayBack", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreatePlayBack))
         .function("Seek", select_overload<void(StreamMatrix &, const std::string &, int, const emscripten::val &)>(&binding_utils::Seek))
 
-        // Analyzer
+
         .function("CreateRtspAnalyzer", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateRtspAnalyzer))
         .function("CreateWebrtcAnalyzer", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateWebrtcAnalyzer))
 
-        .function("SetNotification", select_overload<void(StreamMatrix &, const emscripten::val &, const emscripten::val &)>(&binding_utils::SetNotification));
+        .function("SetNotification", select_overload<void(StreamMatrix &, const emscripten::val &, const emscripten::val &)>(&binding_utils::SetNotification))
+        .function("version", select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::GetVersion));
 }

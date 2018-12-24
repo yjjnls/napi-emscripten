@@ -261,11 +261,13 @@ class Gen:
                     cb_args = searchObj.group(2).split(',')
                     cb_type = searchObj.group(0)
                     args_declare = []
-                    args_transfer = []
+                    args_type = []
+                    args_value = []
                     i = 0
                     for arg in cb_args:
                         args_declare.append('%s value%d' % (arg.strip(), i))
-                        args_transfer.append('cpp2napi(value%d)' % i)
+                        args_type.append(self.normalize_arg(arg))
+                        args_value.append('value%d' % i)
                         i += 1
                     # print template.args_val_function % (cb_type,
                     #                                      ', '.join(args_declare),
@@ -273,8 +275,9 @@ class Gen:
                     #                                      ', '.join(args_transfer))
                     return template.args_val_function % (cb_type,
                                                          ', '.join(args_declare),
+                                                         ', '.join(args_type),
                                                          i,
-                                                         ', '.join(args_transfer))
+                                                         ', '.join(args_value))
             #         print val_type
             #         return "error\n"
             # return template.arg_val

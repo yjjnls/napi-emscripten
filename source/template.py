@@ -21,6 +21,7 @@ bind_gyp = """
 
 bind_cxx_fixed = """\
 #include <node_api.h>
+#include <uv.h>
 %s
 using namespace emscripten::internal;
 
@@ -270,6 +271,103 @@ void napi2cpp(napi_value arg, String &res)
 %s
 }  // namespace internal
 }  // namespace emscripten
+
+uv_mutex_t mutext;
+uv_async_t async;
+
+struct async_callback_t
+{
+    async_callback_t(napi_ref cb_ref, size_t num)
+        : ref(cb_ref), argc(num)
+    {
+    }
+    ~async_callback_t()
+    {
+        napi_delete_reference(global_env, ref);
+    }
+
+    virtual std::vector<napi_value> args()
+    {
+        return std::vector<napi_value>();
+    };
+
+    napi_ref ref;
+    size_t argc;
+};
+template <typename Tuple, std::size_t N>
+struct TuplePrinter
+{
+    static void print(const Tuple &t, std::vector<napi_value> &res)
+    {
+        TuplePrinter<Tuple, N - 1>::print(t, res);
+        res.push_back(cpp2napi(std::get<N - 1>(t)));
+    }
+};
+
+template <typename Tuple>
+struct TuplePrinter<Tuple, 1>
+{
+    static void print(const Tuple &t, std::vector<napi_value> &res)
+    {
+        res.push_back(cpp2napi(std::get<0>(t)));
+    }
+};
+template <typename... Args>
+struct callback_t : public async_callback_t
+{
+    callback_t(napi_ref cb_ref, size_t num, Args... args)
+        : async_callback_t(cb_ref, num)
+    {
+        args_container = std::make_tuple(args...);
+    }
+
+    std::vector<napi_value> args()
+    {
+        std::vector<napi_value> res;
+        TuplePrinter<decltype(args_container), sizeof...(Args)>::print(args_container, res);
+        return res;
+    }
+
+    std::tuple<Args...> args_container;
+};
+
+std::list<async_callback_t *> callbacks;
+
+void PushEvent(async_callback_t *ac)
+{
+    uv_mutex_lock(&mutext);
+    callbacks.push_back(ac);
+    uv_mutex_unlock(&mutext);
+    uv_async_send(&async);
+}
+void AddonEvent(uv_async_t *handle)
+{
+    std::list<async_callback_t *> cbs;
+    uv_mutex_lock(&mutext);
+    cbs.swap(callbacks);
+    uv_mutex_unlock(&mutext);
+
+    napi_handle_scope scope;
+    napi_open_handle_scope(global_env, &scope);
+
+    for (async_callback_t *ac : cbs) {
+        napi_value cb;
+        napi_status status = napi_get_reference_value(global_env, ac->ref, &cb);
+        assert(status == napi_ok);
+        napi_value global;
+        napi_get_global(global_env, &global);
+
+        std::vector<napi_value> args = ac->args();
+
+        napi_value result;
+        napi_call_function(global_env, global, cb, args.size(), args.data(), &result);
+
+        delete ac;
+    }
+
+    napi_close_handle_scope(global_env, scope);
+}
+
 """
 
 class_declaration = Template("""
@@ -445,9 +543,14 @@ ${declare_function}
 napi_init = Template("""
 napi_value Init(napi_env env, napi_value exports)
 {
+    uv_async_init(uv_default_loop(), &async, AddonEvent);
+    uv_mutex_init(&mutext);
+
+    /////////////////////
     global_env = env;
 ${init}
     napi_property_descriptor desc[] = {
+        NAPI_DECLARE_METHOD("release", global_release),
 ${declaration}
 ${create_object}
     };
@@ -578,14 +681,17 @@ args_val_array = """\
 """
 args_val_function = """\
 	// arg{0}
-	napi_value cb = args[{0}];
-    %s fun = [cb, env](%s) {{
-        napi_value global;
-        napi_get_global(env, &global);
-        napi_value argv[%d] = {{%s}};
-        napi_call_function(env, global, cb, sizeof(argv) / sizeof(argv[0]), argv, NULL);
+	napi_value cb{0} = args[{0}];
+
+    napi_ref ref{0} = nullptr;
+    napi_create_reference(env, args[{0}], 1, &ref{0});
+
+    %s fun{0} = [ref{0}, global_env](%s) {{
+        async_callback_t *ac = new callback_t<%s>(ref{0}, %s, %s);
+
+        PushEvent(ac);
     }};
-    val arg{0} = val::func(fun);
+    val arg{0} = val::func(fun{0});
 """
 return_class = Template("""
 namespace emscripten {
@@ -796,6 +902,11 @@ napi_value global_malloc(napi_env env, napi_callback_info info)
     napi_value result;
     napi_create_int64(env, p, &result);
     return result;
+}
+napi_value global_release(napi_env env, napi_callback_info info)
+{
+    uv_close((uv_handle_t *)&async, NULL);
+    return nullptr;
 }
 """
 constant_func = """

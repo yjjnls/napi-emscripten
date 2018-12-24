@@ -23,7 +23,7 @@ class Promise
         , app_(nullptr)
     {
     }
-    StreamMatrix *StreamMatrix()
+    StreamMatrix *GetStreamMatrix()
     {
         return owner_;
     }
@@ -31,7 +31,7 @@ class Promise
     void resolve()
     {
         if (!responsed_) {
-            callback_(0, "");
+            callback_(0, "OK");
             responsed_ = true;
         }
     }

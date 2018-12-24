@@ -4,8 +4,8 @@ using json = nlohmann::json;
 
 static GThread *main_thread = NULL;
 
-GMainLoop *main_loop_ = nullptr;
-GMainContext *main_context_ = nullptr;
+GMainLoop *StreamMatrix::main_loop_ = nullptr;
+GMainContext *StreamMatrix::main_context_ = nullptr;
 
 
 GST_DEBUG_CATEGORY_STATIC(my_category);
@@ -17,7 +17,16 @@ static gboolean main_loop_init(GAsyncQueue *queue)
     return G_SOURCE_REMOVE;
 }
 
-
+StreamMatrix::~StreamMatrix()
+{
+    {
+        printf("destroy StreamMatrix\n");
+        if (terminate_promise_ != nullptr) {
+            delete terminate_promise_;
+            terminate_promise_ = nullptr;
+        }
+    }
+}
 void StreamMatrix::Initialize(callback cb)
 {
     GST_DEBUG_CATEGORY_INIT(my_category, "webstreamer", 2, "libWebStreamer");
@@ -35,7 +44,7 @@ void StreamMatrix::Initialize(callback cb)
 
 gpointer StreamMatrix::main_loop_entry(Promise *promise)
 {
-    StreamMatrix *instance = promise->StreamMatrix();
+    StreamMatrix *instance = promise->GetStreamMatrix();
     instance->main_loop(promise);
     return NULL;
 }
@@ -106,7 +115,7 @@ void StreamMatrix::Call(const nlohmann::json &meta, const nlohmann::json &data, 
 gboolean StreamMatrix::on_promise_entry(gpointer user_data)
 {
     Promise *promise = (Promise *)user_data;
-    StreamMatrix *instance = promise->StreamMatrix();
+    StreamMatrix *instance = promise->GetStreamMatrix();
     instance->on_promise(promise);
     return G_SOURCE_REMOVE;
 }
@@ -125,7 +134,7 @@ void StreamMatrix::on_promise(Promise *promise)
     } else {
         operate_app(promise);
     }
-    promise->reject(promise->data());
+    // promise->reject(promise->data());
     delete promise;
 }
 void StreamMatrix::get_version(Promise *promise)

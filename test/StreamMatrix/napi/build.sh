@@ -1,7 +1,7 @@
 # export CC=clang 
 # export CXX=clang++ 
-# export CC=gcc-7
-# export CXX=g++-7
+export CC=gcc-7
+export CXX=g++-7
 # export LINKXX=clang++ 
 # export LINK=clang
 

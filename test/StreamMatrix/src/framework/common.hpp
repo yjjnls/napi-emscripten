@@ -1,7 +1,6 @@
 #ifndef STREAM_MATRIX_FRAMEWORK_COMMON_HPP
 #define STREAM_MATRIX_FRAMEWORK_COMMON_HPP
 
-#include <gst/gst.h>
 #include <vector>
 #include <list>
 #include <map>
@@ -9,6 +8,7 @@
 #include <functional>
 #include <algorithm>
 #include <utils/nlohmann/json.hpp>
+#include <gst/gst.h>
 
 typedef std::function<void(int code, const std::string &data)> callback;
 typedef std::function<void(const std::string &meta, const std::string &data)> notify_fn;

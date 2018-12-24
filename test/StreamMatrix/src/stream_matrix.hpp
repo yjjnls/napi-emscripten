@@ -10,13 +10,7 @@ class StreamMatrix
     explicit StreamMatrix()
         : terminate_promise_(nullptr){};
 
-    ~StreamMatrix()
-    {
-        if (terminate_promise_ != nullptr) {
-            delete terminate_promise_;
-            terminate_promise_ = nullptr;
-        }
-    };
+    ~StreamMatrix();
 
     void Initialize(callback cb);
     void Terminate(callback cb);
