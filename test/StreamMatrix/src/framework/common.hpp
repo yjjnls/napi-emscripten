@@ -7,6 +7,7 @@
 #include <string>
 #include <functional>
 #include <algorithm>
+#include <unordered_map>
 #include <utils/nlohmann/json.hpp>
 #include <gst/gst.h>
 
@@ -19,7 +20,8 @@ enum MediaType
     kLiveStream,
     kMultiPoints,
     kPlayBack,
-    kAnalyzer
+    kAnalyzer,
+    kLauncher
 };
 
 enum TestServerType

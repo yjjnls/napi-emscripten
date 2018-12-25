@@ -244,7 +244,7 @@ void CreateRtspAnalyzer(StreamMatrix &obj,
     param["type"] = kAnalyzer;
     param["id"] = id;
     param["protocal"] = AnalyzerType::kRtsp;
-    param["url"] = url;
+    // param["url"] = url;
     param["launch"] = launch;
 
     obj.Call(meta, param, CALLBACK(cb));
@@ -284,6 +284,17 @@ void GetVersion(StreamMatrix &obj, const emscripten::val &cb)
     meta["action"] = "version";
     obj.Call(meta, nlohmann::json(), CALLBACK(cb));
 }
+void CreateLauncher(StreamMatrix &obj, const std::string &id, const std::string &launch, const emscripten::val &cb)
+{
+    nlohmann::json meta;
+    meta["action"] = "create";
+    nlohmann::json param;
+    param["type"] = kLauncher;
+    param["id"] = id;
+    param["launch"] = launch;
+
+    obj.Call(meta, param, CALLBACK(cb));
+}
 }  // namespace binding_utils
 
 EMSCRIPTEN_BINDINGS(binding_utils)
@@ -318,5 +329,6 @@ EMSCRIPTEN_BINDINGS(binding_utils)
         .function("CreateWebrtcAnalyzer", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateWebrtcAnalyzer))
 
         .function("SetNotification", select_overload<void(StreamMatrix &, const emscripten::val &, const emscripten::val &)>(&binding_utils::SetNotification))
-        .function("version", select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::GetVersion));
+        .function("version", select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::GetVersion))
+        .function("CreateLauncher", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateLauncher));
 }

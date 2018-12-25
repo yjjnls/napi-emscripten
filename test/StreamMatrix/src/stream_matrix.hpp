@@ -3,6 +3,9 @@
 
 #include <framework/common.hpp>
 #include <framework/promise.hpp>
+#include <framework/app.hpp>
+#include <app/launcher.hpp>
+#include <app/rtsp_test_client.hpp>
 
 class StreamMatrix
 {
@@ -16,6 +19,7 @@ class StreamMatrix
     void Terminate(callback cb);
 
     void SetNotification(notify_fn fun, callback cb);
+    void Notify(const nlohmann::json &meta, const nlohmann::json &data);
 
     void Call(const nlohmann::json &meta, const nlohmann::json &data, callback cb);
 
@@ -33,9 +37,11 @@ class StreamMatrix
     void create_app(Promise *promise);
     void destroy_app(Promise *promise);
     void operate_app(Promise *promise);
+    IApp *app_factory(const nlohmann::json &data);
 
     notify_fn notification_;
     Promise *terminate_promise_;
+    std::unordered_map<std::string, IApp *> app_container_;
 };
 
 #endif

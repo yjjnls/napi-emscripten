@@ -92,6 +92,45 @@ async function terminate(stream_matrix) {
         });
     });
 }
+
+async function launch(stream_matrix) {
+    return new Promise((resolve, reject) => {
+        stream_matrix.CreateLauncher("app1", "videotestsrc ! xvimagesink", (code, data) => {
+            if (code == 0) {
+                console.log('CreateLauncher OK!');
+                console.log('code: ' + code);
+                console.log('data: ' + data);
+                resolve();
+            }
+            else {
+                console.log('CreateLauncher FAILED!');
+                console.log('code: ' + code);
+                console.log('data: ' + data);
+                reject();
+            }
+        });
+    });
+}
+
+async function startup(stream_matrix) {
+    return new Promise((resolve, reject) => {
+        stream_matrix.StartUp("app1", (code, data) => {
+            if (code == 0) {
+                console.log('StartUp OK!')
+                console.log('code: ' + code);
+                console.log('data: ' + data);
+                resolve();
+            }
+            else {
+                console.log('StartUp FAILED!')
+                console.log('code: ' + code);
+                console.log('data: ' + data);
+                reject();
+            }
+        });
+    });
+}
+
 (async function test() {
     let stream_matrix = new Module.StreamMatrix();
 
@@ -101,6 +140,11 @@ async function terminate(stream_matrix) {
     await set_notification(stream_matrix);
 
     console.log('------------------------------');
+    await launch(stream_matrix);
+    console.log('------------------------------');
+    await startup(stream_matrix);
+    console.log('------------------------------');
+    await sleep(10000);
     await version(stream_matrix);
 
     console.log('------------------------------');

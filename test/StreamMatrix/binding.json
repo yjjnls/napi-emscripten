@@ -62,5 +62,8 @@
     ],
     "select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::GetVersion)": [
         "val,std::function<void(int, const std::string &)>"
+    ],
+    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateLauncher)": [
+        "val,std::function<void(int, const std::string &)>"
     ]
 }

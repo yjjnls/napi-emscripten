@@ -14,7 +14,7 @@ class Promise
             void *user_data,
             const nlohmann::json &jmeta = nlohmann::json(),
             const nlohmann::json &jdata = nlohmann::json())
-        : owner_(matrix)
+        : stream_matrix_(matrix)
         , callback_(cb)
         , user_data_(user_data)
         , jdata_(jdata)
@@ -23,9 +23,9 @@ class Promise
         , app_(nullptr)
     {
     }
-    StreamMatrix *GetStreamMatrix()
+    StreamMatrix *stream_matrix()
     {
-        return owner_;
+        return stream_matrix_;
     }
 
     void resolve()
@@ -75,7 +75,7 @@ class Promise
     nlohmann::json jmeta_;
     bool responsed_;
     IApp *app_;
-    StreamMatrix *owner_;
+    StreamMatrix *stream_matrix_;
     callback callback_;
     void *user_data_;
 };
