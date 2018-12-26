@@ -8,7 +8,8 @@
 #include <functional>
 #include <algorithm>
 #include <unordered_map>
-#include <utils/nlohmann/json.hpp>
+#include <mutex>
+#include <nlohmann/json.hpp>
 #include <gst/gst.h>
 
 typedef std::function<void(int code, const std::string &data)> callback;

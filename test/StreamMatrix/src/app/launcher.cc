@@ -18,9 +18,14 @@ bool Launcher::Initialize(Promise *promise)
     launch_ = data["launch"];
     GError *error = NULL;
     GstElement *bin = gst_parse_launch(launch_.c_str(), &error);
+    if (error) {
+        g_printerr("Failed to parse launch: %s\n", error->message);
+        g_error_free(error);
+        return false;
+    }
     IApp::Initialize(promise);
     gst_bin_add(GST_BIN(pipeline()), bin);
-    return TRUE;
+    return true;
 }
 
 void Launcher::On(Promise *promise)
