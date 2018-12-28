@@ -15,7 +15,7 @@ class Launcher : public IApp
     // virtual bool Destroy();
 
  protected:
-    virtual std::string uname() { return id() + "@Launcher"; }
+    virtual std::string uname() { return "Launcher@" + id(); }
     virtual void startup(Promise *promise);
     virtual void stop(Promise *promise);
     static gboolean message_handler(GstBus *bus, GstMessage *message, gpointer data);

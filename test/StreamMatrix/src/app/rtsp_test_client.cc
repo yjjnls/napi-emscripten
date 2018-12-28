@@ -21,16 +21,16 @@ void RtspTestClient::startup(Promise *promise)
 {
     const json &j = promise->data();
 
-    sink_ = gst_bin_get_by_name(GST_BIN(pipeline()), "sink");
-    if (sink_ == NULL) {
-        GST_INFO("[rtsp test client] use multifilesink for test.");
+    sink_ = gst_bin_get_by_name(GST_BIN(Pipeline()), "sink");
+    if (sink_ == nullptr) {
+        GST_INFO("[RtspTestClient] use multifilesink for test.");
     } else {
-        GST_INFO("[rtsp test client] use raw image data for test.");
+        GST_INFO("[RtspTestClient] use raw image data for test.");
         if (j.find("frame") != j.end()) {
             frame_ = j["frame"];
         }
         GstPad *pad = gst_element_get_static_pad(sink_, "sink");
-        gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, RtspTestClient::on_have_data, this, NULL);
+        gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, RtspTestClient::on_have_data, this, nullptr);
         gst_object_unref(pad);
     }
 
@@ -55,26 +55,26 @@ gboolean RtspTestClient::on_save_image(gpointer user_data)
     RtspTestClient *app = static_cast<RtspTestClient *>(user_data);
 
     GstSample *from_sample;
-    g_object_get(app->sink_, "last-sample", &from_sample, NULL);
-    if (from_sample == NULL) {
-        GST_ERROR("[rtsp test client] failed getting sample.");
+    g_object_get(app->sink_, "last-sample", &from_sample, nullptr);
+    if (from_sample == nullptr) {
+        GST_ERROR("[RtspTestClient] failed getting sample.");
         return FALSE;
     }
     GstCaps *caps = gst_caps_from_string("image/bmp");
 
-    if (caps == NULL) {
-        GST_ERROR("[rtsp test client] failed getting caps.");
+    if (caps == nullptr) {
+        GST_ERROR("[RtspTestClient] failed getting caps.");
         return FALSE;
     }
 
-    GError *err = NULL;
+    GError *err = nullptr;
     GstSample *to_sample = gst_video_convert_sample(from_sample, caps, GST_CLOCK_TIME_NONE, &err);
     gst_caps_unref(caps);
     gst_sample_unref(from_sample);
 
-    if (to_sample == NULL && err) {
-        GST_ERROR("[rtsp test client] failed converting frame.");
-        GST_ERROR("[rtsp test client] error : %s", err->message);
+    if (to_sample == nullptr && err) {
+        GST_ERROR("[RtspTestClient] failed converting frame.");
+        GST_ERROR("[RtspTestClient] error : %s", err->message);
         return FALSE;
     }
     GstBuffer *buf = gst_sample_get_buffer(to_sample);
@@ -84,7 +84,7 @@ gboolean RtspTestClient::on_save_image(gpointer user_data)
 
     GstMapInfo map_info;
     if (!gst_buffer_map(buf, &map_info, GST_MAP_READ)) {
-        GST_ERROR("[rtsp test client] could not get image data from gstbuffer");
+        GST_ERROR("[RtspTestClient] could not get image data from gstbuffer");
         gst_sample_unref(to_sample);
 
         return FALSE;

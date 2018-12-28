@@ -12,8 +12,10 @@ class RtspTestClient : public Launcher
     // bool Initialize();
 
  protected:
-    std::string uname() { return id() + "@RtspTestClient"; }
+    std::string uname() { return "RtspTestClient@" + id(); }
+
     void startup(Promise *promise);
+
     static gboolean on_save_image(gpointer user_data);
     static GstPadProbeReturn on_have_data(GstPad *pad, GstPadProbeInfo *info, gpointer user_data);
     void on_message(GstBus *bus, GstMessage *message);

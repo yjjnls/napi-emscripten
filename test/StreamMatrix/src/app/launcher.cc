@@ -16,7 +16,7 @@ bool Launcher::Initialize(Promise *promise)
 {
     const json &data = promise->data();
     launch_ = data["launch"];
-    GError *error = NULL;
+    GError *error = nullptr;
     GstElement *bin = gst_parse_launch(launch_.c_str(), &error);
     if (error) {
         g_printerr("Failed to parse launch: %s\n", error->message);
@@ -24,7 +24,7 @@ bool Launcher::Initialize(Promise *promise)
         return false;
     }
     IApp::Initialize(promise);
-    gst_bin_add(GST_BIN(pipeline()), bin);
+    gst_bin_add(GST_BIN(Pipeline()), bin);
     return true;
 }
 
@@ -42,9 +42,9 @@ void Launcher::On(Promise *promise)
 
 void Launcher::startup(Promise *promise)
 {
-    gst_element_set_state(pipeline(), GST_STATE_PLAYING);
+    gst_element_set_state(Pipeline(), GST_STATE_PLAYING);
 
-    GstBus *bus = gst_element_get_bus(pipeline());
+    GstBus *bus = gst_element_get_bus(Pipeline());
     gst_bus_add_watch(bus, Launcher::message_handler, this);
     gst_object_unref(bus);
 
@@ -53,7 +53,7 @@ void Launcher::startup(Promise *promise)
 
 void Launcher::stop(Promise *promise)
 {
-    gst_element_set_state(pipeline(), GST_STATE_NULL);
+    gst_element_set_state(Pipeline(), GST_STATE_NULL);
     promise->resolve();
 }
 

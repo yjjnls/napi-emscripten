@@ -5,7 +5,6 @@
 #include <framework/common.hpp>
 
 class StreamMatrix;
-class IApp;
 class Promise
 {
  public:
@@ -20,7 +19,6 @@ class Promise
         , jdata_(jdata)
         , jmeta_(jmeta)
         , responsed_(false)
-        , app_(nullptr)
     {
     }
     StreamMatrix *stream_matrix()
@@ -42,13 +40,13 @@ class Promise
             responsed_ = true;
         }
     }
-    void reject(const nlohmann::json &param)
-    {
-        if (!responsed_) {
-            callback_(1, param.dump());
-            responsed_ = true;
-        }
-    }
+    // void reject(const nlohmann::json &param)
+    // {
+    //     if (!responsed_) {
+    //         callback_(1, param.dump());
+    //         responsed_ = true;
+    //     }
+    // }
     void reject(const std::string &message)
     {
         if (!responsed_) {
@@ -74,7 +72,6 @@ class Promise
     nlohmann::json jdata_;
     nlohmann::json jmeta_;
     bool responsed_;
-    IApp *app_;
     StreamMatrix *stream_matrix_;
     callback callback_;
     void *user_data_;

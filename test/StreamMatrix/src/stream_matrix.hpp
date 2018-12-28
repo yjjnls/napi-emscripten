@@ -5,7 +5,6 @@
 #include <framework/promise.hpp>
 #include <framework/app.hpp>
 #include <app/launcher.hpp>
-#include <app/rtsp_test_client.hpp>
 
 class StreamMatrix
 {
@@ -23,6 +22,7 @@ class StreamMatrix
 
     void Call(const nlohmann::json &meta, const nlohmann::json &data, callback cb);
 
+    static GMainContext *MainContext();
 
  private:
     void get_version(Promise *promise);

@@ -43,7 +43,7 @@ void CreateRtspTestServer(StreamMatrix &obj,
     nlohmann::json param;
     param["type"] = kTestServer;
     param["id"] = id;
-    param["protocal"] = TestServerType::kRTSP20;
+    param["protocal"] = ServerType::kRTSP20;
     param["path"] = path;
     param["port"] = port;
     param["launch"] = launch;

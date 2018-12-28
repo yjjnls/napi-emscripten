@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <mutex>
 #include <nlohmann/json.hpp>
+#include <utils/type_def.hpp>
+#include <utils/pipe_joint.hpp>
 #include <gst/gst.h>
 
 typedef std::function<void(int code, const std::string &data)> callback;
@@ -25,7 +27,7 @@ enum MediaType
     kLauncher
 };
 
-enum TestServerType
+enum ServerType
 {
     kRFC7826 = 0,  // RTSP 2.0 RFC7826
     kONVIF,

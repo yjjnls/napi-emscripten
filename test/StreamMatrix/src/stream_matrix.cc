@@ -1,8 +1,12 @@
 #include <stream_matrix.hpp>
+#include <app/launcher.hpp>
+#include <app/rtsp_test_client.hpp>
+#include <app/rtsp_test_server.hpp>
+#include <app/livestream.hpp>
 
 using json = nlohmann::json;
 
-static GThread *main_thread = NULL;
+static GThread *main_thread = nullptr;
 
 GMainLoop *StreamMatrix::main_loop_ = nullptr;
 GMainContext *StreamMatrix::main_context_ = nullptr;
@@ -10,6 +14,11 @@ GMainContext *StreamMatrix::main_context_ = nullptr;
 
 GST_DEBUG_CATEGORY_STATIC(my_category);
 #define GST_CAT_DEFAULT my_category
+
+GMainContext *StreamMatrix::MainContext()
+{
+    return StreamMatrix::main_context_;
+}
 
 static gboolean main_loop_init(GAsyncQueue *queue)
 {
@@ -29,8 +38,8 @@ StreamMatrix::~StreamMatrix()
 }
 void StreamMatrix::Initialize(callback cb)
 {
-    GST_DEBUG_CATEGORY_INIT(my_category, "webstreamer", 2, "libWebStreamer");
-    gst_init(NULL, NULL);
+    GST_DEBUG_CATEGORY_INIT(my_category, "stream_matrix", 2, "stream_matrix");
+    gst_init(nullptr, nullptr);
     GAsyncQueue *queue = g_async_queue_new();
 
     Promise *promise = new Promise(this, cb, queue);
@@ -46,7 +55,7 @@ gpointer StreamMatrix::main_loop_entry(Promise *promise)
 {
     StreamMatrix *instance = promise->stream_matrix();
     instance->main_loop(promise);
-    return NULL;
+    return nullptr;
 }
 
 void StreamMatrix::main_loop(Promise *promise)
@@ -59,13 +68,13 @@ void StreamMatrix::main_loop(Promise *promise)
 
     promise->resolve();
     delete promise;
-    promise = NULL;
+    promise = nullptr;
 
     GSource *idle_source = g_idle_source_new();
     g_source_set_callback(idle_source,
                           (GSourceFunc)main_loop_init,
                           queue,
-                          NULL);
+                          nullptr);
     g_source_set_priority(idle_source, G_PRIORITY_DEFAULT);
     g_source_attach(idle_source, StreamMatrix::main_context_);
 
@@ -78,17 +87,18 @@ void StreamMatrix::main_loop(Promise *promise)
     g_main_loop_unref(StreamMatrix::main_loop_);
 
     gst_deinit();
-    StreamMatrix::main_loop_ = NULL;
-    StreamMatrix::main_context_ = NULL;
+    StreamMatrix::main_loop_ = nullptr;
+    StreamMatrix::main_context_ = nullptr;
     terminate_promise_->resolve();
     delete terminate_promise_;
-    terminate_promise_ = NULL;
+    terminate_promise_ = nullptr;
 }
 
 void StreamMatrix::cleanup()
 {
     for (auto &app : app_container_) {
-        app.second->Destroy(nullptr);
+        GST_DEBUG("[StreamMatrix] clean up app: %s", app.second->uname().c_str());
+        app.second->Destroy();
         delete app.second;
     }
 }
@@ -116,7 +126,7 @@ void StreamMatrix::Call(const nlohmann::json &meta, const nlohmann::json &data, 
     Promise *promise = new Promise(this, cb, nullptr, meta, data);
     GSource *source = g_idle_source_new();
 
-    g_source_set_callback(source, StreamMatrix::on_promise_entry, promise, NULL);
+    g_source_set_callback(source, StreamMatrix::on_promise_entry, promise, nullptr);
     g_source_set_priority(source, G_PRIORITY_DEFAULT);
     g_source_attach(source, StreamMatrix::main_context_);
 }
@@ -158,29 +168,26 @@ void StreamMatrix::create_app(Promise *promise)
     std::string id = data["id"];
 
     if (app_container_.count(id) > 0) {
-        std::string err_msg = "[StreamMatrix] " + id + " has been created!";
-        GST_ERROR(err_msg.c_str());
-        promise->reject(err_msg);
+        GST_ERROR("[StreamMatrix] %s has been created!", id.c_str());
+        promise->reject("[StreamMatrix] " + id + " has been created!");
         return;
     }
 
     IApp *app = app_factory(data);
 
     if (app == nullptr) {
-        std::string err_msg = "[StreamMatrix] " + id + " fail to create!";
-        GST_ERROR(err_msg.c_str());
-        promise->reject(err_msg);
+        GST_ERROR("[StreamMatrix] %s fail to create!", id.c_str());
+        promise->reject("[StreamMatrix] " + id + " fail to create!");
         return;
     }
     if (!app->Initialize(promise)) {
         delete app;
-        std::string err_msg = "[StreamMatrix] " + id + " initialize failed!";
-        GST_ERROR(err_msg.c_str());
-        promise->reject(err_msg);
+        GST_ERROR("[StreamMatrix] %s initialize failed!", id.c_str());
+        promise->reject("[StreamMatrix] " + id + " initialize failed!");
         return;
     }
     app_container_[id] = app;
-    GST_INFO("[StreamMatrix] create app: %s successfully!", id.c_str());
+    GST_INFO("[StreamMatrix] create app: \"%s\" successfully!", app->uname().c_str());
     promise->resolve();
 }
 IApp *StreamMatrix::app_factory(const nlohmann::json &data)
@@ -190,6 +197,7 @@ IApp *StreamMatrix::app_factory(const nlohmann::json &data)
     int type = data["type"];
     // todo
     if (type == MediaType::kTestServer) {
+        app = new RtspTestServer(id, this);
     } else if (type == MediaType::kAnalyzer) {
         int protocal = data["protocal"];
         if (protocal == AnalyzerType::kRtsp) {
@@ -211,25 +219,18 @@ void StreamMatrix::destroy_app(Promise *promise)
     std::string id = data["id"];
 
     if (app_container_.count(id) <= 0) {
-        std::string err_msg = "[StreamMatrix] " + id + " hasn't been created!";
-        GST_ERROR(err_msg.c_str());
-        promise->reject(err_msg);
+        GST_ERROR("[StreamMatrix] %s hasn't been created!", id.c_str());
+        promise->reject("[StreamMatrix] " + id + " hasn't been created!");
         return;
     }
 
     IApp *app = app_container_[id];
-    bool res = app->Destroy(promise);
+    app->Destroy();
     delete app;
     app_container_.erase(id);
 
-    if (!res) {
-        std::string err_msg = "[StreamMatrix] " + id + " fail to destroy!";
-        GST_ERROR(err_msg.c_str());
-        promise->reject(err_msg);
-    } else {
-        GST_INFO("[StreamMatrix] destroy app: %s successfully!", id.c_str());
-        promise->resolve();
-    }
+    GST_INFO("[StreamMatrix] destroy app: %s successfully!", id.c_str());
+    promise->resolve();
 }
 void StreamMatrix::operate_app(Promise *promise)
 {
@@ -237,9 +238,8 @@ void StreamMatrix::operate_app(Promise *promise)
     std::string id = data["id"];
 
     if (app_container_.count(id) <= 0) {
-        std::string err_msg = "[StreamMatrix] " + id + " hasn't been created!";
-        GST_ERROR(err_msg.c_str());
-        promise->reject(err_msg);
+        GST_ERROR("[StreamMatrix] %s hasn't been created!", id.c_str());
+        promise->reject("[StreamMatrix] " + id + " hasn't been created!");
         return;
     }
 

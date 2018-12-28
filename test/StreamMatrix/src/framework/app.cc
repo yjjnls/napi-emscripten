@@ -15,15 +15,14 @@ bool IApp::Initialize(Promise *promise)
 }
 
 
-bool IApp::Destroy(Promise *promise)
+void IApp::Destroy()
 {
     if (pipeline_) {
         gst_element_set_state(pipeline_, GST_STATE_NULL);
         g_object_unref(pipeline_);
-        pipeline_ = NULL;
+        pipeline_ = nullptr;
     }
-    stream_matrix_ = NULL;
-    return true;
+    stream_matrix_ = nullptr;
 }
 
 
