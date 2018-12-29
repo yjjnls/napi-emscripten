@@ -36,7 +36,6 @@ RtspServer::~RtspServer()
 bool RtspServer::Initialize(Promise *promise)
 {
     const json &j = promise->data();
-    port_ = j["port"];
     type_ = j["protocal"];
     IEndpoint::Protocol() = "rtspserver";
 
@@ -81,7 +80,7 @@ bool RtspServer::StartLaunch(const std::string &path,
     gst_rtsp_mount_points_add_factory(mount_points, path.c_str(), factory_);
     g_object_unref(mount_points);
 
-    GST_DEBUG("[RtspServer] \"%s\" launched to %s", id().c_str(), path.c_str());
+    GST_DEBUG("[RtspServer] \"%s\" launched to %s", Id().c_str(), path.c_str());
     // g_object_weak_ref(G_OBJECT(factory_), Notify, factory_);
 
     g_signal_connect(server_, "client-connected", (GCallback)on_client_connected, (gpointer)(this));
@@ -120,7 +119,7 @@ void RtspServer::on_rtsp_media_constructed(GstRTSPMediaFactory *factory, GstRTSP
 
         static std::string media_type = "video";
         std::string pipejoint_name = std::string("rtspserver_video_endpoint_joint_") +
-                                     instance->id() +
+                                     instance->Id() +
                                      std::to_string(session_count);
         instance->video_output_joint() = make_pipe_joint(media_type, pipejoint_name);
 
@@ -141,7 +140,7 @@ void RtspServer::on_rtsp_media_constructed(GstRTSPMediaFactory *factory, GstRTSP
 
         static std::string media_type = "audio";
         std::string pipejoint_name = std::string("rtspserver_audio_endpoint_joint_") +
-                                     instance->id() +
+                                     instance->Id() +
                                      std::to_string(session_count);
         instance->audio_output_joint() = make_pipe_joint(media_type, pipejoint_name);
 
@@ -176,10 +175,10 @@ void RtspServer::on_new_session(GstRTSPClient *client,
     client_mutex_.lock();
     instance->clients_[session] = client;
     client_mutex_.unlock();
-    g_signal_connect(client, "closed", (GCallback)(instance->onclosed), user_data);
+    g_signal_connect(client, "closed", (GCallback)(instance->on_closed), user_data);
     GST_DEBUG("[RtspServer] (path: %s) client: %p connected.", instance->path_.c_str(), client);
 }
-void RtspServer::onclosed(GstRTSPClient *client, gpointer user_data)
+void RtspServer::on_closed(GstRTSPClient *client, gpointer user_data)
 {
     RtspServer *instance = static_cast<RtspServer *>(user_data);
     client_mutex_.lock();

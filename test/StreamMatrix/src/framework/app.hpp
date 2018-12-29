@@ -8,7 +8,7 @@ class IApp
 {
  public:
     IApp(const std::string &id, StreamMatrix *instance)
-        : id_(id)
+        : id_(id.c_str())
         , pipeline_(nullptr)
         , stream_matrix_(instance)
 
@@ -33,8 +33,8 @@ class IApp
     virtual std::string uname() = 0;
 
  protected:
-    // virtual const char *type() const = 0;
-
+    virtual void startup(Promise *promise);
+    virtual void stop(Promise *promise);
     StreamMatrix &stream_matrix() { return *stream_matrix_; }
     std::string id() { return id_; }
 

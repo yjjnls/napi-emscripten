@@ -21,19 +21,19 @@ RtspClient::RtspClient(IApp *app, const std::string &id)
 bool RtspClient::Initialize(Promise *promise)
 {
     const json &j = promise->data();
-    const std::string &url = j["url"];
+    const std::string &url = j["source_url"];
     GST_DEBUG("[RtspClient] source url: %s", url.c_str());
     IEndpoint::Protocol() = "rtspclient";
 
     rtspsrc_ = gst_element_factory_make("rtspsrc", "rtspsrc");
     g_object_set(G_OBJECT(rtspsrc_), "location", url.c_str(), nullptr);
     if (j.find("video_codec") != j.end()) {
-        const std::string video_codec = j["video_codec"];
-        app()->VideoEncoding() = video_codec;
+        std::string video_codec = j["video_codec"];
+        app()->VideoEncoding() = std::string(video_codec.c_str());
     }
     if (j.find("audio_codec") != j.end()) {
         const std::string audio_codec = j["audio_codec"];
-        app()->AudioEncoding() = audio_codec;
+        app()->AudioEncoding() = std::string(audio_codec.c_str());
     }
 
     return add_to_pipeline();
@@ -43,7 +43,7 @@ void RtspClient::Terminate()
 {
     gst_bin_remove_many(GST_BIN(app()->Pipeline()), rtspsrc_, rtpdepay_video_, parse_video_, nullptr);
     gst_bin_remove_many(GST_BIN(app()->Pipeline()), rtpdepay_audio_, nullptr);
-    GST_DEBUG("[RtspClient] %s terminate done.", id().c_str());
+    GST_DEBUG("[RtspClient] %s terminate done.", Id().c_str());
 }
 
 bool RtspClient::add_to_pipeline()
@@ -99,7 +99,7 @@ bool RtspClient::add_to_pipeline()
         gst_bin_add_many(GST_BIN(app()->Pipeline()), rtpdepay_audio_, nullptr);
         GST_DEBUG("[RtspClient] configured audio: %s", uppercase(app()->AudioEncoding()).c_str());
     }
-    GST_DEBUG("[RtspClient] %s initialize done.", id().c_str());
+    GST_DEBUG("[RtspClient] %s initialize done.", Id().c_str());
 
     return true;
 }
@@ -131,6 +131,12 @@ void RtspClient::on_rtspsrc_pad_added(GstElement *src,
             GstPadLinkReturn ret = gst_pad_link(src_pad, sink_pad);
             g_warn_if_fail(ret == GST_PAD_LINK_OK);
             gst_object_unref(sink_pad);
+
+            json meta;
+            meta["from"] = rtsp_client->app()->uname();
+            json data;
+            data["msg"] = "video channel connected";
+            rtsp_client->app()->Notify(meta, data);
             // gst_pad_add_probe(src_pad, GST_PAD_PROBE_TYPE_BUFFER, on_monitor_data, rtspclient, nullptr);
         }
     } else if (g_str_equal(g_value_get_string(media_type), "audio")) {
@@ -139,6 +145,12 @@ void RtspClient::on_rtspsrc_pad_added(GstElement *src,
             GstPadLinkReturn ret = gst_pad_link(src_pad, sink_pad);
             g_warn_if_fail(ret == GST_PAD_LINK_OK);
             gst_object_unref(sink_pad);
+
+            json meta;
+            meta["from"] = rtsp_client->app()->uname();
+            json data;
+            data["msg"] = "audio channel connected";
+            rtsp_client->app()->Notify(meta, data);
             // gst_pad_add_probe(src_pad, GST_PAD_PROBE_TYPE_BUFFER, on_monitor_data, rtspclient, nullptr);
         }
     } else {

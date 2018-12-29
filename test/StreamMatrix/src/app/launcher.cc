@@ -42,20 +42,18 @@ void Launcher::On(Promise *promise)
 
 void Launcher::startup(Promise *promise)
 {
-    gst_element_set_state(Pipeline(), GST_STATE_PLAYING);
-
     GstBus *bus = gst_element_get_bus(Pipeline());
     gst_bus_add_watch(bus, Launcher::message_handler, this);
     gst_object_unref(bus);
 
-    promise->resolve();
+    IApp::startup(promise);
 }
 
-void Launcher::stop(Promise *promise)
-{
-    gst_element_set_state(Pipeline(), GST_STATE_NULL);
-    promise->resolve();
-}
+// void Launcher::stop(Promise *promise)
+// {
+//     gst_element_set_state(Pipeline(), GST_STATE_NULL);
+//     promise->resolve();
+// }
 
 gboolean Launcher::message_handler(GstBus *bus, GstMessage *message, gpointer data)
 {

@@ -204,6 +204,7 @@ IApp *StreamMatrix::app_factory(const nlohmann::json &data)
             app = new RtspTestClient(id, this);
         }
     } else if (type == MediaType::kLiveStream) {
+        app = new LiveStream(id, this);
     } else if (type == MediaType::kMultiPoints) {
     } else if (type == MediaType::kPlayBack) {
     } else if (type == MediaType::kLauncher) {
@@ -225,11 +226,12 @@ void StreamMatrix::destroy_app(Promise *promise)
     }
 
     IApp *app = app_container_[id];
+    std::string uname = app->uname();
     app->Destroy();
     delete app;
     app_container_.erase(id);
 
-    GST_INFO("[StreamMatrix] destroy app: %s successfully!", id.c_str());
+    GST_INFO("[StreamMatrix] destroy app: \"%s\" successfully!", uname.c_str());
     promise->resolve();
 }
 void StreamMatrix::operate_app(Promise *promise)

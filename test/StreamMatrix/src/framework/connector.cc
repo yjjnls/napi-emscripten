@@ -21,8 +21,8 @@ bool Connector::Initialize(Promise *promise)
     g_warn_if_fail(gst_bin_add(GST_BIN(Pipeline()), video_tee_));
     g_warn_if_fail(gst_bin_add(GST_BIN(Pipeline()), audio_tee_));
 
-    video_selector_ = gst_element_factory_make("selector", "video_selector");
-    audio_selector_ = gst_element_factory_make("selector", "audio_selector");
+    video_selector_ = gst_element_factory_make("input-selector", "video_selector");
+    audio_selector_ = gst_element_factory_make("input-selector", "audio_selector");
     g_warn_if_fail(gst_bin_add(GST_BIN(Pipeline()), video_selector_));
     g_warn_if_fail(gst_bin_add(GST_BIN(Pipeline()), audio_selector_));
 
@@ -79,10 +79,11 @@ void Connector::Destroy()
     // g_assert(tee_sinks_.empty());
 
     gst_element_set_state(Pipeline(), GST_STATE_NULL);
-    gst_object_unref(video_tee_);
-    gst_object_unref(video_selector_);
-    gst_object_unref(audio_tee_);
-    gst_object_unref(audio_selector_);
+    gst_bin_remove_many(GST_BIN(Pipeline()), video_tee_, video_selector_, audio_tee_, audio_selector_, nullptr);
+    // gst_object_unref(video_tee_);
+    // gst_object_unref(video_selector_);
+    // gst_object_unref(audio_tee_);
+    // gst_object_unref(audio_selector_);
 
     IApp::Destroy();
 }

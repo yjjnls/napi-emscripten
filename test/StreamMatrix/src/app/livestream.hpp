@@ -8,15 +8,21 @@ class LiveStream : public Connector
 {
  public:
     LiveStream(const std::string &id, StreamMatrix *instance);
-    ~LiveStream();
+    ~LiveStream() {}
 
     bool Initialize(Promise *promise);
+    void On(Promise *promise);
 
-    virtual std::string uname() { return "LiveStream@" + id(); }
+    std::string uname() { return "LiveStream@" + id(); }
 
  protected:
  private:
     bool on_add_endpoint(IEndpoint *endpoint);
+    std::list<IEndpoint *>::iterator find_audience(const std::string &id);
+    void add_audience(Promise *promise);
+    void remove_audience(Promise *promise);
+    void set_remote_description(Promise *promise);
+    void set_remote_candidate(Promise *promise);
 
     IEndpoint *performer_;
     std::list<IEndpoint *> audiences_;

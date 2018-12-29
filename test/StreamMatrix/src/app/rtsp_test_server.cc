@@ -51,9 +51,11 @@ void RtspTestServer::startup(Promise *promise)
 {
     server_->StartLaunch(path_, launch_, NULL, NULL);
     promise->resolve();
+    GST_DEBUG("[RtspTestServer] %s statup!", uname().c_str());
 }
 void RtspTestServer::stop(Promise *promise)
 {
     server_->StopLaunch();
     promise->resolve();
+    GST_DEBUG("[RtspTestServer] %s stop!", uname().c_str());
 }

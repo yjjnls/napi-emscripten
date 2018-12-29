@@ -58,6 +58,10 @@ class Promise
     {
         return jdata_;
     }
+    nlohmann::json &data()
+    {
+        return jdata_;
+    }
 
     const nlohmann::json &meta() const
     {

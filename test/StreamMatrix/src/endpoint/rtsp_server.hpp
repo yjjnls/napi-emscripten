@@ -33,8 +33,8 @@ class RtspServer : public IEndpoint
     static void on_new_session(GstRTSPClient *gstrtspclient,
                                GstRTSPSession *session,
                                gpointer user_data);
-    static void onclosed(GstRTSPClient *client,
-                         gpointer user_data);
+    static void on_closed(GstRTSPClient *client,
+                          gpointer user_data);
 
 
     GstRTSPSessionPool *rtsp_session_pool_;

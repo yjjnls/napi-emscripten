@@ -15,15 +15,15 @@ async function initialize(stream_matrix) {
     return new Promise((resolve, reject) => {
         stream_matrix.Initialize((code, data) => {
             if (code == 0) {
-                console.log('Initialize OK!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~Initialize OK!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 resolve();
             }
             else {
-                console.log('Initialize FAILED!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~Initialize FAILED!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 reject();
             }
         });
@@ -37,15 +37,15 @@ async function set_notification(stream_matrix) {
             console.log('data: ' + data);
         }, (code, data) => {
             if (code == 0) {
-                console.log('set_notification OK!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~set_notification OK!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 resolve();
             }
             else {
-                console.log('set_notification FAILED!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~set_notification FAILED!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 reject();
             }
         });
@@ -55,15 +55,15 @@ async function version(stream_matrix) {
     return new Promise((resolve, reject) => {
         stream_matrix.version((code, data) => {
             if (code == 0) {
-                console.log('version OK!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~version OK!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 resolve();
             }
             else {
-                console.log('version FAILED!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~version FAILED!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 reject();
             }
         });
@@ -73,15 +73,15 @@ async function terminate(stream_matrix) {
     return new Promise((resolve, reject) => {
         stream_matrix.Terminate((code, data) => {
             if (code == 0) {
-                console.log('Terminate OK!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~Terminate OK!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 resolve();
             }
             else {
-                console.log('Terminate FAILED!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~Terminate FAILED!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 reject();
             }
         });
@@ -91,15 +91,15 @@ async function startup(stream_matrix, id) {
     return new Promise((resolve, reject) => {
         stream_matrix.StartUp(id, (code, data) => {
             if (code == 0) {
-                console.log('StartUp OK!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~StartUp OK!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 resolve();
             }
             else {
-                console.log('StartUp FAILED!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~StartUp FAILED!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 reject();
             }
         });
@@ -109,15 +109,15 @@ async function stop(stream_matrix, id) {
     return new Promise((resolve, reject) => {
         stream_matrix.Stop(id, (code, data) => {
             if (code == 0) {
-                console.log('Stop OK!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~Stop OK!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 resolve();
             }
             else {
-                console.log('Stop FAILED!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~Stop FAILED!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 reject();
             }
         });
@@ -127,15 +127,15 @@ async function destroy(stream_matrix, id) {
     return new Promise((resolve, reject) => {
         stream_matrix.Destroy(id, (code, data) => {
             if (code == 0) {
-                console.log('DestroyApp OK!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~DestroyApp OK!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 resolve();
             }
             else {
-                console.log('DestroyApp FAILED!')
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~DestroyApp FAILED!')
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 reject();
             }
         });
@@ -144,38 +144,57 @@ async function destroy(stream_matrix, id) {
 
 /////////////////////////////////////////////////////////////////
 async function launch(stream_matrix) {
-    let id = "app1";
+    let id = "app0";
     return new Promise((resolve, reject) => {
         stream_matrix.CreateLauncher(id, "videotestsrc ! xvimagesink", (code, data) => {
             if (code == 0) {
-                console.log('CreateLauncher OK!');
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~CreateLauncher OK!');
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 resolve(id);
             }
             else {
-                console.log('CreateLauncher FAILED!');
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~CreateLauncher FAILED!');
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 reject();
             }
         });
     });
 }
 async function create_test_server(stream_matrix) {
-    let id = "rtsp_test_server1";
+    let id = "app1";
     return new Promise((resolve, reject) => {
-        stream_matrix.CreateRtspTestServer(id, 554, "/test", "videotestsrc ! video/x-raw,width=320,height=240,framerate=10/1 ! x264enc ! rtph264pay name=pay0 pt=96 ! audiotestsrc ! audio/x-raw,rate=8000 ! alawenc ! rtppcmapay name=pay1 pt=97", (code, data) => {
+        stream_matrix.CreateRtspTestServer(id, 8554, "/test", "videotestsrc ! video/x-raw,width=320,height=240,framerate=10/1 ! x264enc ! rtph264pay name=pay0 pt=96 ! audiotestsrc ! audio/x-raw,rate=8000 ! alawenc ! rtppcmapay name=pay1 pt=97", (code, data) => {
             if (code == 0) {
-                console.log('CreateRtspTestServer OK!');
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~CreateRtspTestServer OK!');
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 resolve(id);
             }
             else {
-                console.log('CreateRtspTestServer FAILED!');
-                console.log('code: ' + code);
-                console.log('data: ' + data);
+                console.log('~~~CreateRtspTestServer FAILED!');
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
+                reject();
+            }
+        });
+    });
+}
+async function create_livestream(stream_matrix) {
+    let id = "app2";
+    return new Promise((resolve, reject) => {
+        stream_matrix.CreateLiveStream(id, "rtsp://127.0.0.1:8554/test", "H264", "PCMA", (code, data) => {
+            if (code == 0) {
+                console.log('~~~CreateLiveStream OK!');
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
+                resolve(id);
+            }
+            else {
+                console.log('~~~CreateLiveStream FAILED!');
+                // console.log('code: ' + code);
+                // console.log('data: ' + data);
                 reject();
             }
         });
@@ -185,9 +204,7 @@ async function create_test_server(stream_matrix) {
     let stream_matrix = new Module.StreamMatrix();
 
     await initialize(stream_matrix);
-    console.log('------------------------------');
     await set_notification(stream_matrix);
-    console.log('------------------------------');
 
 
     // let launch_id = await launch(stream_matrix);
@@ -199,18 +216,23 @@ async function create_test_server(stream_matrix) {
     // console.log('------------------------------');
 
     let rtsp_test_server = await create_test_server(stream_matrix);
-    console.log('------------------------------');
     await startup(stream_matrix, rtsp_test_server);
-    console.log('------------------------------');
+    console.log('---------------rtsp test server done---------------');
+    await sleep(1000);
+
+    let livestream = await create_livestream(stream_matrix);
+    await startup(stream_matrix, livestream);
+    console.log('--------------livestream done----------------');
     await sleep(10000);
-    await stop(stream_matrix, rtsp_test_server);
+
+    await stop(stream_matrix, livestream);
+    await destroy(stream_matrix, livestream);
     console.log('------------------------------');
+    await stop(stream_matrix, rtsp_test_server);
     await destroy(stream_matrix, rtsp_test_server);
 
     await version(stream_matrix);
-    console.log('------------------------------');
     await terminate(stream_matrix);
-    console.log('------------------------------');
 
 
     stream_matrix.delete();

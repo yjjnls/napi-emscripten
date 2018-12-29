@@ -283,7 +283,6 @@ struct async_callback_t
     }
     ~async_callback_t()
     {
-        napi_delete_reference(global_env, ref);
     }
 
     virtual std::vector<napi_value> args()
@@ -332,6 +331,7 @@ struct callback_t : public async_callback_t
 };
 
 std::list<async_callback_t *> callbacks;
+std::list<async_callback_t *> notifications;
 
 void PushEvent(async_callback_t *ac)
 {
@@ -340,11 +340,20 @@ void PushEvent(async_callback_t *ac)
     uv_mutex_unlock(&mutext);
     uv_async_send(&async);
 }
+void PushNotification(async_callback_t *ac)
+{
+    uv_mutex_lock(&mutext);
+    notifications.push_back(ac);
+    uv_mutex_unlock(&mutext);
+    uv_async_send(&async);
+}
 void AddonEvent(uv_async_t *handle)
 {
     std::list<async_callback_t *> cbs;
+    std::list<async_callback_t *> nfs;
     uv_mutex_lock(&mutext);
     cbs.swap(callbacks);
+    nfs.swap(notifications);
     uv_mutex_unlock(&mutext);
 
     napi_handle_scope scope;
@@ -362,9 +371,23 @@ void AddonEvent(uv_async_t *handle)
         napi_value result;
         napi_call_function(global_env, global, cb, args.size(), args.data(), &result);
 
+        napi_delete_reference(global_env, ac->ref);
         delete ac;
     }
+    for (async_callback_t *ac : nfs) {
+        napi_value cb;
+        napi_status status = napi_get_reference_value(global_env, ac->ref, &cb);
+        assert(status == napi_ok);
+        napi_value global;
+        napi_get_global(global_env, &global);
 
+        std::vector<napi_value> args = ac->args();
+
+        napi_value result;
+        napi_call_function(global_env, global, cb, args.size(), args.data(), &result);
+
+        delete ac;
+    }
     napi_close_handle_scope(global_env, scope);
 }
 
@@ -906,6 +929,14 @@ napi_value global_malloc(napi_env env, napi_callback_info info)
 napi_value global_release(napi_env env, napi_callback_info info)
 {
     uv_close((uv_handle_t *)&async, NULL);
+    for (async_callback_t *ac : callbacks) {
+        napi_delete_reference(global_env, ac->ref);
+        delete ac;
+    }
+    for (async_callback_t *ac : notifications) {
+        napi_delete_reference(global_env, ac->ref);
+        delete ac;
+    }
     return nullptr;
 }
 """

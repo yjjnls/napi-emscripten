@@ -19,10 +19,11 @@ class IEndpoint
 
     const std::string &Protocol() const { return protocol_; }
     std::string &Protocol() { return protocol_; }
+    // const std::string &Id() { return id_; }
+    std::string &Id() { return id_; }
 
  protected:
     IApp *app() { return app_; }
-    const std::string &id() { return id_; }
 
     PipeJoint &video_input_joint() { return video_input_joint_; }
     PipeJoint &video_output_joint() { return video_output_joint_; }

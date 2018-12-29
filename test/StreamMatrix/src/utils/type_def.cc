@@ -29,7 +29,7 @@ AudioEncodingType get_audio_encoding_type(const std::string &type)
 
 std::string uppercase(const std::string &target)
 {
-    std::string result = target;
+    std::string result(target.c_str());
     for (int i = 0; i < result.size(); ++i) {
         if (result[i] >= 97 && result[i] <= 122) {
             result[i] -= 32;
