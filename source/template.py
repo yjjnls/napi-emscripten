@@ -566,13 +566,10 @@ ${declare_function}
 napi_init = Template("""
 napi_value Init(napi_env env, napi_value exports)
 {
-    uv_async_init(uv_default_loop(), &async, AddonEvent);
-    uv_mutex_init(&mutext);
-
-    /////////////////////
     global_env = env;
 ${init}
     napi_property_descriptor desc[] = {
+        NAPI_DECLARE_METHOD("initialize", global_initialize),
         NAPI_DECLARE_METHOD("release", global_release),
 ${declaration}
 ${create_object}
@@ -925,6 +922,12 @@ napi_value global_malloc(napi_env env, napi_callback_info info)
     napi_value result;
     napi_create_int64(env, p, &result);
     return result;
+}
+napi_value global_initialize(napi_env env, napi_callback_info info)
+{
+    uv_async_init(uv_default_loop(), &async, AddonEvent);
+    uv_mutex_init(&mutext);
+    return nullptr;
 }
 napi_value global_release(napi_env env, napi_callback_info info)
 {

@@ -13,6 +13,7 @@ include_directories(${GST_MODULES_INCLUDE_DIRS})
 link_directories   (${GST_MODULES_LIBRARY_DIRS})
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+ADD_DEFINITIONS( -DGST_USE_UNSTABLE_API  )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 add_library(stream_matrix  SHARED ${LWS_SOURCES} )
 target_link_libraries(stream_matrix ${GST_MODULES_LIBRARIES} )

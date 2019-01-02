@@ -12,7 +12,13 @@ class IEndpoint
         , id_(id)
     {
     }
-    virtual ~IEndpoint() {}
+    virtual ~IEndpoint()
+    {
+        destroy_pipe_joint(&video_input_joint_);
+        destroy_pipe_joint(&video_output_joint_);
+        destroy_pipe_joint(&audio_input_joint_);
+        destroy_pipe_joint(&audio_output_joint_);
+    }
 
     virtual bool Initialize(Promise *promise) { return true; }
     virtual void Terminate() {}

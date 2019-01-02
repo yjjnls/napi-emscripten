@@ -133,7 +133,8 @@ void RtspClient::on_rtspsrc_pad_added(GstElement *src,
             gst_object_unref(sink_pad);
 
             json meta;
-            meta["from"] = rtsp_client->app()->uname();
+            meta["topic"] = "rtspclient@" + rtsp_client->Id();
+            meta["origin"] = rtsp_client->app()->uname();
             json data;
             data["msg"] = "video channel connected";
             rtsp_client->app()->Notify(meta, data);
@@ -147,7 +148,8 @@ void RtspClient::on_rtspsrc_pad_added(GstElement *src,
             gst_object_unref(sink_pad);
 
             json meta;
-            meta["from"] = rtsp_client->app()->uname();
+            meta["topic"] = "rtspclient@" + rtsp_client->Id();
+            meta["origin"] = rtsp_client->app()->uname();
             json data;
             data["msg"] = "audio channel connected";
             rtsp_client->app()->Notify(meta, data);
