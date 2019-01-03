@@ -4,24 +4,25 @@ var Promise = require('bluebird');
 
 class IApp extends EventEmitter {
     constructor(stream_matrix, id, type) {
+        super();
         this.stream_matrix_ = stream_matrix;
-        this.id = id;
-        var uname = `${id}@${type}`;
+        this.instance_ = stream_matrix.stream_matrix_;
+        this.id_ = id;
+        this.uname_ = `${id}@${type}`;
 
-        if (stream_matrix.apps_[uname]) {
+        if (stream_matrix.apps_[this.uname_]) {
             throw {
                 name: 'AppCreate',
-                message: `create repeated application :${uname}`
+                message: `create repeated application :${this.uname_}`
             };
         }
-        stream_matrix.apps_[uname] = this;
-        return uname;
+        stream_matrix.apps_[this.uname_] = this;
     }
 
     async startup() {
         let self = this;
         return new Promise((resolve, reject) => {
-            self.stream_matrix_.StartUp(self.id, (code, data) => {
+            self.instance_.StartUp(self.id_, (code, data) => {
                 if (code == 0) { resolve(data); }
                 else { reject(data); }
             });
@@ -31,7 +32,7 @@ class IApp extends EventEmitter {
     async stop() {
         let self = this;
         return new Promise((resolve, reject) => {
-            self.stream_matrix_.Stop(self.id, (code, data) => {
+            self.instance_.Stop(self.id_, (code, data) => {
                 if (code == 0) { resolve(data); }
                 else { reject(data); }
             });
@@ -39,9 +40,10 @@ class IApp extends EventEmitter {
     }
 
     async destroy() {
+        delete this.stream_matrix_.apps_[this.uname_];
         let self = this;
         return new Promise((resolve, reject) => {
-            self.stream_matrix_.Destroy(self.id, (code, data) => {
+            self.instance_.Destroy(self.id_, (code, data) => {
                 if (code == 0) { resolve(data); }
                 else { reject(data); }
             });

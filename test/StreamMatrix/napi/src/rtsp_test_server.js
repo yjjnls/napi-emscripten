@@ -1,8 +1,9 @@
 'use strict';
 
-var IApp = require('./app.js');
-const CodecMap = require('./codecmap.js').TABLE;
+var IApp = require('./app.js').IApp;
+const CodecMap = require('./codec_map.js').TABLE;
 const option = require('./analyze_source.js').option;
+var Promise = require('bluebird');
 
 function video_description() {
     var v = option.video;
@@ -71,7 +72,7 @@ class RtspTestServer extends IApp {
         let self = this;
         let launch = source_bin_description();
         return new Promise((resolve, reject) => {
-            self.stream_matrix_.CreateRtspTestServer(self.id_, self.port_, self.path_, launch, (code, data) => {
+            self.instance_.CreateRtspTestServer(self.id_, self.port_, self.path_, launch, (code, data) => {
                 if (code == 0) { resolve(data); }
                 else { reject(data); }
             });

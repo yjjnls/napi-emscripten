@@ -78,13 +78,13 @@ void StreamMatrix::main_loop(Promise *promise)
     g_source_set_priority(idle_source, G_PRIORITY_DEFAULT);
     g_source_attach(idle_source, StreamMatrix::main_context_);
 
+    GST_INFO("[StreamMatrix] initialize done!");
     g_main_loop_run(StreamMatrix::main_loop_);
 
 
     cleanup();
     g_main_context_pop_thread_default(StreamMatrix::main_context_);
-    
-    GST_INFO("[StreamMatrix] initialize done!");
+
     g_main_loop_unref(StreamMatrix::main_loop_);
 
     gst_deinit();
@@ -189,7 +189,7 @@ void StreamMatrix::create_app(Promise *promise)
         return;
     }
     app_container_[id] = app;
-    GST_INFO("[StreamMatrix] create app: \"%s\" successfully!", app->uname().c_str());
+    GST_INFO("[StreamMatrix] create app: %s successfully!", app->uname().c_str());
     promise->resolve();
 }
 IApp *StreamMatrix::app_factory(const nlohmann::json &data)
@@ -233,7 +233,7 @@ void StreamMatrix::destroy_app(Promise *promise)
     delete app;
     app_container_.erase(id);
 
-    GST_INFO("[StreamMatrix] destroy app: \"%s\" successfully!", uname.c_str());
+    GST_INFO("[StreamMatrix] destroy app: %s successfully!", uname.c_str());
     promise->resolve();
 }
 void StreamMatrix::operate_app(Promise *promise)

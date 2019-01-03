@@ -18,13 +18,13 @@ async function initialize(stream_matrix) {
                 console.log('~~~Initialize OK!')
                 // console.log('code: ' + code);
                 // console.log('data: ' + data);
-                resolve();
+                resolve(data);
             }
             else {
                 console.log('~~~Initialize FAILED!')
                 // console.log('code: ' + code);
                 // console.log('data: ' + data);
-                reject();
+                reject(data);
             }
         });
     });
@@ -46,7 +46,7 @@ async function set_notification(stream_matrix) {
                 console.log('~~~set_notification FAILED!')
                 // console.log('code: ' + code);
                 // console.log('data: ' + data);
-                reject();
+                reject(data);
             }
         });
     });
@@ -64,7 +64,7 @@ async function version(stream_matrix) {
                 console.log('~~~version FAILED!')
                 // console.log('code: ' + code);
                 // console.log('data: ' + data);
-                reject();
+                reject(data);
             }
         });
     });
@@ -82,7 +82,7 @@ async function terminate(stream_matrix) {
                 console.log('~~~Terminate FAILED!')
                 // console.log('code: ' + code);
                 // console.log('data: ' + data);
-                reject();
+                reject(data);
             }
         });
     });
@@ -100,7 +100,7 @@ async function startup(stream_matrix, id) {
                 console.log('~~~StartUp FAILED!')
                 // console.log('code: ' + code);
                 // console.log('data: ' + data);
-                reject();
+                reject(data);
             }
         });
     });
@@ -118,7 +118,7 @@ async function stop(stream_matrix, id) {
                 console.log('~~~Stop FAILED!')
                 // console.log('code: ' + code);
                 // console.log('data: ' + data);
-                reject();
+                reject(data);
             }
         });
     });
@@ -136,7 +136,7 @@ async function destroy(stream_matrix, id) {
                 console.log('~~~DestroyApp FAILED!')
                 // console.log('code: ' + code);
                 // console.log('data: ' + data);
-                reject();
+                reject(data);
             }
         });
     });
@@ -157,7 +157,7 @@ async function launch(stream_matrix) {
                 console.log('~~~CreateLauncher FAILED!');
                 // console.log('code: ' + code);
                 // console.log('data: ' + data);
-                reject();
+                reject(data);
             }
         });
     });
@@ -165,7 +165,7 @@ async function launch(stream_matrix) {
 async function create_test_server(stream_matrix) {
     let id = "app1";
     return new Promise((resolve, reject) => {
-        stream_matrix.CreateRtspTestServer(id, 8554, "/test", "videotestsrc ! video/x-raw,width=320,height=240,framerate=10/1 ! x264enc ! rtph264pay name=pay0 pt=96 ! audiotestsrc ! audio/x-raw,rate=8000 ! alawenc ! rtppcmapay name=pay1 pt=97", (code, data) => {
+        stream_matrix.CreateRtspTestServer(id, 8554, "/test", "( videotestsrc ! video/x-raw,width=320,height=240,framerate=10/1 ! x264enc ! rtph264pay name=pay0 pt=96 ! audiotestsrc ! audio/x-raw,rate=8000 ! alawenc ! rtppcmapay name=pay1 pt=97 )", (code, data) => {
             if (code == 0) {
                 console.log('~~~CreateRtspTestServer OK!');
                 // console.log('code: ' + code);
@@ -176,7 +176,7 @@ async function create_test_server(stream_matrix) {
                 console.log('~~~CreateRtspTestServer FAILED!');
                 // console.log('code: ' + code);
                 // console.log('data: ' + data);
-                reject();
+                reject(data);
             }
         });
     });
@@ -195,15 +195,19 @@ async function create_livestream(stream_matrix) {
                 console.log('~~~CreateLiveStream FAILED!');
                 // console.log('code: ' + code);
                 // console.log('data: ' + data);
-                reject();
+                reject(data);
             }
         });
     });
 }
 (async function test() {
+    Module.initialize();
+    console.log("-----------1")
     let stream_matrix = new Module.StreamMatrix();
 
+    console.log("-----------2")
     await initialize(stream_matrix);
+    console.log("-----------3")
     await set_notification(stream_matrix);
 
 
@@ -223,7 +227,7 @@ async function create_livestream(stream_matrix) {
     let livestream = await create_livestream(stream_matrix);
     await startup(stream_matrix, livestream);
     console.log('--------------livestream done----------------');
-    await sleep(10000);
+    await sleep(30000);
 
     await stop(stream_matrix, livestream);
     await destroy(stream_matrix, livestream);
