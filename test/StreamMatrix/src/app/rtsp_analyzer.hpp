@@ -1,18 +1,18 @@
-#ifndef STREAM_MATRIX_APPLICATION_RTSP_TEST_CLIENT_HPP
-#define STREAM_MATRIX_APPLICATION_RTSP_TEST_CLIENT_HPP
+#ifndef STREAM_MATRIX_APPLICATION_RTSP_ANALYZER_HPP
+#define STREAM_MATRIX_APPLICATION_RTSP_ANALYZER_HPP
 
 #include <app/launcher.hpp>
 
-class RtspTestClient : public Launcher
+class RtspAnalyzer : public Launcher
 {
  public:
-    RtspTestClient(const std::string &id, StreamMatrix *instance);
+    RtspAnalyzer(const std::string &id, StreamMatrix *instance);
 
-    ~RtspTestClient() {}
+    ~RtspAnalyzer();
     // bool Initialize();
 
  protected:
-    std::string uname() { return "RtspTestClient@" + id(); }
+    std::string uname() { return "RtspAnalyzer@" + id(); }
 
     void startup(Promise *promise);
 
@@ -24,7 +24,8 @@ class RtspTestClient : public Launcher
  private:
     GstElement *sink_;
     int frame_;
-    int cur_frame_;
+    int cur_video_frame_;
+    int cur_audio_frame_;
     std::vector<unsigned char *> bmps_;
 };
 

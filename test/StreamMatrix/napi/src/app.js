@@ -8,7 +8,7 @@ class IApp extends EventEmitter {
         this.stream_matrix_ = stream_matrix;
         this.instance_ = stream_matrix.stream_matrix_;
         this.id_ = id;
-        this.uname_ = `${id}@${type}`;
+        this.uname_ = `${type}@${id}`;
 
         if (stream_matrix.apps_[this.uname_]) {
             throw {
@@ -39,7 +39,7 @@ class IApp extends EventEmitter {
         });
     }
 
-    async destroy() {
+    async terminate() {
         delete this.stream_matrix_.apps_[this.uname_];
         let self = this;
         return new Promise((resolve, reject) => {

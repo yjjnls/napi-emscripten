@@ -246,11 +246,11 @@ void RtspServer::StopLaunch()
             // 'gst_rtsp_client_finalize'(automaticlly) after we invoke `gst_rtsp_client_close`
             // seems like the bug below
             // https://bugzilla.gnome.org/show_bug.cgi?id=790909
-            GST_DEBUG("[RtspServer] %s (port:%d path:%s) start close client: %p actively.",
-                      Id().c_str(),
-                      port_,
-                      path_.c_str(),
-                      client.second);
+            // GST_DEBUG("[RtspServer] %s (port:%d path:%s) start close client: %p actively.",
+            //           Id().c_str(),
+            //           port_,
+            //           path_.c_str(),
+            //           client.second);
             g_object_set(G_OBJECT(client.second), "path", (gchar *)path_.c_str(), "close", client.first, nullptr);
 
             GST_INFO("[RtspServer] %s (port:%d path:%s) close client: %p actively.",

@@ -7,7 +7,10 @@ find_package(PkgConfig 0.29.1 REQUIRED)
 pkg_check_modules(GST_MODULES  REQUIRED
                   gstreamer-1.0>=1.14.0
                   gstreamer-base-1.0>=1.14.0
-                  gstreamer-rtsp-server-1.0)
+                  gstreamer-rtsp-server-1.0
+                  gstreamer-sdp-1.0
+                  gstreamer-webrtc-1.0
+                  gstreamer-video-1.0 )
 
 include_directories(${GST_MODULES_INCLUDE_DIRS}) 
 link_directories   (${GST_MODULES_LIBRARY_DIRS})

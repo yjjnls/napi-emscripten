@@ -1,6 +1,6 @@
 #include <stream_matrix.hpp>
 #include <app/launcher.hpp>
-#include <app/rtsp_test_client.hpp>
+#include <app/rtsp_analyzer.hpp>
 #include <app/rtsp_test_server.hpp>
 #include <app/livestream.hpp>
 
@@ -87,7 +87,7 @@ void StreamMatrix::main_loop(Promise *promise)
 
     g_main_loop_unref(StreamMatrix::main_loop_);
 
-    gst_deinit();
+    // gst_deinit();
     StreamMatrix::main_loop_ = nullptr;
     StreamMatrix::main_context_ = nullptr;
     terminate_promise_->resolve();
@@ -203,7 +203,7 @@ IApp *StreamMatrix::app_factory(const nlohmann::json &data)
     } else if (type == MediaType::kAnalyzer) {
         int protocal = data["protocal"];
         if (protocal == AnalyzerType::kRtsp) {
-            app = new RtspTestClient(id, this);
+            app = new RtspAnalyzer(id, this);
         }
     } else if (type == MediaType::kLiveStream) {
         app = new LiveStream(id, this);

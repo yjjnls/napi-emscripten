@@ -16,9 +16,9 @@ let result = api.GetUTF8Text();
 
 console.log(result);
 
-api.End();
 Module.pixDestroy(image);
 
+api.End();
 api.delete();
 api = null;
 

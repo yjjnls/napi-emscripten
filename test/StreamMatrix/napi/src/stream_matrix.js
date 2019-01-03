@@ -47,9 +47,9 @@ class StreamMatrix {
         let self = this;
         return new Promise((resolve, reject) => {
             self.stream_matrix_.SetNotification((meta, data) => {
-                console.log('~~~~~notification~~~~~');
-                console.log('meta: ' + meta);
-                console.log('data: ' + data);
+                // console.log('~~~~~notification~~~~~');
+                // console.log('meta: ' + meta);
+                // console.log('data: ' + data);
 
                 var m = JSON.parse(meta.toString('utf8'));
                 var app = self.apps_[m.origin];

@@ -5,8 +5,9 @@ const CodecMap = require('./codec_map.js').TABLE;
 const option = require('./analyze_source.js').option;
 var Promise = require('bluebird');
 
-function video_description() {
+function video_description(video_codec) {
     var v = option.video;
+    v.codec = video_codec;
     if (!v) {
         return;
     }
@@ -31,9 +32,10 @@ function video_description() {
     // line = `${line}  ! jpegenc ! rtph264pay pt=96`;
     return line;
 }
-function audio_description() {
+function audio_description(audio_codec) {
 
     var a = option.audio;
+    a.codec = audio_codec;
     if (!a) {
         return;
     }
@@ -43,9 +45,9 @@ function audio_description() {
     line = `${line} ! ${codec.enc} ! ${codec.pay} pt=97`;
     return line;
 }
-function source_bin_description() {
-    var video = video_description();
-    var audio = audio_description();
+function source_bin_description(video_codec, audio_codec) {
+    var video = video_description(video_codec);
+    var audio = audio_description(audio_codec);
     var desc = '( ';
     if (video) {
         desc += ` ${video} name=pay0 `;
@@ -63,14 +65,16 @@ function source_bin_description() {
 }
 
 class RtspTestServer extends IApp {
-    constructor(stream_matrix, id, port = 8554, path = "/test") {
+    constructor(stream_matrix, id, port = 8554, path = "/test", option) {
         super(stream_matrix, id, "RtspTestServer");
         this.port_ = port;
         this.path_ = path;
+        this.video_codec_ = option.video;
+        this.audio_codec_ = option.audio;
     }
     async initialize() {
         let self = this;
-        let launch = source_bin_description();
+        let launch = source_bin_description(this.video_codec_, this.audio_codec_);
         return new Promise((resolve, reject) => {
             self.instance_.CreateRtspTestServer(self.id_, self.port_, self.path_, launch, (code, data) => {
                 if (code == 0) { resolve(data); }
