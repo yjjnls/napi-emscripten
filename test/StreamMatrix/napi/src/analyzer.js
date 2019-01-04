@@ -13,13 +13,13 @@ class RtspAnalyzer extends IApp {
     constructor(stream_matrix, id, url, option) {
         super(stream_matrix, id, "RtspAnalyzer");
         this.url_ = url;
-        this.option = default_option;
+        this.option_ = default_option;
 
-        let video = this.option.video;
-        let audio = this.option.audio;
+        let video = this.option_.video;
+        let audio = this.option_.audio;
 
-        this.option.video.codec = option.video;
-        this.option.audio.codec = option.audio;
+        this.option_.video.codec = option.video;
+        this.option_.audio.codec = option.audio;
 
         let video_codec = CodecMap[video.codec];
         let audio_codec = CodecMap[audio.codec];
@@ -55,7 +55,7 @@ class RtspAnalyzer extends IApp {
     async initialize() {
         let self = this;
         return new Promise((resolve, reject) => {
-            self.instance_.CreateRtspAnalyzer(self.id_, "", self.launch_, (code, data) => {
+            self.stream_matrix().CreateRtspAnalyzer(self.id_, self.launch_, (code, data) => {
                 if (code == 0) { resolve(data); }
                 else { reject(data); }
             });
@@ -70,9 +70,9 @@ class RtspAnalyzer extends IApp {
         global.gc();
     }
     analyze_spectrum(magnitude) {
-        let freq = this.option.audio.freq;
-        let bands = this.option.audio.bands;
-        let rate = this.option.audio.rate;
+        let freq = this.option_.audio.freq;
+        let bands = this.option_.audio.bands;
+        let rate = this.option_.audio.rate;
 
         let bandwith = (rate / bands) / 2;
         let pos = freq / bandwith;

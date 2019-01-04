@@ -5,11 +5,15 @@ let assert = chai.assert;
 var StreamMatrix = require("../index.js").StreamMatrix;
 var RtspTestServer = require("../index.js").RtspTestServer;
 var RtspAnalyzer = require("../index.js").RtspAnalyzer;
+var LiveStream = require("../index.js").LiveStream;
 var utils = require("../index.js").utils;
 var sleep = require("./internal.js").sleep;
 
 let stream_matrix;
-describe('WebStreamer', function () {
+let rtsp_test_server;
+let rtsp_analyzer;
+let livestream;
+describe('StreamMatrix', function () {
     describe('#interface', function () {
         beforeEach(async () => {
             stream_matrix = new StreamMatrix();
@@ -26,7 +30,6 @@ describe('WebStreamer', function () {
         });
     });
     describe('#rtsp_test_server', function () {
-        let rtsp_test_server;
         beforeEach(async () => {
             stream_matrix = new StreamMatrix();
             await stream_matrix.initialize();
@@ -34,7 +37,7 @@ describe('WebStreamer', function () {
 
             rtsp_test_server = new RtspTestServer(stream_matrix, "app0", 8554, "/test", {
                 video: "h264",
-                audio: "g711a"
+                audio: "pcma"
             });
             await rtsp_test_server.initialize();
             await rtsp_test_server.startup();
@@ -45,23 +48,92 @@ describe('WebStreamer', function () {
             await rtsp_test_server.terminate();
             await stream_matrix.terminate();
         });
-        let rtsp_analyzer;
         it(`analyzer`, async () => {
             rtsp_analyzer = new RtspAnalyzer(stream_matrix,
                 "app1",
                 "rtsp://127.0.0.1:8554/test",
                 {
                     video: "h264",
-                    audio: "g711a"
+                    audio: "pcma"
                 });
             await rtsp_analyzer.initialize();
             await rtsp_analyzer.startup();
-            // await sleep(30000);
             await utils.poll(() => {
                 return rtsp_analyzer.analyze_done();
             }, 100, 10000);
             await rtsp_analyzer.stop();
             await rtsp_analyzer.terminate();
         });
+    });
+    describe.only('#livestream', function () {
+        beforeEach(async () => {
+            stream_matrix = new StreamMatrix();
+            await stream_matrix.initialize();
+            await stream_matrix.set_notification();
+            // rtsp test server
+            rtsp_test_server = new RtspTestServer(stream_matrix, "app0", 8554, "/test", {
+                video: "h264",
+                audio: "pcma"
+            });
+            await rtsp_test_server.initialize();
+            await rtsp_test_server.startup();
+        });
+        afterEach(async () => {
+            await rtsp_test_server.stop();
+            await rtsp_test_server.terminate();
+
+            await stream_matrix.terminate();
+            console.log("=========================================")
+        });
+
+        it.skip(`create livestream`, async () => {
+            livestream = new LiveStream(stream_matrix, "app1", "rtsp://127.0.0.1:8554/test", {
+                video: "h264",
+                audio: "pcma"
+            });
+            await livestream.initialize();
+            await livestream.startup();
+            await utils.poll(() => {
+                return livestream.prepared();
+            }, 100, 10000);
+            await livestream.stop();
+            await livestream.terminate();
+        });
+        describe('#audience', function () {
+            beforeEach(async () => {
+                livestream = new LiveStream(stream_matrix, "app1", "rtsp://127.0.0.1:8554/test", {
+                    video: "h264",
+                    audio: "pcma"
+                });
+                await livestream.initialize();
+                await livestream.startup();
+                await utils.poll(() => {
+                    return livestream.prepared();
+                }, 100, 10000);
+            });
+            afterEach(async () => {
+                await livestream.stop();
+                await livestream.terminate();
+            });
+            it(`add rtsp audience`, async () => {
+                await livestream.add_audience("endpoint0", { type: "rtsp", port: 8553, path: "/test_server" });
+                // await sleep(30000);
+                rtsp_analyzer = new RtspAnalyzer(stream_matrix,
+                    "app2",
+                    "rtsp://127.0.0.1:8553/test_server",
+                    {
+                        video: "h264",
+                        audio: "pcma"
+                    });
+                await rtsp_analyzer.initialize();
+                await rtsp_analyzer.startup();
+                await utils.poll(() => {
+                    return rtsp_analyzer.analyze_done();
+                }, 100, 10000);
+                await rtsp_analyzer.stop();
+                await rtsp_analyzer.terminate();
+                await livestream.remove_audience("endpoint0");
+            });
+        })
     });
 });

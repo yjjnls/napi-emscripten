@@ -36,7 +36,7 @@ RtspServer::~RtspServer()
 bool RtspServer::Initialize(Promise *promise)
 {
     const json &j = promise->data();
-    type_ = j["protocal"];
+    type_ = j["protocol"];
     IEndpoint::Protocol() = "rtspserver";
 
     Prepare(j["port"]);
@@ -68,7 +68,6 @@ bool RtspServer::StartLaunch(const std::string &path,
     // if you want multiple clients to see the same video,
     // set the shared property to TRUE
     gst_rtsp_media_factory_set_shared(factory_, TRUE);
-
     gst_rtsp_media_factory_set_launch(factory_, launch_.c_str());
     if (media_constructed) {
         g_signal_connect(factory_, "media-constructed", (GCallback)media_constructed, (gpointer)(this));
@@ -81,13 +80,18 @@ bool RtspServer::StartLaunch(const std::string &path,
     gst_rtsp_mount_points_add_factory(mount_points, path.c_str(), factory_);
     g_object_unref(mount_points);
 
-    GST_DEBUG("[RtspServer] %s launched to port:%d path:%s", Id().c_str(), port_, path.c_str());
+    GST_DEBUG("[RtspServer] %s{%s} launched to port:%d path:%s",
+              Id().c_str(),
+              app()->uname().c_str(),
+              port_,
+              path.c_str());
     // g_object_weak_ref(G_OBJECT(factory_), Notify, factory_);
 
     g_signal_connect(server_, "client-connected", (GCallback)on_client_connected, (gpointer)(this));
 
-    GST_DEBUG("[RtspServer] %s (port:%d path:%s) initialize done.",
+    GST_DEBUG("[RtspServer] %s{%s} (port:%d path:%s) initialize done.",
               Id().c_str(),
+              app()->uname().c_str(),
               port_,
               path.c_str());
 
@@ -103,8 +107,9 @@ GstPadProbeReturn cb_have_data(GstPad *pad, GstPadProbeInfo *info, gpointer user
 void RtspServer::on_rtsp_media_constructed(GstRTSPMediaFactory *factory, GstRTSPMedia *media, gpointer user_data)
 {
     RtspServer *instance = static_cast<RtspServer *>(user_data);
-    GST_DEBUG("[RtspServer] %s (port:%d path:%s) on_rtsp_media_constructed",
+    GST_DEBUG("[RtspServer] %s{%s} (port:%d path:%s) on_rtsp_media_constructed",
               instance->Id().c_str(),
+              instance->app()->uname().c_str(),
               instance->port_,
               instance->path_.c_str());
     GstElement *rtsp_server_media_bin = gst_rtsp_media_get_element(media);
@@ -114,13 +119,15 @@ void RtspServer::on_rtsp_media_constructed(GstRTSPMediaFactory *factory, GstRTSP
     gboolean sync = TRUE;
     g_object_get(G_OBJECT(gstrtspstream), "sink-false", &sync, nullptr);
     if (!sync) {
-        GST_FIXME("[RtspServer] %s (port:%d path:%s) uses the fixed plugin.",
+        GST_FIXME("[RtspServer] %s{%s} (port:%d path:%s) uses the fixed plugin.",
                   instance->Id().c_str(),
+                  instance->app()->uname().c_str(),
                   instance->port_,
                   instance->path_.c_str());
     } else {
-        GST_FIXME("[RtspServer] %s (port:%d path:%s) uses the origin plugin.",
+        GST_FIXME("[RtspServer] %s{%s} (port:%d path:%s) uses the origin plugin.",
                   instance->Id().c_str(),
+                  instance->app()->uname().c_str(),
                   instance->port_,
                   instance->path_.c_str());
     }
@@ -128,8 +135,9 @@ void RtspServer::on_rtsp_media_constructed(GstRTSPMediaFactory *factory, GstRTSP
 
     static int session_count = 0;
     if (!instance->app()->VideoEncoding().empty()) {
-        GST_DEBUG("[RtspServer] %s (port:%d path:%s) media constructed: video",
+        GST_DEBUG("[RtspServer] %s{%s} (port:%d path:%s) media constructed: video",
                   instance->Id().c_str(),
+                  instance->app()->uname().c_str(),
                   instance->port_,
                   instance->path_.c_str());
 
@@ -152,8 +160,9 @@ void RtspServer::on_rtsp_media_constructed(GstRTSPMediaFactory *factory, GstRTSP
     }
 
     if (!instance->app()->AudioEncoding().empty()) {
-        GST_DEBUG("[RtspServer] %s (port:%d path:%s) media constructed: audio",
+        GST_DEBUG("[RtspServer] %s{%s} (port:%d path:%s) media constructed: audio",
                   instance->Id().c_str(),
+                  instance->app()->uname().c_str(),
                   instance->port_,
                   instance->path_.c_str());
 
@@ -195,8 +204,9 @@ void RtspServer::on_new_session(GstRTSPClient *client,
     instance->clients_[session] = client;
     client_mutex_.unlock();
     g_signal_connect(client, "closed", (GCallback)(instance->on_closed), user_data);
-    GST_DEBUG("[RtspServer] %s (port:%d path:%s) client: %p connected.",
+    GST_DEBUG("[RtspServer] %s{%s} (port:%d path:%s) client: %p connected.",
               instance->Id().c_str(),
+              instance->app()->uname().c_str(),
               instance->port_,
               instance->path_.c_str(),
               client);
@@ -212,8 +222,9 @@ void RtspServer::on_closed(GstRTSPClient *client, gpointer user_data)
                            });
     if (it != instance->clients_.end()) {
         instance->clients_.erase(it);
-        GST_DEBUG("[RtspServer] %s (port:%d path:%s) client: %p closed and removed.",
+        GST_DEBUG("[RtspServer] %s{%s} (port:%d path:%s) client: %p closed and removed.",
                   instance->Id().c_str(),
+                  instance->app()->uname().c_str(),
                   instance->port_,
                   instance->path_.c_str(),
                   client);
@@ -253,8 +264,9 @@ void RtspServer::StopLaunch()
             //           client.second);
             g_object_set(G_OBJECT(client.second), "path", (gchar *)path_.c_str(), "close", client.first, nullptr);
 
-            GST_INFO("[RtspServer] %s (port:%d path:%s) close client: %p actively.",
+            GST_INFO("[RtspServer] %s{%s} (port:%d path:%s) close client: %p actively.",
                      Id().c_str(),
+                     app()->uname().c_str(),
                      port_,
                      path_.c_str(),
                      client.second);
@@ -267,8 +279,9 @@ void RtspServer::StopLaunch()
         g_object_unref(mount_points);
 
         factory_ = nullptr;
-        GST_DEBUG("[RtspServer] %s (port:%d path:%s) terminate done.",
+        GST_DEBUG("[RtspServer] %s{%s} (port:%d path:%s) terminate done.",
                   Id().c_str(),
+                  app()->uname().c_str(),
                   port_,
                   path_.c_str());
     }

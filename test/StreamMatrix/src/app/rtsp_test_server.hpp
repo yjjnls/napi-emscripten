@@ -8,7 +8,10 @@ class RtspTestServer : public IApp
 {
  public:
     RtspTestServer(const std::string &id, StreamMatrix *instance);
-    virtual ~RtspTestServer() {}
+    virtual ~RtspTestServer()
+    {
+        printf("      ~RtspTestServer     \n");
+    }
 
     virtual bool Initialize(Promise *promise);
     virtual void Destroy();

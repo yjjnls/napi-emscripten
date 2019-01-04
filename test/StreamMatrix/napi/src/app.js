@@ -5,8 +5,8 @@ var Promise = require('bluebird');
 class IApp extends EventEmitter {
     constructor(stream_matrix, id, type) {
         super();
-        this.stream_matrix_ = stream_matrix;
-        this.instance_ = stream_matrix.stream_matrix_;
+        this.owner_ = stream_matrix;
+        // this.owner_.stream_matrix_ = stream_matrix.stream_matrix_;
         this.id_ = id;
         this.uname_ = `${type}@${id}`;
 
@@ -22,7 +22,7 @@ class IApp extends EventEmitter {
     async startup() {
         let self = this;
         return new Promise((resolve, reject) => {
-            self.instance_.StartUp(self.id_, (code, data) => {
+            self.owner_.stream_matrix_.StartUp(self.id_, (code, data) => {
                 if (code == 0) { resolve(data); }
                 else { reject(data); }
             });
@@ -32,7 +32,7 @@ class IApp extends EventEmitter {
     async stop() {
         let self = this;
         return new Promise((resolve, reject) => {
-            self.instance_.Stop(self.id_, (code, data) => {
+            self.owner_.stream_matrix_.Stop(self.id_, (code, data) => {
                 if (code == 0) { resolve(data); }
                 else { reject(data); }
             });
@@ -40,14 +40,17 @@ class IApp extends EventEmitter {
     }
 
     async terminate() {
-        delete this.stream_matrix_.apps_[this.uname_];
+        delete this.owner_.apps_[this.uname_];
         let self = this;
         return new Promise((resolve, reject) => {
-            self.instance_.Destroy(self.id_, (code, data) => {
+            self.owner_.stream_matrix_.Destroy(self.id_, (code, data) => {
                 if (code == 0) { resolve(data); }
                 else { reject(data); }
             });
         });
+    }
+    stream_matrix() {
+        return this.owner_.stream_matrix_;
     }
 }
 

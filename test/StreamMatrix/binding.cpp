@@ -43,7 +43,7 @@ void CreateRtspTestServer(StreamMatrix &obj,
     nlohmann::json param;
     param["type"] = kTestServer;
     param["id"] = id;
-    param["protocal"] = ServerType::kRTSP20;
+    param["protocol"] = ServerType::kRTSP20;
     param["path"] = path;
     param["port"] = port;
     param["launch"] = launch;
@@ -132,7 +132,8 @@ void StopApp(StreamMatrix &obj, const std::string &id, const emscripten::val &cb
 }
 // livestream
 void AddRtspAudience(StreamMatrix &obj,
-                     const std::string &id,
+                     const std::string &app_id,
+                     const std::string &endpoint_id,
                      int port,
                      const std::string &path,
                      const emscripten::val &cb)
@@ -140,8 +141,9 @@ void AddRtspAudience(StreamMatrix &obj,
     nlohmann::json meta;
     meta["action"] = "add_audience";
     nlohmann::json param;
-    param["id"] = id;
-    param["protocal"] = EndpointType::kRtspServer;
+    param["id"] = app_id;
+    param["endpoint_id"] = endpoint_id;
+    param["protocol"] = EndpointType::kRtspServer;
     param["path"] = path;
     param["port"] = port;
 
@@ -158,7 +160,7 @@ void AddWebrtcAudience(StreamMatrix &obj,
     meta["action"] = "add_audience";
     nlohmann::json param;
     param["id"] = id;
-    param["protocal"] = EndpointType::kWebrtc;
+    param["protocol"] = EndpointType::kWebrtc;
     param["signal_bridge"] = signal_bridge;
     param["connection_id"] = connection_id;
     param["role"] = (role == "Offer" ? WebrtcRole::kOffer : WebrtcRole::kAnswer);
@@ -172,15 +174,19 @@ void AddHlsAudience(StreamMatrix &obj,
     meta["action"] = "add_audience";
     nlohmann::json param;
     param["id"] = id;
-    param["protocal"] = EndpointType::kHls;
+    param["protocol"] = EndpointType::kHls;
     obj.Call(meta, param, CALLBACK(cb));
 }
-void RemoveAudience(StreamMatrix &obj, const std::string &id, const emscripten::val &cb)
+void RemoveAudience(StreamMatrix &obj,
+                    const std::string &app_id,
+                    const std::string &endpoint_id,
+                    const emscripten::val &cb)
 {
     nlohmann::json meta;
     meta["action"] = "remove_audience";
     nlohmann::json param;
-    param["id"] = id;
+    param["id"] = app_id;
+    param["endpoint_id"] = endpoint_id;
 
     obj.Call(meta, param, CALLBACK(cb));
 }
@@ -196,7 +202,7 @@ void AddMember(StreamMatrix &obj,
     meta["action"] = "add_member";
     nlohmann::json param;
     param["id"] = id;
-    param["protocal"] = EndpointType::kWebrtc;
+    param["protocol"] = EndpointType::kWebrtc;
     param["signal_bridge"] = signal_bridge;
     param["connection_id"] = connection_id;
     param["role"] = (role == "Offer" ? WebrtcRole::kOffer : WebrtcRole::kAnswer);
@@ -234,7 +240,6 @@ void Seek(StreamMatrix &obj, const std::string &id, int pos, const emscripten::v
 
 void CreateRtspAnalyzer(StreamMatrix &obj,
                         const std::string &id,
-                        const std::string &url,
                         const std::string &launch,
                         const emscripten::val &cb)
 {
@@ -243,8 +248,7 @@ void CreateRtspAnalyzer(StreamMatrix &obj,
     nlohmann::json param;
     param["type"] = kAnalyzer;
     param["id"] = id;
-    param["protocal"] = AnalyzerType::kRtsp;
-    // param["url"] = url;
+    param["protocol"] = AnalyzerType::kRtsp;
     param["launch"] = launch;
 
     obj.Call(meta, param, CALLBACK(cb));
@@ -263,7 +267,7 @@ void CreateWebrtcAnalyzer(StreamMatrix &obj,
     nlohmann::json param;
     param["type"] = kAnalyzer;
     param["id"] = id;
-    param["protocal"] = AnalyzerType::kWebrtcSendRecv;
+    param["protocol"] = AnalyzerType::kWebrtcSendRecv;
     param["signal_bridge"] = signal_bridge;
     param["connection_id"] = connection_id;
     param["launch"] = launch;
@@ -311,10 +315,10 @@ EMSCRIPTEN_BINDINGS(binding_utils)
         .function("CreateRtspTestServer", select_overload<void(StreamMatrix &, const std::string &, int, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateRtspTestServer))
 
         .function("CreateLiveStream", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateLiveStream))
-        .function("AddRtspAudience", select_overload<void(StreamMatrix &, const std::string &, int, const std::string &, const emscripten::val &)>(&binding_utils::AddRtspAudience))
+        .function("AddRtspAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, int, const std::string &, const emscripten::val &)>(&binding_utils::AddRtspAudience))
         .function("AddWebrtcAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddWebrtcAudience))
         .function("AddHlsAudience", select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::AddHlsAudience))
-        .function("RemoveAudience", select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveAudience))
+        .function("RemoveAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveAudience))
 
         .function("CreateMultiPoints", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateMultiPoints))
         .function("AddMember", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddMember))
@@ -325,7 +329,7 @@ EMSCRIPTEN_BINDINGS(binding_utils)
         .function("Seek", select_overload<void(StreamMatrix &, const std::string &, int, const emscripten::val &)>(&binding_utils::Seek))
 
 
-        .function("CreateRtspAnalyzer", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateRtspAnalyzer))
+        .function("CreateRtspAnalyzer", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateRtspAnalyzer))
         .function("CreateWebrtcAnalyzer", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateWebrtcAnalyzer))
 
         .function("SetNotification", select_overload<void(StreamMatrix &, const emscripten::val &, const emscripten::val &)>(&binding_utils::SetNotification))

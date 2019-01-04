@@ -17,7 +17,7 @@ RtspTestServer::RtspTestServer(const std::string &id, StreamMatrix *instance)
 bool RtspTestServer::Initialize(Promise *promise)
 {
     if (server_ == nullptr) {
-        server_ = new RtspServer(this, uname());
+        server_ = new RtspServer(this, "default_server");
     }
     const json &j = promise->data();
 
@@ -49,9 +49,9 @@ void RtspTestServer::On(Promise *promise)
 
 void RtspTestServer::startup(Promise *promise)
 {
-    server_->StartLaunch(path_, launch_, NULL, NULL);
+    server_->StartLaunch(path_, launch_, nullptr, nullptr);
     promise->resolve();
-    GST_DEBUG("[RtspTestServer] %s statup!", uname().c_str());
+    GST_DEBUG("[RtspTestServer] %s startup!", uname().c_str());
 }
 void RtspTestServer::stop(Promise *promise)
 {

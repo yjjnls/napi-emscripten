@@ -28,12 +28,10 @@ static gboolean main_loop_init(GAsyncQueue *queue)
 
 StreamMatrix::~StreamMatrix()
 {
-    {
-        printf("destroy StreamMatrix\n");
-        if (terminate_promise_ != nullptr) {
-            delete terminate_promise_;
-            terminate_promise_ = nullptr;
-        }
+    printf("destroy StreamMatrix\n");
+    if (terminate_promise_ != nullptr) {
+        delete terminate_promise_;
+        terminate_promise_ = nullptr;
     }
 }
 void StreamMatrix::Initialize(callback cb)
@@ -201,8 +199,8 @@ IApp *StreamMatrix::app_factory(const nlohmann::json &data)
     if (type == MediaType::kTestServer) {
         app = new RtspTestServer(id, this);
     } else if (type == MediaType::kAnalyzer) {
-        int protocal = data["protocal"];
-        if (protocal == AnalyzerType::kRtsp) {
+        int protocol = data["protocol"];
+        if (protocol == AnalyzerType::kRtsp) {
             app = new RtspAnalyzer(id, this);
         }
     } else if (type == MediaType::kLiveStream) {

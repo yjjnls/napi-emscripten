@@ -31,7 +31,7 @@ bool Connector::Initialize(Promise *promise)
 
     return true;
 }
-void Connector::Destroy()
+void Connector::dynamic_release()
 {
     if (!selector_sinks_.empty()) {
         for (auto info : selector_sinks_) {
@@ -75,6 +75,12 @@ void Connector::Destroy()
             delete info;
         }
     }
+    selector_sinks_.clear();
+    tee_sinks_.clear();
+}
+void Connector::Destroy()
+{
+    dynamic_release();
     // g_assert(selector_sinks_.empty());
     // g_assert(tee_sinks_.empty());
 

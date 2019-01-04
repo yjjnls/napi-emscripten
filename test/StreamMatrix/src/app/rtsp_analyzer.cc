@@ -19,7 +19,6 @@ RtspAnalyzer::RtspAnalyzer(const std::string &id,
 }
 RtspAnalyzer::~RtspAnalyzer()
 {
-    printf("      ~RtspAnalyzer     \n");
     for (auto it : bmps_) {
         delete[] it;
     }
@@ -30,9 +29,9 @@ void RtspAnalyzer::startup(Promise *promise)
 
     sink_ = gst_bin_get_by_name(GST_BIN(Pipeline()), "sink");
     if (sink_ == nullptr) {
-        GST_INFO("[RtspAnalyzer] use multifilesink for test.");
+        GST_INFO("[RtspAnalyzer] %s use multifilesink for test.", uname().c_str());
     } else {
-        GST_INFO("[RtspAnalyzer] use raw image data for test.");
+        GST_INFO("[RtspAnalyzer] %s use raw image data for test.", uname().c_str());
         if (j.find("frame") != j.end()) {
             frame_ = j["frame"];
         }
@@ -64,13 +63,13 @@ gboolean RtspAnalyzer::on_save_image(gpointer user_data)
     GstSample *from_sample;
     g_object_get(app->sink_, "last-sample", &from_sample, nullptr);
     if (from_sample == nullptr) {
-        GST_ERROR("[RtspAnalyzer] failed getting sample.");
+        GST_ERROR("[RtspAnalyzer] %s failed getting sample.", app->uname().c_str());
         return FALSE;
     }
     GstCaps *caps = gst_caps_from_string("image/bmp");
 
     if (caps == nullptr) {
-        GST_ERROR("[RtspAnalyzer] failed getting caps.");
+        GST_ERROR("[RtspAnalyzer] %s failed getting caps.", app->uname().c_str());
         return FALSE;
     }
 
@@ -80,8 +79,8 @@ gboolean RtspAnalyzer::on_save_image(gpointer user_data)
     gst_sample_unref(from_sample);
 
     if (to_sample == nullptr && err) {
-        GST_ERROR("[RtspAnalyzer] failed converting frame.");
-        GST_ERROR("[RtspAnalyzer] error : %s", err->message);
+        GST_ERROR("[RtspAnalyzer] %s failed converting frame.", app->uname().c_str());
+        GST_ERROR("[RtspAnalyzer] %s error : %s", app->uname().c_str(), err->message);
         return FALSE;
     }
     GstBuffer *buf = gst_sample_get_buffer(to_sample);
@@ -91,7 +90,7 @@ gboolean RtspAnalyzer::on_save_image(gpointer user_data)
 
     GstMapInfo map_info;
     if (!gst_buffer_map(buf, &map_info, GST_MAP_READ)) {
-        GST_ERROR("[RtspAnalyzer] could not get image data from gstbuffer");
+        GST_ERROR("[RtspAnalyzer] %s could not get image data from gstbuffer", app->uname().c_str());
         gst_sample_unref(to_sample);
 
         return FALSE;

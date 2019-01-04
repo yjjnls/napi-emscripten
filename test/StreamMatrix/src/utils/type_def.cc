@@ -21,7 +21,9 @@ VideoEncodingType get_video_encoding_type(const std::string &type)
 }
 std::map<std::string, AudioEncodingType> audio_encoding_type = {{"PCMA", AudioEncodingType::PCMA},
                                                                 {"PCMU", AudioEncodingType::PCMU},
-                                                                {"OPUS", AudioEncodingType::OPUS}};
+                                                                {"OPUS", AudioEncodingType::OPUS},
+                                                                {"G711A", AudioEncodingType::PCMA},
+                                                                {"G711U", AudioEncodingType::PCMU}};
 AudioEncodingType get_audio_encoding_type(const std::string &type)
 {
     return audio_encoding_type[type];

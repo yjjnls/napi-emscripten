@@ -273,11 +273,18 @@ class Gen:
                     #                                      ', '.join(args_declare),
                     #                                      i,
                     #                                      ', '.join(args_transfer))
-                    return template.args_val_function % (cb_type,
-                                                         ', '.join(args_declare),
-                                                         ', '.join(args_type),
-                                                         i,
-                                                         ', '.join(args_value))
+                    if 'notification' in val_type:
+                        return template.args_val_notification % (cb_type,
+                                                                 ', '.join(args_declare),
+                                                                 ', '.join(args_type),
+                                                                 i,
+                                                                 ', '.join(args_value))
+                    else:
+                        return template.args_val_function % (cb_type,
+                                                             ', '.join(args_declare),
+                                                             ', '.join(args_type),
+                                                             i,
+                                                             ', '.join(args_value))
             #         print val_type
             #         return "error\n"
             # return template.arg_val

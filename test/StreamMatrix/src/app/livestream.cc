@@ -35,7 +35,7 @@ bool LiveStream::Initialize(Promise *promise)
     if (rc) {
         // link endpoint to video/audio tee
         if (on_add_endpoint(performer_)) {
-            GST_INFO("[LiveStream] %s add performer (type: %s)", id.c_str(), performer_->Protocol().c_str());
+            GST_DEBUG("[LiveStream] %s add performer (type: %s)", id.c_str(), performer_->Protocol().c_str());
             promise->resolve();
             return true;
         }
@@ -80,9 +80,9 @@ bool LiveStream::on_add_endpoint(IEndpoint *endpoint)
         // gst_object_unref(sinkpad);
 
         // monitor data probe
-        // GstPad *pad = gst_element_get_static_pad(fake_video_queue_, "src");
-        // gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, on_monitor_data, this, nullptr);
-        // gst_object_unref(pad);
+        GstPad *pad = gst_element_get_static_pad(fake_video_queue_, "sink");
+        gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, LiveStream::on_monitor_video_data, this, nullptr);
+        gst_object_unref(pad);
     }
     if (!AudioEncoding().empty()) {
         GstElement *audio_depay = gst_bin_get_by_name_recurse_up(GST_BIN(Pipeline()), "audio-depay");
@@ -125,14 +125,24 @@ bool LiveStream::on_add_endpoint(IEndpoint *endpoint)
         // g_warn_if_fail(gst_pad_link(audio_tee_pad_, sinkpad) == GST_PAD_LINK_OK);
         // gst_object_unref(sinkpad);
 
-        // //monitor data probe
-        // GstPad *pad = gst_element_get_static_pad(audio_depay, "sink");
-        // gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, on_monitor_data, this, nullptr);
-        // gst_object_unref(pad);
-        // g_debug("\n---audio---\n");
+        //monitor data probe
+        GstPad *pad = gst_element_get_static_pad(fake_audio_queue_, "sink");
+        gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, LiveStream::on_monitor_audio_data, this, nullptr);
+        gst_object_unref(pad);
     }
 }
+void LiveStream::Destroy()
+{
+    Connector::dynamic_release();
 
+    gst_element_set_state(Pipeline(), GST_STATE_NULL);
+    performer_->Terminate();
+    delete performer_;
+    performer_ = nullptr;
+
+    Connector::Destroy();
+    GST_DEBUG("[LiveStream] %s remove performer!", id().c_str());
+}
 void LiveStream::On(Promise *promise)
 {
     const json &j = promise->meta();
@@ -174,7 +184,7 @@ void LiveStream::add_audience(Promise *promise)
         promise->reject("[LiveStream] no protocol in audience.");
         return;
     }
-    const std::string &id = j["id"];
+    const std::string &id = j["endpoint_id"];
     EndpointType protocol = j["protocol"];
     if (find_audience(id) != audiences_.end()) {
         GST_ERROR("[LiveStream] audience: %s has been added.", id.c_str());
@@ -221,7 +231,7 @@ void LiveStream::add_audience(Promise *promise)
 void LiveStream::remove_audience(Promise *promise)
 {
     const json &j = promise->data();
-    const std::string &id = j["id"];
+    const std::string &id = j["endpoint_id"];
     auto it = find_audience(id);
     if (it == audiences_.end()) {
         GST_ERROR("[LiveStream] audience: %s has not been added.", id.c_str());
@@ -269,4 +279,30 @@ void LiveStream::set_remote_candidate(Promise *promise)
     // ep->set_remote_candidate(promise);
 
     // promise->resolve();
+}
+
+GstPadProbeReturn LiveStream::on_monitor_video_data(GstPad *pad, GstPadProbeInfo *info, gpointer user_data)
+{
+    LiveStream *instance = static_cast<LiveStream *>(user_data);
+    json meta;
+    meta["topic"] = "livestream@default_audience";
+    meta["origin"] = instance->uname();
+    json data;
+    data["msg"] = "video data received";
+    instance->Notify(meta, data);
+    // return GST_PAD_PROBE_OK;
+    return GST_PAD_PROBE_REMOVE;
+}
+
+GstPadProbeReturn LiveStream::on_monitor_audio_data(GstPad *pad, GstPadProbeInfo *info, gpointer user_data)
+{
+    LiveStream *instance = static_cast<LiveStream *>(user_data);
+    json meta;
+    meta["topic"] = "livestream@default_audience";
+    meta["origin"] = instance->uname();
+    json data;
+    data["msg"] = "audio data received";
+    instance->Notify(meta, data);
+    // return GST_PAD_PROBE_OK;
+    return GST_PAD_PROBE_REMOVE;
 }

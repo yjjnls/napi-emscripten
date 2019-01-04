@@ -20,7 +20,9 @@ enum AudioEncodingType
 {
     PCMA = (1 << 0),
     PCMU = (1 << 1),
-    OPUS = (1 << 2)
+    OPUS = (1 << 2),
+    G711A = PCMA,
+    G711U = PCMU
 };
 
 // EndpointType get_endpoint_type(const std::string &type);

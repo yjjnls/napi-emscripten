@@ -76,7 +76,7 @@ class RtspTestServer extends IApp {
         let self = this;
         let launch = source_bin_description(this.video_codec_, this.audio_codec_);
         return new Promise((resolve, reject) => {
-            self.instance_.CreateRtspTestServer(self.id_, self.port_, self.path_, launch, (code, data) => {
+            self.stream_matrix().CreateRtspTestServer(self.id_, self.port_, self.path_, launch, (code, data) => {
                 if (code == 0) { resolve(data); }
                 else { reject(data); }
             });

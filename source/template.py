@@ -713,6 +713,20 @@ args_val_function = """\
     }};
     val arg{0} = val::func(fun{0});
 """
+args_val_notification = """\
+	// arg{0}
+	napi_value cb{0} = args[{0}];
+
+    napi_ref ref{0} = nullptr;
+    napi_create_reference(env, args[{0}], 1, &ref{0});
+
+    %s fun{0} = [ref{0}, global_env](%s) {{
+        async_callback_t *ac = new callback_t<%s>(ref{0}, %s, %s);
+
+        PushNotification(ac);
+    }};
+    val arg{0} = val::func(fun{0});
+"""
 return_class = Template("""
 namespace emscripten {
 namespace internal {

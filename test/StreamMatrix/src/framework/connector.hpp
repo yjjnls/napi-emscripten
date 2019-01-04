@@ -53,6 +53,7 @@ class Connector : public IApp
     GstElement *audio_tee() { return audio_tee_; }
     GstElement *video_selector() { return video_selector_; }
     GstElement *audio_selector() { return audio_selector_; }
+    void dynamic_release();
 
  private:
     void link_stream_output_joint(GstElement *upstream_joint);

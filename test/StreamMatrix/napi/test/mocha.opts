@@ -1,0 +1,4 @@
+--expose-gc 
+--check-leaks 
+--no-timeouts 
+--bail

@@ -11,6 +11,7 @@ class LiveStream : public Connector
     ~LiveStream() {}
 
     bool Initialize(Promise *promise);
+    void Destroy();
     void On(Promise *promise);
 
     std::string uname() { return "LiveStream@" + id(); }
@@ -23,6 +24,12 @@ class LiveStream : public Connector
     void remove_audience(Promise *promise);
     void set_remote_description(Promise *promise);
     void set_remote_candidate(Promise *promise);
+    static GstPadProbeReturn on_monitor_video_data(GstPad *pad,
+                                                   GstPadProbeInfo *info,
+                                                   gpointer user_data);
+    static GstPadProbeReturn on_monitor_audio_data(GstPad *pad,
+                                                   GstPadProbeInfo *info,
+                                                   gpointer user_data);
 
     IEndpoint *performer_;
     std::list<IEndpoint *> audiences_;

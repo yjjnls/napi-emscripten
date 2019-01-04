@@ -22,7 +22,7 @@ bool RtspClient::Initialize(Promise *promise)
 {
     const json &j = promise->data();
     const std::string &url = j["source_url"];
-    GST_DEBUG("[RtspClient] source url: %s", url.c_str());
+    GST_DEBUG("[RtspClient] %s{%s} source url: %s", Id().c_str(), app()->uname().c_str(), url.c_str());
     IEndpoint::Protocol() = "rtspclient";
 
     rtspsrc_ = gst_element_factory_make("rtspsrc", "rtspsrc");
@@ -43,7 +43,7 @@ void RtspClient::Terminate()
 {
     gst_bin_remove_many(GST_BIN(app()->Pipeline()), rtspsrc_, rtpdepay_video_, parse_video_, nullptr);
     gst_bin_remove_many(GST_BIN(app()->Pipeline()), rtpdepay_audio_, nullptr);
-    GST_DEBUG("[RtspClient] %s terminate done.", Id().c_str());
+    GST_DEBUG("[RtspClient] %s{%s} terminate done.", Id().c_str(), app()->uname().c_str());
 }
 
 bool RtspClient::add_to_pipeline()
@@ -67,14 +67,20 @@ bool RtspClient::add_to_pipeline()
                 parse_video_ = gst_element_factory_make("h265parse", "parse");
                 break;
             default:
-                GST_WARNING("[RtspClient] invalid Video Codec!");
+                GST_WARNING("[RtspClient] %s{%s} invalid Video Codec: %s!",
+                            Id().c_str(),
+                            app()->uname().c_str(),
+                            uppercase(app()->VideoEncoding()).c_str());
                 return false;
         }
         g_warn_if_fail(rtpdepay_video_ && parse_video_);
 
         gst_bin_add_many(GST_BIN(app()->Pipeline()), rtpdepay_video_, parse_video_, nullptr);
         g_warn_if_fail(gst_element_link(rtpdepay_video_, parse_video_));
-        GST_DEBUG("[RtspClient] configured video: %s", uppercase(app()->VideoEncoding()).c_str());
+        GST_DEBUG("[RtspClient] %s{%s} configured video: %s",
+                  Id().c_str(),
+                  app()->uname().c_str(),
+                  uppercase(app()->VideoEncoding()).c_str());
 
         // g_signal_connect(rtspsrc_, "new-manager", (GCallback)on_get_new_rtpbin, this);
     }
@@ -91,15 +97,21 @@ bool RtspClient::add_to_pipeline()
                 rtpdepay_audio_ = gst_element_factory_make("rtpopusdepay", "audio-depay");
                 break;
             default:
-                GST_WARNING("[RtspClient] invalid Audio Codec!");
+                GST_WARNING("[RtspClient] %s{%s} invalid Audio Codec: %s!",
+                            Id().c_str(),
+                            app()->uname().c_str(),
+                            uppercase(app()->VideoEncoding()).c_str());
                 return false;
         }
 
         g_warn_if_fail(rtpdepay_audio_);
         gst_bin_add_many(GST_BIN(app()->Pipeline()), rtpdepay_audio_, nullptr);
-        GST_DEBUG("[RtspClient] configured audio: %s", uppercase(app()->AudioEncoding()).c_str());
+        GST_DEBUG("[RtspClient] %s{%s} configured audio: %s",
+                  Id().c_str(),
+                  app()->uname().c_str(),
+                  uppercase(app()->AudioEncoding()).c_str());
     }
-    GST_DEBUG("[RtspClient] %s initialize done.", Id().c_str());
+    GST_DEBUG("[RtspClient] %s{%s} initialize done.", Id().c_str(), app()->uname().c_str());
 
     return true;
 }

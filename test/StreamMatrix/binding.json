@@ -20,7 +20,7 @@
     "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateLiveStream)": [
         "val,std::function<void(int, const std::string &)>"
     ],
-    "select_overload<void(StreamMatrix &, const std::string &, int, const std::string &, const emscripten::val &)>(&binding_utils::AddRtspAudience)": [
+    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, int, const std::string &, const emscripten::val &)>(&binding_utils::AddRtspAudience)": [
         "val,std::function<void(int, const std::string &)>"
     ],
     "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddWebrtcAudience)": [
@@ -29,7 +29,7 @@
     "select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::AddHlsAudience)": [
         "val,std::function<void(int, const std::string &)>"
     ],
-    "select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveAudience)": [
+    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveAudience)": [
         "val,std::function<void(int, const std::string &)>"
     ],
     "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateMultiPoints)": [
@@ -50,14 +50,14 @@
     "select_overload<void(StreamMatrix &, const std::string &, int, const emscripten::val &)>(&binding_utils::Seek)": [
         "val,std::function<void(int, const std::string &)>"
     ],
-    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateRtspAnalyzer)": [
+    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateRtspAnalyzer)": [
         "val,std::function<void(int, const std::string &)>"
     ],
     "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateWebrtcAnalyzer)": [
         "val,std::function<void(int, const std::string &)>"
     ],
     "select_overload<void(StreamMatrix &, const emscripten::val &, const emscripten::val &)>(&binding_utils::SetNotification)": [
-        "val,std::function<void(const std::string &, const std::string &)>",
+        "val,std::function<void(const std::string &, const std::string &)> notification",
         "val,std::function<void(int, const std::string &)>"
     ],
     "select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::GetVersion)": [
