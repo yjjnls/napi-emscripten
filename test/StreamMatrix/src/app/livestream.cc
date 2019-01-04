@@ -11,6 +11,7 @@ GST_DEBUG_CATEGORY_STATIC(my_category);
 
 LiveStream::LiveStream(const std::string &id, StreamMatrix *instance)
     : Connector(id, instance)
+    , performer_(nullptr)
 {
     GST_DEBUG_CATEGORY_INIT(my_category, "stream_matrix", 2, "stream_matrix");
 }

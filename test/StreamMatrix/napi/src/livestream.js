@@ -15,13 +15,13 @@ class LiveStream extends IApp {
 
         this.prepared_ = 0;
         this.on("rtspclient@default_performer", (meta, data) => {
-            console.log(data);
+            // console.log(data);
             var obj = JSON.parse(data.toString('utf8'));
             if (obj.msg == "video channel connected" || obj.msg == "audio channel connected")
                 this.prepared_++;
         });
         this.on("livestream@default_audience", (meta, data) => {
-            console.log(data);
+            // console.log(data);
             var obj = JSON.parse(data.toString('utf8'));
             if (obj.msg == "video data received" || obj.msg == "audio data received")
                 this.prepared_++;
@@ -58,7 +58,7 @@ class LiveStream extends IApp {
                     else { reject(data); }
                 });
             });
-        } else if (option.type = "rtsp") {
+        } else if (option.type = "webrtc") {
 
         } else if (option.type = "hls") {
 

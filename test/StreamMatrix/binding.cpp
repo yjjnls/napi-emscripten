@@ -150,7 +150,8 @@ void AddRtspAudience(StreamMatrix &obj,
     obj.Call(meta, param, CALLBACK(cb));
 }
 void AddWebrtcAudience(StreamMatrix &obj,
-                       const std::string &id,
+                       const std::string &app_id,
+                       const std::string &endpoint_id,
                        const std::string &signal_bridge,
                        const std::string &role,
                        const std::string &connection_id,
@@ -159,7 +160,8 @@ void AddWebrtcAudience(StreamMatrix &obj,
     nlohmann::json meta;
     meta["action"] = "add_audience";
     nlohmann::json param;
-    param["id"] = id;
+    param["id"] = app_id;
+    param["endpoint_id"] = endpoint_id;
     param["protocol"] = EndpointType::kWebrtc;
     param["signal_bridge"] = signal_bridge;
     param["connection_id"] = connection_id;
@@ -167,13 +169,15 @@ void AddWebrtcAudience(StreamMatrix &obj,
     obj.Call(meta, param, CALLBACK(cb));
 }
 void AddHlsAudience(StreamMatrix &obj,
-                    const std::string &id,
+                    const std::string &app_id,
+                    const std::string &endpoint_id,
                     const emscripten::val &cb)
 {
     nlohmann::json meta;
     meta["action"] = "add_audience";
     nlohmann::json param;
-    param["id"] = id;
+    param["id"] = app_id;
+    param["endpoint_id"] = endpoint_id;
     param["protocol"] = EndpointType::kHls;
     obj.Call(meta, param, CALLBACK(cb));
 }
@@ -316,8 +320,8 @@ EMSCRIPTEN_BINDINGS(binding_utils)
 
         .function("CreateLiveStream", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateLiveStream))
         .function("AddRtspAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, int, const std::string &, const emscripten::val &)>(&binding_utils::AddRtspAudience))
-        .function("AddWebrtcAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddWebrtcAudience))
-        .function("AddHlsAudience", select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::AddHlsAudience))
+        .function("AddWebrtcAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddWebrtcAudience))
+        .function("AddHlsAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddHlsAudience))
         .function("RemoveAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveAudience))
 
         .function("CreateMultiPoints", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateMultiPoints))
