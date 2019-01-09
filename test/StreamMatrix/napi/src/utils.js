@@ -10,7 +10,7 @@ function parseTime(str) {
     return ms;
 }
 
-function poll(func, tick = 100, timeout = 3 * 1000) {
+function poll(func, tick = 100, timeout = 3 * 1000, err_msg = 'poll time out!') {
     let elapse = 0;
     return new Promise(function (resolve, reject) {
         let interval = setInterval(function () {
@@ -22,7 +22,7 @@ function poll(func, tick = 100, timeout = 3 * 1000) {
 
             if (elapse > timeout) {
                 clearInterval(interval);
-                reject('poll time out!');
+                reject(err_msg);
             }
         }, tick);
     });

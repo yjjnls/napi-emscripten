@@ -9,7 +9,7 @@ class IEndpoint
  public:
     IEndpoint(IApp *app, const std::string &id)
         : app_(app)
-        , id_(id)
+        , id_(id.c_str())
     {
     }
     virtual ~IEndpoint()
@@ -27,6 +27,8 @@ class IEndpoint
     std::string &Protocol() { return protocol_; }
     // const std::string &Id() { return id_; }
     std::string &Id() { return id_; }
+
+    virtual std::string uname() = 0;
 
  protected:
     IApp *app() { return app_; }

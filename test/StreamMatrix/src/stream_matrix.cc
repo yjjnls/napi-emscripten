@@ -1,6 +1,7 @@
 #include <stream_matrix.hpp>
 #include <app/launcher.hpp>
 #include <app/rtsp_analyzer.hpp>
+#include <app/webrtc_analyzer.hpp>
 #include <app/rtsp_test_server.hpp>
 #include <app/livestream.hpp>
 
@@ -202,6 +203,8 @@ IApp *StreamMatrix::app_factory(const nlohmann::json &data)
         int protocol = data["protocol"];
         if (protocol == AnalyzerType::kRtsp) {
             app = new RtspAnalyzer(id, this);
+        } else if (protocol == AnalyzerType::kWebrtcSendRecv) {
+            app = new WebrtcAnalyzer(id, this);
         }
     } else if (type == MediaType::kLiveStream) {
         app = new LiveStream(id, this);

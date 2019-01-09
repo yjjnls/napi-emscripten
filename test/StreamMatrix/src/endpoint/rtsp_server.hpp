@@ -22,6 +22,7 @@ class RtspServer : public IEndpoint
                      GCallback media_constructed,
                      GCallback media_configure);
     void StopLaunch();
+    std::string uname() { return "RtspServer@" + Id(); }
 
  private:
     static void on_rtsp_media_constructed(GstRTSPMediaFactory *factory,

@@ -5,6 +5,7 @@ let assert = chai.assert;
 var StreamMatrix = require("../index.js").StreamMatrix;
 var RtspTestServer = require("../index.js").RtspTestServer;
 var RtspAnalyzer = require("../index.js").RtspAnalyzer;
+var WebrtcAnalyzer = require("../index.js").WebrtcAnalyzer;
 var LiveStream = require("../index.js").LiveStream;
 var utils = require("../index.js").utils;
 var sleep = require("./internal.js").sleep;
@@ -12,20 +13,22 @@ var sleep = require("./internal.js").sleep;
 let stream_matrix;
 let rtsp_test_server;
 let rtsp_analyzer;
+let webrtc_analyzer;
 let livestream;
 let port = 8554;
 describe('StreamMatrix', function () {
+    beforeEach(async () => {
+        stream_matrix = new StreamMatrix();
+        await stream_matrix.initialize();
+        await stream_matrix.set_notification();
+    });
+
+    afterEach(async () => {
+        await stream_matrix.terminate();
+        console.log("=========================================")
+    });
+
     describe('#interface', function () {
-        beforeEach(async () => {
-            stream_matrix = new StreamMatrix();
-            await stream_matrix.initialize();
-        });
-
-        afterEach(async () => {
-            await stream_matrix.terminate();
-            console.log("=========================================")
-        });
-
         it(`version`, async () => {
             let version = await stream_matrix.version();
             assert.isString(version);
@@ -33,10 +36,6 @@ describe('StreamMatrix', function () {
     });
     describe('#rtsp_test_server', function () {
         beforeEach(async () => {
-            stream_matrix = new StreamMatrix();
-            await stream_matrix.initialize();
-            await stream_matrix.set_notification();
-
             rtsp_test_server = new RtspTestServer(stream_matrix, "app0", port, "/test", {
                 video: "h264",
                 audio: "pcma"
@@ -48,17 +47,15 @@ describe('StreamMatrix', function () {
         afterEach(async () => {
             await rtsp_test_server.stop();
             await rtsp_test_server.terminate();
-            await stream_matrix.terminate();
             port++;
-            console.log("=========================================")
         });
         it(`analyzer`, async () => {
             rtsp_analyzer = new RtspAnalyzer(stream_matrix,
                 "app1",
-                `rtsp://127.0.0.1:${port}/test`,
                 {
                     video: "h264",
-                    audio: "pcma"
+                    audio: "pcma",
+                    url: `rtsp://127.0.0.1:${port}/test`
                 });
             await rtsp_analyzer.initialize();
             await rtsp_analyzer.startup();
@@ -71,10 +68,10 @@ describe('StreamMatrix', function () {
         it(`analyzer2`, async () => {
             rtsp_analyzer = new RtspAnalyzer(stream_matrix,
                 "app1",
-                `rtsp://127.0.0.1:${port}/test`,
                 {
                     video: "h264",
-                    audio: "pcma"
+                    audio: "pcma",
+                    url: `rtsp://127.0.0.1:${port}/test`
                 });
             await rtsp_analyzer.initialize();
             await rtsp_analyzer.startup();
@@ -87,9 +84,6 @@ describe('StreamMatrix', function () {
     });
     describe('#livestream', function () {
         beforeEach(async () => {
-            stream_matrix = new StreamMatrix();
-            await stream_matrix.initialize();
-            await stream_matrix.set_notification();
             // rtsp test server
             rtsp_test_server = new RtspTestServer(stream_matrix, "app0", port, "/test", {
                 video: "h264",
@@ -101,10 +95,7 @@ describe('StreamMatrix', function () {
         afterEach(async () => {
             await rtsp_test_server.stop();
             await rtsp_test_server.terminate();
-
-            await stream_matrix.terminate();
             port++;
-            console.log("=========================================")
         });
 
         it(`create livestream`, async () => {
@@ -144,10 +135,10 @@ describe('StreamMatrix', function () {
 
                 rtsp_analyzer = new RtspAnalyzer(stream_matrix,
                     "app2",
-                    `rtsp://127.0.0.1:${port}/test_server`,
                     {
                         video: "h264",
-                        audio: "pcma"
+                        audio: "pcma",
+                        url: `rtsp://127.0.0.1:${port}/test_server`
                     });
                 await rtsp_analyzer.initialize();
                 await rtsp_analyzer.startup();
@@ -159,26 +150,36 @@ describe('StreamMatrix', function () {
 
                 await livestream.remove_audience("endpoint0");
             });
-            it.only(`add webrtc audience`, async () => {
-                await livestream.add_audience("endpoint0", { type: "rtsp", port: 8553, path: "/test_server" });
+            it(`add webrtc audience`, async () => {
+                await livestream.add_audience("endpoint1", { type: "webrtc", signal_bridge: "http://172.16.64.58:9001/", role: "offer", connection_id: "1" });
 
-                rtsp_analyzer = new RtspAnalyzer(stream_matrix,
-                    "app2",
-                    "rtsp://127.0.0.1:8553/test_server",
-                    {
-                        video: "h264",
-                        audio: "pcma"
-                    });
-                await rtsp_analyzer.initialize();
-                await rtsp_analyzer.startup();
+                webrtc_analyzer = new WebrtcAnalyzer(stream_matrix, "app2", { video: "h264", audio: "pcma", signal_bridge: "http://172.16.64.58:9001/", role: "answer", connection_id: "1" });
+                await webrtc_analyzer.initialize();
+                await webrtc_analyzer.startup();
+
                 await utils.poll(() => {
-                    return rtsp_analyzer.analyze_done();
+                    return webrtc_analyzer.analyze_done();
                 }, 100, 10000);
-                await rtsp_analyzer.stop();
-                await rtsp_analyzer.terminate();
+                // await sleep(200000);
 
-                await livestream.remove_audience("endpoint0");
+                await webrtc_analyzer.stop();
+                await webrtc_analyzer.terminate();
+
+
+                await livestream.remove_audience("endpoint1");
             });
-        })
+        });
     });
+
+    describe.only('#multipoints', function () {
+        beforeEach(async () => {
+        });
+        afterEach(async () => {
+        });
+        it(`version`, async () => {
+            let version = await stream_matrix.version();
+            assert.isString(version);
+        });
+    });
+
 });

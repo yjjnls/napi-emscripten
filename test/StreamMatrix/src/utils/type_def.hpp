@@ -30,5 +30,6 @@ VideoEncodingType get_video_encoding_type(const std::string &type);
 AudioEncodingType get_audio_encoding_type(const std::string &type);
 
 std::string uppercase(const std::string &target);
+std::string lowercase(const std::string &target);
 
 #endif

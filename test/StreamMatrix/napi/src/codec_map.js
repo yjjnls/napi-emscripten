@@ -26,7 +26,7 @@ var codec_table = {
         enc: 'x264enc',
         dec: 'avdec_h264',
         pay: 'rtph264pay',
-        depay: 'rtph264depay'
+        depay: 'rtph264depay ! h264parse'
     },
 
     openh264: {

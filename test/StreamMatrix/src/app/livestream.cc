@@ -1,6 +1,7 @@
 #include <app/livestream.hpp>
 #include <endpoint/rtsp_client.hpp>
 #include <endpoint/rtsp_server.hpp>
+#include <endpoint/webrtc.hpp>
 
 using json = nlohmann::json;
 
@@ -20,7 +21,7 @@ LiveStream::LiveStream(const std::string &id, StreamMatrix *instance)
 bool LiveStream::Initialize(Promise *promise)
 {
     if (performer_ != nullptr) {
-        GST_ERROR("[LiveStream] there's already a performer!");
+        GST_ERROR("[%s] there's already a performer!", uname().c_str());
         promise->reject("there's already a performer!");
         return false;
     }
@@ -36,7 +37,7 @@ bool LiveStream::Initialize(Promise *promise)
     if (rc) {
         // link endpoint to video/audio tee
         if (on_add_endpoint(performer_)) {
-            GST_DEBUG("[LiveStream] %s add performer (type: %s)", id.c_str(), performer_->Protocol().c_str());
+            GST_DEBUG("[%s] add performer (type: %s)", uname().c_str(), performer_->Protocol().c_str());
             promise->resolve();
             return true;
         }
@@ -44,7 +45,7 @@ bool LiveStream::Initialize(Promise *promise)
     performer_->Terminate();
     delete performer_;
     performer_ = nullptr;
-    GST_ERROR("[LiveStream] %s add performer failed!", id.c_str());
+    GST_ERROR("[%s] add performer failed!", uname().c_str());
     promise->reject(id + " add performer failed!");
     return false;
 }
@@ -142,7 +143,7 @@ void LiveStream::Destroy()
     performer_ = nullptr;
 
     Connector::Destroy();
-    GST_DEBUG("[LiveStream] %s remove performer!", id().c_str());
+    GST_DEBUG("[%s] remove performer!", uname().c_str());
 }
 void LiveStream::On(Promise *promise)
 {
@@ -161,7 +162,7 @@ void LiveStream::On(Promise *promise)
     } else if (action == "remote_candidate") {
         set_remote_candidate(promise);
     } else {
-        GST_ERROR("[LiveStream] action: %s is not supported!", action.c_str());
+        GST_ERROR("[%s] action: %s is not supported!", uname().c_str(), action.c_str());
         promise->reject("action: " + action + " is not supported!");
     }
 }
@@ -181,15 +182,15 @@ void LiveStream::add_audience(Promise *promise)
     // get endpoint protocol
     json &j = promise->data();
     if (j.find("protocol") == j.end()) {
-        GST_ERROR("[LiveStream] no protocol in audience.");
-        promise->reject("[LiveStream] no protocol in audience.");
+        GST_ERROR("[%s] no protocol in audience.", uname().c_str());
+        promise->reject("no protocol in audience.");
         return;
     }
     const std::string &id = j["endpoint_id"];
     EndpointType protocol = j["protocol"];
     if (find_audience(id) != audiences_.end()) {
-        GST_ERROR("[LiveStream] audience: %s has been added.", id.c_str());
-        promise->reject("[LiveStream] audience: " + id + " has been added.");
+        GST_ERROR("[%s] audience: %s has been added.", uname().c_str(), id.c_str());
+        promise->reject("audience: " + id + " has been added.");
         return;
     }
     // create endpoint
@@ -207,11 +208,11 @@ void LiveStream::add_audience(Promise *promise)
             j["launch"] = launch;
         } break;
         case EndpointType::kWebrtc: {
-            // ep = new WebRTC(this, name);
+            ep = new Webrtc(this, id);
         } break;
         default: {
-            GST_ERROR("[LiveStream] protocol: %s not supported.", ep->Protocol().c_str());
-            promise->reject("[LiveStream] protocol: " + ep->Protocol() + " not supported.");
+            GST_ERROR("[%s] protocol: %s not supported.", uname().c_str(), ep->Protocol().c_str());
+            promise->reject("protocol: " + ep->Protocol() + " not supported.");
             return;
         }
     }
@@ -219,14 +220,14 @@ void LiveStream::add_audience(Promise *promise)
     if (rc) {
         // add endpoint to pipeline and link with tee
         audiences_.push_back(ep);
-        GST_INFO("[LiveStream] add audience: %s (type: %s)", id.c_str(), ep->Protocol().c_str());
+        GST_INFO("[%s] add audience: %s (type: %s)", uname().c_str(), id.c_str(), ep->Protocol().c_str());
         promise->resolve();
         return;
     }
     ep->Terminate();
     delete ep;
     ep = NULL;
-    GST_ERROR("[LiveStream] add audience: %s failed!", id.c_str());
+    GST_ERROR("[%s] add audience: %s failed!", uname().c_str(), id.c_str());
     promise->reject("add audience " + id + " failed!");
 }
 void LiveStream::remove_audience(Promise *promise)
@@ -235,15 +236,15 @@ void LiveStream::remove_audience(Promise *promise)
     const std::string &id = j["endpoint_id"];
     auto it = find_audience(id);
     if (it == audiences_.end()) {
-        GST_ERROR("[LiveStream] audience: %s has not been added.", id.c_str());
-        promise->reject("[LiveStream] audience: " + id + " has not been added.");
+        GST_ERROR("[%s] audience: %s has not been added.", uname().c_str(), id.c_str());
+        promise->reject(" audience: " + id + " has not been added.");
         return;
     }
     IEndpoint *ep = *it;
     ep->Terminate();
     audiences_.erase(it);
 
-    GST_INFO("[LiveStream] remove audience: %s (type: %s)", id.c_str(), ep->Protocol().c_str());
+    GST_INFO("[%s] remove audience: %s (type: %s)", uname().c_str(), id.c_str(), ep->Protocol().c_str());
 
     delete ep;
     promise->resolve();
@@ -251,35 +252,35 @@ void LiveStream::remove_audience(Promise *promise)
 
 void LiveStream::set_remote_description(Promise *promise)
 {
-    // const json &j = promise->data();
+    const json &j = promise->data();
 
-    // const std::string &name = j["name"];
-    // auto it = find_audience(name);
-    // if (it == audiences_.end()) {
-    //     GST_ERROR("[LiveStream] audience: %s has not been added.", name.c_str());
-    //     promise->reject("[LiveStream] audience: " + name + " has not been added.");
-    //     return;
-    // }
-    // WebRTC *ep = static_cast<WebRTC *>(*it);
-    // ep->set_remote_description(promise);
+    const std::string &endpoint_id = j["endpoint_id"];
+    auto it = find_audience(endpoint_id);
+    if (it == audiences_.end()) {
+        GST_ERROR("[%s] audience: %s has not been added.", uname().c_str(), endpoint_id.c_str());
+        promise->reject(" audience: " + endpoint_id + " has not been added.");
+        return;
+    }
+    Webrtc *ep = static_cast<Webrtc *>(*it);
+    ep->SetRemoteDescription(promise);
 
-    // promise->resolve();
+    promise->resolve();
 }
 void LiveStream::set_remote_candidate(Promise *promise)
 {
-    // const json &j = promise->data();
+    const json &j = promise->data();
 
-    // const std::string &name = j["name"];
-    // auto it = find_audience(name);
-    // if (it == audiences_.end()) {
-    //     GST_ERROR("[LiveStream] audience: %s has not been added.", name.c_str());
-    //     promise->reject("[LiveStream] audience: " + name + " has not been added.");
-    //     return;
-    // }
-    // WebRTC *ep = static_cast<WebRTC *>(*it);
-    // ep->set_remote_candidate(promise);
+    const std::string &endpoint_id = j["endpoint_id"];
+    auto it = find_audience(endpoint_id);
+    if (it == audiences_.end()) {
+        GST_ERROR("[%s] audience: %s has not been added.", uname().c_str(), endpoint_id.c_str());
+        promise->reject("audience: " + endpoint_id + " has not been added.");
+        return;
+    }
+    Webrtc *ep = static_cast<Webrtc *>(*it);
+    ep->SetRemoteCandidate(promise);
 
-    // promise->resolve();
+    promise->resolve();
 }
 
 GstPadProbeReturn LiveStream::on_monitor_video_data(GstPad *pad, GstPadProbeInfo *info, gpointer user_data)

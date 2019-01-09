@@ -3,17 +3,15 @@
 
 #include <app/launcher.hpp>
 
-class RtspAnalyzer : public Launcher
+class Analyzer : public Launcher
 {
  public:
-    RtspAnalyzer(const std::string &id, StreamMatrix *instance);
+    Analyzer(const std::string &id, StreamMatrix *instance);
 
-    ~RtspAnalyzer();
+    ~Analyzer();
     // bool Initialize();
 
  protected:
-    std::string uname() { return "RtspAnalyzer@" + id(); }
-
     void startup(Promise *promise);
 
     static gboolean on_save_image(gpointer user_data);
@@ -27,6 +25,17 @@ class RtspAnalyzer : public Launcher
     int cur_video_frame_;
     int cur_audio_frame_;
     std::vector<unsigned char *> bmps_;
+};
+
+class RtspAnalyzer : public Analyzer
+{
+ public:
+    RtspAnalyzer(const std::string &id, StreamMatrix *instance);
+
+    ~RtspAnalyzer();
+
+ protected:
+    std::string uname() { return "RtspAnalyzer@" + id(); }
 };
 
 #endif

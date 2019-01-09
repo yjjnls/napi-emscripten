@@ -23,7 +23,13 @@
     "select_overload<void(StreamMatrix &, const std::string &, const std::string &, int, const std::string &, const emscripten::val &)>(&binding_utils::AddRtspAudience)": [
         "val,std::function<void(int, const std::string &)>"
     ],
-    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddWebrtcAudience)": [
+    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddWebrtcAudience)": [
+        "val,std::function<void(int, const std::string &)>"
+    ],
+    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::SetRemoteDescription)": [
+        "val,std::function<void(int, const std::string &)>"
+    ],
+    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, int, const emscripten::val &)>(&binding_utils::SetRemoteCandidate)": [
         "val,std::function<void(int, const std::string &)>"
     ],
     "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddHlsAudience)": [
@@ -53,7 +59,7 @@
     "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateRtspAnalyzer)": [
         "val,std::function<void(int, const std::string &)>"
     ],
-    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateWebrtcAnalyzer)": [
+    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateWebrtcAnalyzer)": [
         "val,std::function<void(int, const std::string &)>"
     ],
     "select_overload<void(StreamMatrix &, const emscripten::val &, const emscripten::val &)>(&binding_utils::SetNotification)": [

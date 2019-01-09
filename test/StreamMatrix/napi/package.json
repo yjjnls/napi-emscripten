@@ -8,7 +8,9 @@
   },
   "dependencies": {
     "bluebird": "^3.5.3",
-    "chai": "^4.2.0"
+    "chai": "^4.2.0",
+    "socket.io": "^2.2.0",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
     "mocha": "^5.2.0"

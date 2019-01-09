@@ -12,6 +12,8 @@ class RtspClient : public IEndpoint
     bool Initialize(Promise *promise);
     void Terminate();
 
+    std::string uname() { return "RtspClient@" + Id(); }
+
  private:
     bool add_to_pipeline();
 

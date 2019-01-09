@@ -12,11 +12,11 @@ class Webrtc : public IEndpoint
     bool Initialize(Promise *promise);
     void Terminate();
 
-    void set_remote_description(Promise *promise);
-    void set_remote_candidate(Promise *promise);
+    void SetRemoteDescription(Promise *promise);
+    void SetRemoteCandidate(Promise *promise);
 
-    // GstElement *pipeline() { return pipeline_; }
-    // std::string &launch() { return launch_; }
+    std::string uname() { return "Webrtc@" + Id(); }
+    GstElement *Pipeline() { return pipeline_; }
 
  private:
     bool parse_launch();

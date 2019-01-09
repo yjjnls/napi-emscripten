@@ -3,6 +3,8 @@
 var IApp = require('./app.js').IApp;
 var Promise = require('bluebird');
 const default_option = require('./analyze_source.js').option;
+var WebRTC = require('./webrtc.js').WebRTC;
+var utils = require("./utils.js");
 
 class LiveStream extends IApp {
     constructor(stream_matrix, id, url, option) {
@@ -14,18 +16,36 @@ class LiveStream extends IApp {
         this.option_.audio.codec = option.audio;
 
         this.prepared_ = 0;
+        let self = this;
         this.on("rtspclient@default_performer", (meta, data) => {
             // console.log(data);
             var obj = JSON.parse(data.toString('utf8'));
             if (obj.msg == "video channel connected" || obj.msg == "audio channel connected")
-                this.prepared_++;
+                self.prepared_++;
         });
         this.on("livestream@default_audience", (meta, data) => {
             // console.log(data);
             var obj = JSON.parse(data.toString('utf8'));
             if (obj.msg == "video data received" || obj.msg == "audio data received")
-                this.prepared_++;
+                self.prepared_++;
         });
+        this.on(`webrtc`, (meta, data) => {
+            var meta_obj = JSON.parse(meta.toString('utf8'));
+            let type = meta_obj.type;
+            let id = meta_obj.id;
+            for (var pos = 0; pos < self.audiences_.length; ++pos) {
+                if (self.audiences_[pos].id == id) {
+                    if (type == 'sdp')
+                        self.audiences_[pos].webrtc.send_sdp(data);
+                    else
+                        self.audiences_[pos].webrtc.send_ice(data);
+                    break;
+                }
+            }
+        });
+        // this.on(`webrtc-peer-closed`, async (id) => {
+        //     await self.remove_audience(id);
+        // })
 
         this.audiences_ = [];
     }
@@ -47,20 +67,37 @@ class LiveStream extends IApp {
     }
     async add_audience(id, option) {
         let self = this;
-        if (option.type = "rtsp") {
+        if (option.type == "rtsp") {
 
             return new Promise((resolve, reject) => {
-                self.stream_matrix().AddRtspAudience(self.id_, id, option.port, option.path, (code, data) => {
+                self.stream_matrix().AddRtspAudience(self.id_, id, option.port, option.path,
+                    (code, data) => {
+                        if (code == 0) {
+                            self.audiences_.push({ "type": option.type, "id": id });
+                            resolve(data);
+                        }
+                        else { reject(data); }
+                    });
+            });
+        } else if (option.type == "webrtc") {
+            let webrtc = new WebRTC(option.signal_bridge, option.connection_id, id, this, option.role);
+            webrtc.connect();
+
+            self.audiences_.push({ "type": option.type, "id": id, "webrtc": webrtc });
+
+            return new Promise((resolve, reject) => {
+                self.stream_matrix().AddWebrtcAudience(self.id_, id, option.role, (code, data) => {
                     if (code == 0) {
-                        self.audiences_.push(id);
                         resolve(data);
                     }
-                    else { reject(data); }
+                    else {
+                        webrtc.close();
+                        self.audiences_.pop()
+                        reject(data);
+                    }
                 });
             });
-        } else if (option.type = "webrtc") {
-
-        } else if (option.type = "hls") {
+        } else if (option.type == "hls") {
 
         } else {
             return new Promise((resolve, reject) => {
@@ -71,13 +108,25 @@ class LiveStream extends IApp {
     }
     async remove_audience(id) {
         let self = this;
-        let pos = this.audiences_.indexOf(id);
-        if (pos == -1) {
-            return new Promise((resolve, reject) => {
-                reject(`livestream remove_audience: the audience ${id} hasn't been added!`);
-            });
+        let pos = 0;
+        for (; pos < this.audiences_.length; ++pos) {
+            if (this.audiences_[pos].id == id) {
+                break;
+            }
+        }
+
+        if (pos == this.audiences_.length) {
+            return;
+            // return new Promise((resolve, reject) => {
+            //     reject(`livestream remove_audience: the audience ${id} hasn't been added!`);
+            // });
+        }
+
+        if (this.audiences_[pos].type == 'webrtc') {
+            this.audiences_[pos].webrtc.close();
         }
         this.audiences_.splice(pos, 1);
+
         return new Promise((resolve, reject) => {
             self.stream_matrix().RemoveAudience(self.id_, id, (code, data) => {
                 if (code == 0) { resolve(data); }

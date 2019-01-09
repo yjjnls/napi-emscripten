@@ -28,7 +28,7 @@ class IApp
     std::string &VideoEncoding() { return video_encoding_; }
     const std::string &AudioEncoding() const { return audio_encoding_; }
     std::string &AudioEncoding() { return audio_encoding_; }
-    GstElement *Pipeline() { return pipeline_; }
+    virtual GstElement *Pipeline() { return pipeline_; }
 
     virtual std::string uname() = 0;
 

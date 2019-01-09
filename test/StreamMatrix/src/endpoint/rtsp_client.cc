@@ -22,18 +22,18 @@ bool RtspClient::Initialize(Promise *promise)
 {
     const json &j = promise->data();
     const std::string &url = j["source_url"];
-    GST_DEBUG("[RtspClient] %s{%s} source url: %s", Id().c_str(), app()->uname().c_str(), url.c_str());
+    GST_DEBUG("[%s] {%s} source url: %s", uname().c_str(), app()->uname().c_str(), url.c_str());
     IEndpoint::Protocol() = "rtspclient";
 
     rtspsrc_ = gst_element_factory_make("rtspsrc", "rtspsrc");
     g_object_set(G_OBJECT(rtspsrc_), "location", url.c_str(), nullptr);
     if (j.find("video_codec") != j.end()) {
         std::string video_codec = j["video_codec"];
-        app()->VideoEncoding() = std::string(video_codec.c_str());
+        app()->VideoEncoding() = lowercase(std::string(video_codec.c_str()));
     }
     if (j.find("audio_codec") != j.end()) {
         const std::string audio_codec = j["audio_codec"];
-        app()->AudioEncoding() = std::string(audio_codec.c_str());
+        app()->AudioEncoding() = lowercase(std::string(audio_codec.c_str()));
     }
 
     return add_to_pipeline();
@@ -43,7 +43,7 @@ void RtspClient::Terminate()
 {
     gst_bin_remove_many(GST_BIN(app()->Pipeline()), rtspsrc_, rtpdepay_video_, parse_video_, nullptr);
     gst_bin_remove_many(GST_BIN(app()->Pipeline()), rtpdepay_audio_, nullptr);
-    GST_DEBUG("[RtspClient] %s{%s} terminate done.", Id().c_str(), app()->uname().c_str());
+    GST_DEBUG("[%s] {%s} terminate done.", uname().c_str(), app()->uname().c_str());
 }
 
 bool RtspClient::add_to_pipeline()
@@ -56,7 +56,7 @@ bool RtspClient::add_to_pipeline()
     }
 
     if (!app()->VideoEncoding().empty()) {
-        VideoEncodingType video_codec = get_video_encoding_type(uppercase(app()->VideoEncoding()));
+        VideoEncodingType video_codec = get_video_encoding_type(app()->VideoEncoding());
         switch (video_codec) {
             case VideoEncodingType::H264:
                 rtpdepay_video_ = gst_element_factory_make("rtph264depay", "depay");
@@ -67,25 +67,25 @@ bool RtspClient::add_to_pipeline()
                 parse_video_ = gst_element_factory_make("h265parse", "parse");
                 break;
             default:
-                GST_WARNING("[RtspClient] %s{%s} invalid Video Codec: %s!",
-                            Id().c_str(),
+                GST_WARNING("[%s] {%s} invalid Video Codec: %s!",
+                            uname().c_str(),
                             app()->uname().c_str(),
-                            uppercase(app()->VideoEncoding()).c_str());
+                            app()->VideoEncoding().c_str());
                 return false;
         }
         g_warn_if_fail(rtpdepay_video_ && parse_video_);
 
         gst_bin_add_many(GST_BIN(app()->Pipeline()), rtpdepay_video_, parse_video_, nullptr);
         g_warn_if_fail(gst_element_link(rtpdepay_video_, parse_video_));
-        GST_DEBUG("[RtspClient] %s{%s} configured video: %s",
-                  Id().c_str(),
+        GST_DEBUG("[%s] {%s} configured video: %s",
+                  uname().c_str(),
                   app()->uname().c_str(),
-                  uppercase(app()->VideoEncoding()).c_str());
+                  app()->VideoEncoding().c_str());
 
         // g_signal_connect(rtspsrc_, "new-manager", (GCallback)on_get_new_rtpbin, this);
     }
     if (!app()->AudioEncoding().empty()) {
-        AudioEncodingType audio_codec = get_audio_encoding_type(uppercase(app()->AudioEncoding()));
+        AudioEncodingType audio_codec = get_audio_encoding_type(app()->AudioEncoding());
         switch (audio_codec) {
             case AudioEncodingType::PCMA:
                 rtpdepay_audio_ = gst_element_factory_make("rtppcmadepay", "audio-depay");
@@ -97,21 +97,21 @@ bool RtspClient::add_to_pipeline()
                 rtpdepay_audio_ = gst_element_factory_make("rtpopusdepay", "audio-depay");
                 break;
             default:
-                GST_WARNING("[RtspClient] %s{%s} invalid Audio Codec: %s!",
-                            Id().c_str(),
+                GST_WARNING("[%s] {%s} invalid Audio Codec: %s!",
+                            uname().c_str(),
                             app()->uname().c_str(),
-                            uppercase(app()->VideoEncoding()).c_str());
+                            app()->VideoEncoding().c_str());
                 return false;
         }
 
         g_warn_if_fail(rtpdepay_audio_);
         gst_bin_add_many(GST_BIN(app()->Pipeline()), rtpdepay_audio_, nullptr);
-        GST_DEBUG("[RtspClient] %s{%s} configured audio: %s",
-                  Id().c_str(),
+        GST_DEBUG("[%s] {%s} configured audio: %s",
+                  uname().c_str(),
                   app()->uname().c_str(),
-                  uppercase(app()->AudioEncoding()).c_str());
+                  app()->AudioEncoding().c_str());
     }
-    GST_DEBUG("[RtspClient] %s{%s} initialize done.", Id().c_str(), app()->uname().c_str());
+    GST_DEBUG("[%s] {%s} initialize done.", uname().c_str(), app()->uname().c_str());
 
     return true;
 }

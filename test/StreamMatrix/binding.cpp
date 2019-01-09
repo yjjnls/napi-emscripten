@@ -152,9 +152,7 @@ void AddRtspAudience(StreamMatrix &obj,
 void AddWebrtcAudience(StreamMatrix &obj,
                        const std::string &app_id,
                        const std::string &endpoint_id,
-                       const std::string &signal_bridge,
                        const std::string &role,
-                       const std::string &connection_id,
                        const emscripten::val &cb)
 {
     nlohmann::json meta;
@@ -163,9 +161,39 @@ void AddWebrtcAudience(StreamMatrix &obj,
     param["id"] = app_id;
     param["endpoint_id"] = endpoint_id;
     param["protocol"] = EndpointType::kWebrtc;
-    param["signal_bridge"] = signal_bridge;
-    param["connection_id"] = connection_id;
-    param["role"] = (role == "Offer" ? WebrtcRole::kOffer : WebrtcRole::kAnswer);
+    param["role"] = (role == "offer" ? WebrtcRole::kOffer : WebrtcRole::kAnswer);
+    obj.Call(meta, param, CALLBACK(cb));
+}
+void SetRemoteDescription(StreamMatrix &obj,
+                          const std::string &app_id,
+                          const std::string &endpoint_id,
+                          const std::string &type,
+                          const std::string &sdp,
+                          const emscripten::val &cb)
+{
+    nlohmann::json meta;
+    meta["action"] = "remote_sdp";
+    nlohmann::json param;
+    param["id"] = app_id;
+    param["endpoint_id"] = endpoint_id;
+    param["type"] = type;
+    param["sdp"] = sdp;
+    obj.Call(meta, param, CALLBACK(cb));
+}
+void SetRemoteCandidate(StreamMatrix &obj,
+                        const std::string &app_id,
+                        const std::string &endpoint_id,
+                        const std::string &candidate,
+                        int sdpMLineIndex,
+                        const emscripten::val &cb)
+{
+    nlohmann::json meta;
+    meta["action"] = "remote_candidate";
+    nlohmann::json param;
+    param["id"] = app_id;
+    param["endpoint_id"] = endpoint_id;
+    param["candidate"] = candidate;
+    param["sdpMLineIndex"] = sdpMLineIndex;
     obj.Call(meta, param, CALLBACK(cb));
 }
 void AddHlsAudience(StreamMatrix &obj,
@@ -209,7 +237,7 @@ void AddMember(StreamMatrix &obj,
     param["protocol"] = EndpointType::kWebrtc;
     param["signal_bridge"] = signal_bridge;
     param["connection_id"] = connection_id;
-    param["role"] = (role == "Offer" ? WebrtcRole::kOffer : WebrtcRole::kAnswer);
+    param["role"] = (role == "offer" ? WebrtcRole::kOffer : WebrtcRole::kAnswer);
     obj.Call(meta, param, CALLBACK(cb));
 }
 void RemoveMember(StreamMatrix &obj, const std::string &id, const emscripten::val &cb)
@@ -260,9 +288,7 @@ void CreateRtspAnalyzer(StreamMatrix &obj,
 
 void CreateWebrtcAnalyzer(StreamMatrix &obj,
                           const std::string &id,
-                          const std::string &signal_bridge,
                           const std::string &role,
-                          const std::string &connection_id,
                           const std::string &launch,
                           const emscripten::val &cb)
 {
@@ -272,10 +298,8 @@ void CreateWebrtcAnalyzer(StreamMatrix &obj,
     param["type"] = kAnalyzer;
     param["id"] = id;
     param["protocol"] = AnalyzerType::kWebrtcSendRecv;
-    param["signal_bridge"] = signal_bridge;
-    param["connection_id"] = connection_id;
     param["launch"] = launch;
-    param["role"] = (role == "Offer" ? WebrtcRole::kOffer : WebrtcRole::kAnswer);
+    param["role"] = (role == "offer" ? WebrtcRole::kOffer : WebrtcRole::kAnswer);
 
     obj.Call(meta, param, CALLBACK(cb));
 }
@@ -320,7 +344,9 @@ EMSCRIPTEN_BINDINGS(binding_utils)
 
         .function("CreateLiveStream", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateLiveStream))
         .function("AddRtspAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, int, const std::string &, const emscripten::val &)>(&binding_utils::AddRtspAudience))
-        .function("AddWebrtcAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddWebrtcAudience))
+        .function("AddWebrtcAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddWebrtcAudience))
+        .function("SetRemoteDescription", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::SetRemoteDescription))
+        .function("SetRemoteCandidate", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, int, const emscripten::val &)>(&binding_utils::SetRemoteCandidate))
         .function("AddHlsAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddHlsAudience))
         .function("RemoveAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveAudience))
 
@@ -334,7 +360,7 @@ EMSCRIPTEN_BINDINGS(binding_utils)
 
 
         .function("CreateRtspAnalyzer", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateRtspAnalyzer))
-        .function("CreateWebrtcAnalyzer", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateWebrtcAnalyzer))
+        .function("CreateWebrtcAnalyzer", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateWebrtcAnalyzer))
 
         .function("SetNotification", select_overload<void(StreamMatrix &, const emscripten::val &, const emscripten::val &)>(&binding_utils::SetNotification))
         .function("version", select_overload<void(StreamMatrix &, const emscripten::val &)>(&binding_utils::GetVersion))

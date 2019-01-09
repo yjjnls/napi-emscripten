@@ -7,8 +7,8 @@ GST_DEBUG_CATEGORY_STATIC(my_category);
 #define GST_CAT_DEFAULT my_category
 
 
-RtspAnalyzer::RtspAnalyzer(const std::string &id,
-                           StreamMatrix *instance)
+Analyzer::Analyzer(const std::string &id,
+                   StreamMatrix *instance)
     : Launcher(id, instance)
     , sink_(nullptr)
     , frame_(10)
@@ -17,59 +17,65 @@ RtspAnalyzer::RtspAnalyzer(const std::string &id,
 {
     GST_DEBUG_CATEGORY_INIT(my_category, "stream_matrix", 2, "stream_matrix");
 }
-RtspAnalyzer::~RtspAnalyzer()
+Analyzer::~Analyzer()
 {
     for (auto it : bmps_) {
         delete[] it;
     }
 }
-void RtspAnalyzer::startup(Promise *promise)
+void Analyzer::startup(Promise *promise)
 {
     const json &j = promise->data();
 
     sink_ = gst_bin_get_by_name(GST_BIN(Pipeline()), "sink");
     if (sink_ == nullptr) {
-        GST_INFO("[RtspAnalyzer] %s use multifilesink for test.", uname().c_str());
+        GST_INFO("[%s] use multifilesink for test.", uname().c_str());
     } else {
-        GST_INFO("[RtspAnalyzer] %s use raw image data for test.", uname().c_str());
+        GST_INFO("[%s] use raw image data for test.", uname().c_str());
         if (j.find("frame") != j.end()) {
             frame_ = j["frame"];
         }
         GstPad *pad = gst_element_get_static_pad(sink_, "sink");
-        gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, RtspAnalyzer::on_have_data, this, nullptr);
+        gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, Analyzer::on_have_data, this, nullptr);
         gst_object_unref(pad);
     }
 
     Launcher::startup(promise);
 }
 
-GstPadProbeReturn RtspAnalyzer::on_have_data(GstPad *pad,
-                                             GstPadProbeInfo *info,
-                                             gpointer user_data)
+GstPadProbeReturn Analyzer::on_have_data(GstPad *pad,
+                                         GstPadProbeInfo *info,
+                                         gpointer user_data)
 {
-    RtspAnalyzer *app = static_cast<RtspAnalyzer *>(user_data);
-    if (app->cur_video_frame_ <= (app->frame_ * 2)) {
-        if (++app->cur_video_frame_ % 2 == 0)
-            app->on_save_image(user_data);
-        return GST_PAD_PROBE_OK;
-    } else {
+    Analyzer *app = static_cast<Analyzer *>(user_data);
+    int start = app->frame_ * 2;
+    int end = app->frame_ * 4;
+
+    ++app->cur_video_frame_;
+
+    if (app->cur_video_frame_ > end) {
         return GST_PAD_PROBE_REMOVE;
     }
+    if (app->cur_video_frame_ >= start && app->cur_video_frame_ <= end) {
+        if (app->cur_video_frame_ % 2 == 0)
+            app->on_save_image(user_data);
+    }
+    return GST_PAD_PROBE_OK;
 }
-gboolean RtspAnalyzer::on_save_image(gpointer user_data)
+gboolean Analyzer::on_save_image(gpointer user_data)
 {
-    RtspAnalyzer *app = static_cast<RtspAnalyzer *>(user_data);
+    Analyzer *app = static_cast<Analyzer *>(user_data);
 
     GstSample *from_sample;
     g_object_get(app->sink_, "last-sample", &from_sample, nullptr);
     if (from_sample == nullptr) {
-        GST_ERROR("[RtspAnalyzer] %s failed getting sample.", app->uname().c_str());
+        GST_ERROR("[Analyzer] %s failed getting sample.", app->uname().c_str());
         return FALSE;
     }
     GstCaps *caps = gst_caps_from_string("image/bmp");
 
     if (caps == nullptr) {
-        GST_ERROR("[RtspAnalyzer] %s failed getting caps.", app->uname().c_str());
+        GST_ERROR("[Analyzer] %s failed getting caps.", app->uname().c_str());
         return FALSE;
     }
 
@@ -79,8 +85,8 @@ gboolean RtspAnalyzer::on_save_image(gpointer user_data)
     gst_sample_unref(from_sample);
 
     if (to_sample == nullptr && err) {
-        GST_ERROR("[RtspAnalyzer] %s failed converting frame.", app->uname().c_str());
-        GST_ERROR("[RtspAnalyzer] %s error : %s", app->uname().c_str(), err->message);
+        GST_ERROR("[Analyzer] %s failed converting frame.", app->uname().c_str());
+        GST_ERROR("[Analyzer] %s error : %s", app->uname().c_str(), err->message);
         return FALSE;
     }
     GstBuffer *buf = gst_sample_get_buffer(to_sample);
@@ -90,7 +96,7 @@ gboolean RtspAnalyzer::on_save_image(gpointer user_data)
 
     GstMapInfo map_info;
     if (!gst_buffer_map(buf, &map_info, GST_MAP_READ)) {
-        GST_ERROR("[RtspAnalyzer] %s could not get image data from gstbuffer", app->uname().c_str());
+        GST_ERROR("[Analyzer] %s could not get image data from gstbuffer", app->uname().c_str());
         gst_sample_unref(to_sample);
 
         return FALSE;
@@ -119,7 +125,7 @@ gboolean RtspAnalyzer::on_save_image(gpointer user_data)
     return TRUE;
 }
 
-void RtspAnalyzer::on_message(GstBus *bus, GstMessage *message)
+void Analyzer::on_message(GstBus *bus, GstMessage *message)
 {
     if (message->type == GST_MESSAGE_ELEMENT) {
         const gchar *name = GST_MESSAGE_SRC_NAME(message);
@@ -131,7 +137,7 @@ void RtspAnalyzer::on_message(GstBus *bus, GstMessage *message)
         }
     }
 }
-void RtspAnalyzer::on_spectrum(const std::string &name, const GstStructure *message)
+void Analyzer::on_spectrum(const std::string &name, const GstStructure *message)
 {
     GstClockTime endtime;
     const GValue *magnitudes;
@@ -165,4 +171,15 @@ void RtspAnalyzer::on_spectrum(const std::string &name, const GstStructure *mess
     if (cur_audio_frame_++ < frame_) {
         Notify(meta, data);
     }
+}
+
+
+
+RtspAnalyzer::RtspAnalyzer(const std::string &id, StreamMatrix *instance)
+    : Analyzer(id, instance)
+{
+}
+
+RtspAnalyzer::~RtspAnalyzer()
+{
 }

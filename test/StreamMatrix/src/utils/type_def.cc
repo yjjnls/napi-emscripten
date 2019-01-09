@@ -17,7 +17,7 @@ std::map<std::string, VideoEncodingType> video_encoding_type = {{"H264", VideoEn
                                                                 {"H265", VideoEncodingType::H265}};
 VideoEncodingType get_video_encoding_type(const std::string &type)
 {
-    return video_encoding_type[type];
+    return video_encoding_type[uppercase(type)];
 }
 std::map<std::string, AudioEncodingType> audio_encoding_type = {{"PCMA", AudioEncodingType::PCMA},
                                                                 {"PCMU", AudioEncodingType::PCMU},
@@ -26,7 +26,7 @@ std::map<std::string, AudioEncodingType> audio_encoding_type = {{"PCMA", AudioEn
                                                                 {"G711U", AudioEncodingType::PCMU}};
 AudioEncodingType get_audio_encoding_type(const std::string &type)
 {
-    return audio_encoding_type[type];
+    return audio_encoding_type[uppercase(type)];
 }
 
 std::string uppercase(const std::string &target)
@@ -35,6 +35,17 @@ std::string uppercase(const std::string &target)
     for (int i = 0; i < result.size(); ++i) {
         if (result[i] >= 97 && result[i] <= 122) {
             result[i] -= 32;
+        }
+    }
+    return result;
+}
+
+std::string lowercase(const std::string &target)
+{
+    std::string result(target.c_str());
+    for (int i = 0; i < result.size(); ++i) {
+        if (result[i] >= 'A' && result[i] <= 'Z') {
+            result[i] += 32;
         }
     }
     return result;
