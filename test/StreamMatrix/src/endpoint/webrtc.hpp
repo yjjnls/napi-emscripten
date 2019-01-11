@@ -18,6 +18,9 @@ class Webrtc : public IEndpoint
     std::string uname() { return "Webrtc@" + Id(); }
     GstElement *Pipeline() { return pipeline_; }
 
+    GstElement *VideoInputPipejoint() { return video_input_joint().downstream_joint; }
+    GstElement *AudioInputPipejoint() { return audio_input_joint().downstream_joint; }
+
  private:
     bool parse_launch();
     static void on_ice_candidate(GstElement *webrtc G_GNUC_UNUSED,
@@ -36,6 +39,7 @@ class Webrtc : public IEndpoint
 
     WebrtcRole role_;
     std::string launch_;
+    EndpointType protocol_;
     static int session_count_;
 };
 

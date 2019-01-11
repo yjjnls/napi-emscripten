@@ -143,7 +143,7 @@ void AddRtspAudience(StreamMatrix &obj,
     nlohmann::json param;
     param["id"] = app_id;
     param["endpoint_id"] = endpoint_id;
-    param["protocol"] = EndpointType::kRtspServer;
+    param["protocol"] = kRtspServer;
     param["path"] = path;
     param["port"] = port;
 
@@ -160,8 +160,8 @@ void AddWebrtcAudience(StreamMatrix &obj,
     nlohmann::json param;
     param["id"] = app_id;
     param["endpoint_id"] = endpoint_id;
-    param["protocol"] = EndpointType::kWebrtc;
-    param["role"] = (role == "offer" ? WebrtcRole::kOffer : WebrtcRole::kAnswer);
+    param["protocol"] = kWebrtc;
+    param["role"] = (role == "offer" ? kOffer : kAnswer);
     obj.Call(meta, param, CALLBACK(cb));
 }
 void SetRemoteDescription(StreamMatrix &obj,
@@ -206,7 +206,7 @@ void AddHlsAudience(StreamMatrix &obj,
     nlohmann::json param;
     param["id"] = app_id;
     param["endpoint_id"] = endpoint_id;
-    param["protocol"] = EndpointType::kHls;
+    param["protocol"] = kHls;
     obj.Call(meta, param, CALLBACK(cb));
 }
 void RemoveAudience(StreamMatrix &obj,
@@ -224,37 +224,43 @@ void RemoveAudience(StreamMatrix &obj,
 }
 // multipoints
 void AddMember(StreamMatrix &obj,
-               const std::string &id,
-               const std::string &signal_bridge,
+               const std::string &app_id,
+               const std::string &endpoint_id,
                const std::string &role,
-               const std::string &connection_id,
                const emscripten::val &cb)
 {
     nlohmann::json meta;
     meta["action"] = "add_member";
     nlohmann::json param;
-    param["id"] = id;
-    param["protocol"] = EndpointType::kWebrtc;
-    param["signal_bridge"] = signal_bridge;
-    param["connection_id"] = connection_id;
-    param["role"] = (role == "offer" ? WebrtcRole::kOffer : WebrtcRole::kAnswer);
+    param["id"] = app_id;
+    param["endpoint_id"] = endpoint_id;
+    param["protocol"] = kWebrtcSendRecv;
+    param["role"] = (role == "offer" ? kOffer : kAnswer);
     obj.Call(meta, param, CALLBACK(cb));
 }
-void RemoveMember(StreamMatrix &obj, const std::string &id, const emscripten::val &cb)
+void RemoveMember(StreamMatrix &obj,
+                  const std::string &app_id,
+                  const std::string &endpoint_id,
+                  const emscripten::val &cb)
 {
     nlohmann::json meta;
     meta["action"] = "remove_member";
     nlohmann::json param;
-    param["id"] = id;
+    param["id"] = app_id;
+    param["endpoint_id"] = endpoint_id;
 
     obj.Call(meta, param, CALLBACK(cb));
 }
-void SetSpeaker(StreamMatrix &obj, const std::string &id, const emscripten::val &cb)
+void SetSpeaker(StreamMatrix &obj,
+                const std::string &app_id,
+                const std::string &endpoint_id,
+                const emscripten::val &cb)
 {
     nlohmann::json meta;
     meta["action"] = "set_speaker";
     nlohmann::json param;
-    param["id"] = id;
+    param["id"] = app_id;
+    param["endpoint_id"] = endpoint_id;
 
     obj.Call(meta, param, CALLBACK(cb));
 }
@@ -280,7 +286,7 @@ void CreateRtspAnalyzer(StreamMatrix &obj,
     nlohmann::json param;
     param["type"] = kAnalyzer;
     param["id"] = id;
-    param["protocol"] = AnalyzerType::kRtsp;
+    param["protocol"] = kRtspClient;
     param["launch"] = launch;
 
     obj.Call(meta, param, CALLBACK(cb));
@@ -297,9 +303,9 @@ void CreateWebrtcAnalyzer(StreamMatrix &obj,
     nlohmann::json param;
     param["type"] = kAnalyzer;
     param["id"] = id;
-    param["protocol"] = AnalyzerType::kWebrtcSendRecv;
+    param["protocol"] = kWebrtc;
     param["launch"] = launch;
-    param["role"] = (role == "offer" ? WebrtcRole::kOffer : WebrtcRole::kAnswer);
+    param["role"] = (role == "offer" ? kOffer : kAnswer);
 
     obj.Call(meta, param, CALLBACK(cb));
 }
@@ -351,9 +357,9 @@ EMSCRIPTEN_BINDINGS(binding_utils)
         .function("RemoveAudience", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveAudience))
 
         .function("CreateMultiPoints", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateMultiPoints))
-        .function("AddMember", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddMember))
-        .function("RemoveMember", select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveMember))
-        .function("SetSpeaker", select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::SetSpeaker))
+        .function("AddMember", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddMember))
+        .function("RemoveMember", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveMember))
+        .function("SetSpeaker", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::SetSpeaker))
 
         .function("CreatePlayBack", select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreatePlayBack))
         .function("Seek", select_overload<void(StreamMatrix &, const std::string &, int, const emscripten::val &)>(&binding_utils::Seek))

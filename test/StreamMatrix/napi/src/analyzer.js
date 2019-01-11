@@ -38,6 +38,11 @@ class Analyzer extends IApp {
         this.api_.Init("/opt", "eng");
         this.api_.SetVariable("tessedit_char_whitelist", "0123456789:.");
     }
+    async startup() {
+        this.audio_passed_ = 0;
+        this.image_passed_ = 0;
+        super.startup();
+    }
     async terminate() {
         super.terminate();
         this.api_.End();
@@ -131,12 +136,14 @@ class WebrtcAnalyzer extends Analyzer {
         let audio = this.option_.audio;
 
         this.launch_ =
-            `( webrtcbin name=webrtc `
-            + ` webrtc.! ${CodecMap[video.codec].depay} name=video_payloader ! ${CodecMap[video.codec].dec} name=video_decoder ! fakesink sync=false name=sink`
-            // + `! jpegenc ! multifilesink name=image post-messages=TRUE location=${this.option.image.location}`
-            + ` webrtc. ! ${CodecMap[audio.codec].depay} ! ${CodecMap[audio.codec].dec} ! audioconvert ! audioresample `
-            + `! spectrum name=audio bands=${audio.bands} threshold=${audio.threshold} post-messages=TRUE message-phase=TRUE message-magnitude=TRUE `
-            + `! fakesink sync=false )`;
+            `webrtcbin name=webrtc `
+            // + ` webrtc. ! ${CodecMap[video.codec].depay} name=video_payloader ! ${CodecMap[video.codec].dec} name=video_decoder ! fakesink sync=false name=sink`
+            // // + ` webrtc. ! ${CodecMap[video.codec].depay} name=video_payloader ! ${CodecMap[video.codec].dec} name=video_decoder ! videoconvert ! ximagesink sync=false name=sink`
+            // + ` webrtc. ! ${CodecMap[audio.codec].depay} ! ${CodecMap[audio.codec].dec} ! audioconvert ! audioresample `
+            // + `! spectrum name=audio bands=${audio.bands} threshold=${audio.threshold} post-messages=TRUE message-phase=TRUE message-magnitude=TRUE `
+            // + `! fakesink sync=false `
+            + `rtph264pay config-interval=-1 name=pay0 ! queue ! application/x-rtp,media=video,encoding-name=H264,payload=96 ! webrtc.  rtppcmapay name=pay1 ! queue ! application/x-rtp,media=audio,encoding-name=PCMA,payload=8 ! webrtc.`
+        // + ` )`;
 
         let self = this;
         this.on(`webrtc`, (meta, data) => {

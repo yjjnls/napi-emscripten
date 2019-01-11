@@ -41,13 +41,13 @@
     "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreateMultiPoints)": [
         "val,std::function<void(int, const std::string &)>"
     ],
-    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddMember)": [
+    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::AddMember)": [
         "val,std::function<void(int, const std::string &)>"
     ],
-    "select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveMember)": [
+    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::RemoveMember)": [
         "val,std::function<void(int, const std::string &)>"
     ],
-    "select_overload<void(StreamMatrix &, const std::string &, const emscripten::val &)>(&binding_utils::SetSpeaker)": [
+    "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::SetSpeaker)": [
         "val,std::function<void(int, const std::string &)>"
     ],
     "select_overload<void(StreamMatrix &, const std::string &, const std::string &, const std::string &, const std::string &, const emscripten::val &)>(&binding_utils::CreatePlayBack)": [

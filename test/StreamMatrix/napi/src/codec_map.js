@@ -3,7 +3,8 @@ var codec_table = {
         enc: 'alawenc',
         dec: 'alawdec',
         pay: 'rtppcmapay',
-        depay: 'rtppcmadepay'
+        depay: 'rtppcmadepay',
+        caps: 'application/x-rtp,media=audio,encoding-name=PCMA,payload=8'
     },
 
     g711u: {
@@ -17,7 +18,8 @@ var codec_table = {
         enc: 'opusenc',
         dec: 'opusdec',
         pay: 'rtpopuspay',
-        depay: 'rtpopusdepay'
+        depay: 'rtpopusdepay',
+        caps: 'application/x-rtp,media=audio,payload=97,encoding-name=OPUS'
     },
 
 
@@ -25,8 +27,9 @@ var codec_table = {
     h264: {
         enc: 'x264enc',
         dec: 'avdec_h264',
-        pay: 'rtph264pay',
-        depay: 'rtph264depay ! h264parse'
+        pay: 'rtph264pay config-interval=-1',
+        depay: 'rtph264depay ! h264parse',
+        caps: 'application/x-rtp,media=video,encoding-name=H264,payload=96'
     },
 
     openh264: {
@@ -42,6 +45,14 @@ var codec_table = {
         pay: 'rtpjpegpay',
         depay: 'rtpjpegdepay'
     },
+
+    vp8: {
+        enc: 'vp8enc',
+        dec: 'vp8dec',
+        pay: 'rtpvp8pay',
+        depay: 'rtpvp8depay',
+        caps: 'application/x-rtp,media=video,payload=96,encoding-name=VP8'
+    }
 };
 
 codec_table.pcma = codec_table.g711a;

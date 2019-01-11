@@ -38,11 +38,11 @@ void IApp::startup(Promise *promise)
 {
     gst_element_set_state(Pipeline(), GST_STATE_PLAYING);
     promise->resolve();
-    GST_DEBUG("%s startup!", uname().c_str());
+    GST_DEBUG("[%s] startup!", uname().c_str());
 }
 void IApp::stop(Promise *promise)
 {
     gst_element_set_state(Pipeline(), GST_STATE_NULL);
     promise->resolve();
-    GST_DEBUG("%s stop!", uname().c_str());
+    GST_DEBUG("[%s] stop!", uname().c_str());
 }

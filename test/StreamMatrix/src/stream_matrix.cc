@@ -4,6 +4,7 @@
 #include <app/webrtc_analyzer.hpp>
 #include <app/rtsp_test_server.hpp>
 #include <app/livestream.hpp>
+#include <app/multipoints.hpp>
 
 using json = nlohmann::json;
 
@@ -197,20 +198,21 @@ IApp *StreamMatrix::app_factory(const nlohmann::json &data)
     std::string id = data["id"];
     int type = data["type"];
     // todo
-    if (type == MediaType::kTestServer) {
+    if (type == AppType::kTestServer) {
         app = new RtspTestServer(id, this);
-    } else if (type == MediaType::kAnalyzer) {
+    } else if (type == AppType::kAnalyzer) {
         int protocol = data["protocol"];
-        if (protocol == AnalyzerType::kRtsp) {
+        if (protocol == kRtspClient) {
             app = new RtspAnalyzer(id, this);
-        } else if (protocol == AnalyzerType::kWebrtcSendRecv) {
+        } else if (protocol == kWebrtc || protocol == kWebrtcSendRecv) {
             app = new WebrtcAnalyzer(id, this);
         }
-    } else if (type == MediaType::kLiveStream) {
+    } else if (type == AppType::kLiveStream) {
         app = new LiveStream(id, this);
-    } else if (type == MediaType::kMultiPoints) {
-    } else if (type == MediaType::kPlayBack) {
-    } else if (type == MediaType::kLauncher) {
+    } else if (type == AppType::kMultiPoints) {
+        app = new MultiPoints(id, this);
+    } else if (type == AppType::kPlayBack) {
+    } else if (type == AppType::kLauncher) {
         app = new Launcher(id, this);
     }
 

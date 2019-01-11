@@ -7,6 +7,7 @@ var RtspTestServer = require("../index.js").RtspTestServer;
 var RtspAnalyzer = require("../index.js").RtspAnalyzer;
 var WebrtcAnalyzer = require("../index.js").WebrtcAnalyzer;
 var LiveStream = require("../index.js").LiveStream;
+var MultiPoints = require("../index.js").MultiPoints;
 var utils = require("../index.js").utils;
 var sleep = require("./internal.js").sleep;
 
@@ -15,6 +16,7 @@ let rtsp_test_server;
 let rtsp_analyzer;
 let webrtc_analyzer;
 let livestream;
+let multipoints;
 let port = 8554;
 describe('StreamMatrix', function () {
     beforeEach(async () => {
@@ -141,11 +143,19 @@ describe('StreamMatrix', function () {
                         url: `rtsp://127.0.0.1:${port}/test_server`
                     });
                 await rtsp_analyzer.initialize();
+
                 await rtsp_analyzer.startup();
                 await utils.poll(() => {
                     return rtsp_analyzer.analyze_done();
                 }, 100, 10000);
                 await rtsp_analyzer.stop();
+                // console.log("------------------------------------------")
+                // await rtsp_analyzer.startup();
+                // await utils.poll(() => {
+                //     return rtsp_analyzer.analyze_done();
+                // }, 100, 10000);
+                // await rtsp_analyzer.stop();
+
                 await rtsp_analyzer.terminate();
 
                 await livestream.remove_audience("endpoint0");
@@ -155,30 +165,58 @@ describe('StreamMatrix', function () {
 
                 webrtc_analyzer = new WebrtcAnalyzer(stream_matrix, "app2", { video: "h264", audio: "pcma", signal_bridge: "http://172.16.64.58:9001/", role: "answer", connection_id: "1" });
                 await webrtc_analyzer.initialize();
-                await webrtc_analyzer.startup();
 
+                await webrtc_analyzer.startup();
+                await utils.poll(() => {
+                    return webrtc_analyzer.analyze_done();
+                }, 100, 10000);
+                await webrtc_analyzer.stop();
+
+                await webrtc_analyzer.startup();
                 await utils.poll(() => {
                     return webrtc_analyzer.analyze_done();
                 }, 100, 10000);
                 // await sleep(200000);
-
                 await webrtc_analyzer.stop();
-                await webrtc_analyzer.terminate();
 
+                await webrtc_analyzer.terminate();
 
                 await livestream.remove_audience("endpoint1");
             });
         });
     });
 
-    describe.only('#multipoints', function () {
+    describe('#multipoints', function () {
         beforeEach(async () => {
+            multipoints = new MultiPoints(stream_matrix, "app1", {
+                video: "h264",
+                audio: "pcma"
+            });
+            await multipoints.initialize();
+            await multipoints.startup();
         });
         afterEach(async () => {
+            await multipoints.stop();
+            await multipoints.terminate();
+            multipoints = null;
         });
-        it(`version`, async () => {
-            let version = await stream_matrix.version();
-            assert.isString(version);
+        it.only(`members`, async () => {
+            await multipoints.add_member("endpoint1", "test_room", { type: "webrtc", signal_bridge: "http://172.16.64.58:9001/", role: "offer", connection_id: "1" });
+
+
+            await multipoints.add_member("endpoint2", "test_room", { type: "webrtc", signal_bridge: "http://172.16.64.58:9001/", role: "offer", connection_id: "2" });
+
+            // webrtc_analyzer = new WebrtcAnalyzer(stream_matrix, "app2", { video: "h264", audio: "pcma", signal_bridge: "http://172.16.64.58:9001/", role: "answer", connection_id: "1", room_id: "test_room" });
+            // await webrtc_analyzer.initialize();
+            // await webrtc_analyzer.startup();
+
+            await sleep(30000);
+            // await webrtc_analyzer.stop();
+            // await webrtc_analyzer.terminate();
+
+            await multipoints.remove_member("endpoint1", "test_room");
+            await multipoints.remove_member("endpoint2", "test_room");
+
         });
     });
 

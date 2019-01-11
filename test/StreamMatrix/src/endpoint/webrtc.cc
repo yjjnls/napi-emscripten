@@ -16,6 +16,7 @@ Webrtc::Webrtc(IApp *app, const std::string &id)
     , bin_(nullptr)
     , webrtc_(nullptr)
     , role_(kOffer)
+    , protocol_(kWebrtc)
 {
     GST_DEBUG_CATEGORY_INIT(my_category, "stream_matrix", 2, "stream_matrix");
 }
@@ -32,6 +33,7 @@ bool Webrtc::Initialize(Promise *promise)
         GST_ERROR("[%s] %p initialize failed, invalid role: %s.", uname().c_str(), webrtc_, role_ ? "answer" : "offer");
         return false;
     }
+    protocol_ = j["protocol"];
     if (j.find("launch") != j.end()) {
         launch_ = j["launch"];
     }
@@ -115,10 +117,10 @@ bool Webrtc::Initialize(Promise *promise)
     if (role_ == kOffer) {
         g_signal_connect(webrtc_, "on-negotiation-needed", G_CALLBACK(Webrtc::on_negotiation_needed), this);
     }
-    // used as test
-    // if (j.find("launch") == j.end()) {
-    //     g_signal_connect(webrtc_, "pad-added", G_CALLBACK(Webrtc::on_webrtc_pad_added), this);
-    // }
+    // used for multipoints
+    if (protocol_ == kWebrtcSendRecv) {
+        g_signal_connect(webrtc_, "pad-added", G_CALLBACK(Webrtc::on_webrtc_pad_added), this);
+    }
 
     GstStateChangeReturn ret = gst_element_set_state(pipeline_, GST_STATE_PLAYING);
     if (ret == GST_STATE_CHANGE_FAILURE) {
@@ -296,7 +298,8 @@ void Webrtc::on_webrtc_pad_added(GstElement *webrtc_element, GstPad *new_pad, gp
     } else if (g_strcmp0(encoding_name, "H264") == 0) {
         GST_INFO("[%s] (%p %s) receive video: H264.", webrtc->uname().c_str(), webrtc, webrtc->role_ ? "answer" : "offer");
         out = gst_parse_bin_from_description(
-            "rtph264depay ! tee name=local_tee allow-not-linked=true",
+            "rtph264depay ! tee name=local_tee allow-not-linked=true ! queue ! avdec_h264 ! videoconvert ! ximagesink sync=false",
+            // "rtph264depay ! tee name=local_tee allow-not-linked=true",
             TRUE,
             nullptr);
 

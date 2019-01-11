@@ -17,6 +17,8 @@ class LiveStream : public Connector
     std::string uname() { return "LiveStream@" + id(); }
 
  protected:
+    virtual void release_sources();
+
  private:
     bool on_add_endpoint(IEndpoint *endpoint);
     std::list<IEndpoint *>::iterator find_audience(const std::string &id);

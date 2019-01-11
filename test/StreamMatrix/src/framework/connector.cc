@@ -31,6 +31,14 @@ bool Connector::Initialize(Promise *promise)
 
     return true;
 }
+void Connector::stop(Promise *promise)
+{
+    dynamic_release();
+    // todo something
+    release_sources();
+    IApp::stop(promise);
+}
+
 void Connector::dynamic_release()
 {
     if (!selector_sinks_.empty()) {
@@ -80,7 +88,7 @@ void Connector::dynamic_release()
 }
 void Connector::Destroy()
 {
-    dynamic_release();
+    // dynamic_release();
     // g_assert(selector_sinks_.empty());
     // g_assert(tee_sinks_.empty());
 

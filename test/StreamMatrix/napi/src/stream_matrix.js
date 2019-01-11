@@ -55,6 +55,8 @@ class StreamMatrix {
                 var app = self.apps_[m.origin];
                 if (app) {
                     app.emit(m.topic, meta, data);
+                } else {
+                    console.log("=================error")
                 }
 
             }, (code, data) => {

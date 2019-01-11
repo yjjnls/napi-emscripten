@@ -17,7 +17,7 @@
 typedef std::function<void(int code, const std::string &data)> callback;
 typedef std::function<void(const std::string &meta, const std::string &data)> notify_fn;
 
-enum MediaType
+enum AppType
 {
     kTestServer = 0,
     kLiveStream,
@@ -35,18 +35,12 @@ enum ServerType
     kHLS
 };
 
-enum AnalyzerType
-{
-    kRtsp = 0,
-    kWebrtcRecv,
-    kWebrtcSendRecv
-};
-
 enum EndpointType
 {
     kRtspServer = 0,
     kRtspClient,
     kWebrtc,
+    kWebrtcSendRecv,
     kHls
 };
 

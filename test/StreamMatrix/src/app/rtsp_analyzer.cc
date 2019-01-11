@@ -22,6 +22,7 @@ Analyzer::~Analyzer()
     for (auto it : bmps_) {
         delete[] it;
     }
+    bmps_.clear();
 }
 void Analyzer::startup(Promise *promise)
 {
@@ -39,7 +40,8 @@ void Analyzer::startup(Promise *promise)
         gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, Analyzer::on_have_data, this, nullptr);
         gst_object_unref(pad);
     }
-
+    cur_video_frame_ = 0;
+    cur_audio_frame_ = 0;
     Launcher::startup(promise);
 }
 

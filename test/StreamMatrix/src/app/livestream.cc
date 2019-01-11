@@ -13,6 +13,14 @@ GST_DEBUG_CATEGORY_STATIC(my_category);
 LiveStream::LiveStream(const std::string &id, StreamMatrix *instance)
     : Connector(id, instance)
     , performer_(nullptr)
+    , fake_video_queue_(nullptr)
+    , fake_video_sink_(nullptr)
+    , fake_audio_queue_(nullptr)
+    , fake_audio_sink_(nullptr)
+    , fake_video_decodec_(nullptr)
+    , fake_audio_decodec_(nullptr)
+    , fake_audio_convert_(nullptr)
+    , fake_audio_resample_(nullptr)
 {
     GST_DEBUG_CATEGORY_INIT(my_category, "stream_matrix", 2, "stream_matrix");
 }
@@ -133,10 +141,22 @@ bool LiveStream::on_add_endpoint(IEndpoint *endpoint)
         gst_object_unref(pad);
     }
 }
+
+
+void LiveStream::release_sources()
+{
+    for (auto ep : audiences_) {
+        ep->Terminate();
+        GST_DEBUG("[%s] remove audience: %s (type: %s)",
+                  uname().c_str(),
+                  ep->Id().c_str(),
+                  ep->Protocol().c_str());
+        delete ep;
+    }
+    audiences_.clear();
+}
 void LiveStream::Destroy()
 {
-    Connector::dynamic_release();
-
     gst_element_set_state(Pipeline(), GST_STATE_NULL);
     performer_->Terminate();
     delete performer_;
@@ -226,7 +246,7 @@ void LiveStream::add_audience(Promise *promise)
     }
     ep->Terminate();
     delete ep;
-    ep = NULL;
+    ep = nullptr;
     GST_ERROR("[%s] add audience: %s failed!", uname().c_str(), id.c_str());
     promise->reject("add audience " + id + " failed!");
 }
@@ -293,6 +313,7 @@ GstPadProbeReturn LiveStream::on_monitor_video_data(GstPad *pad, GstPadProbeInfo
     data["msg"] = "video data received";
     instance->Notify(meta, data);
     // return GST_PAD_PROBE_OK;
+
     return GST_PAD_PROBE_REMOVE;
 }
 
