@@ -23,6 +23,9 @@ class RtspServer : public IEndpoint
                      GCallback media_configure);
     void StopLaunch();
     std::string uname() { return "RtspServer@" + Id(); }
+    static RtspServer *GetServer(int port);
+    GstRTSPServer *GetGstRtspServer() { return server_; }
+    GSource *GetGSource() { return server_source_; }
 
  private:
     static void on_rtsp_media_constructed(GstRTSPMediaFactory *factory,
@@ -47,6 +50,9 @@ class RtspServer : public IEndpoint
     std::map<GstRTSPSession *, GstRTSPClient *> clients_;
     static std::mutex client_mutex_;
     GstRTSPMediaFactory *factory_;
+    guint server_source_id_;
+    GSource *server_source_;
+    static std::map<int, RtspServer *> server_container_;
 };
 
 #endif

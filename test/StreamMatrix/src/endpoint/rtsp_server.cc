@@ -7,23 +7,33 @@ GST_DEBUG_CATEGORY_STATIC(my_category);
 #define GST_CAT_DEFAULT my_category
 
 std::mutex RtspServer::client_mutex_;
+std::map<int, RtspServer *> RtspServer::server_container_;
+RtspServer *RtspServer::GetServer(int port)
+{
+    return RtspServer::server_container_[port];
+}
 
 RtspServer::RtspServer(IApp *app, const std::string &id)
     : IEndpoint(app, id)
     , rtsp_session_pool_(nullptr)
     , port_(-1)
     , factory_(nullptr)
+    , server_source_id_(-1)
+    , server_source_(nullptr)
 {
     GST_DEBUG_CATEGORY_INIT(my_category, "stream_matrix", 2, "stream_matrix");
 
     gint max_sessions = 100;
     rtsp_session_pool_ = gst_rtsp_session_pool_new();
     gst_rtsp_session_pool_set_max_sessions(rtsp_session_pool_, max_sessions);
-    server_ = gst_rtsp_server_new();
-    gst_rtsp_server_set_session_pool(server_, rtsp_session_pool_);
 }
 RtspServer::~RtspServer()
 {
+    if (server_source_) {
+        // g_source_remove(server_source_id_);
+        g_source_unref(server_source_);
+        server_source_ = nullptr;
+    }
     if (server_) {
         g_object_unref(server_);
         server_ = nullptr;
@@ -49,11 +59,30 @@ bool RtspServer::Initialize(Promise *promise)
 void RtspServer::Prepare(int port)
 {
     port_ = port;
-    gchar *service = g_strdup_printf("%d", port);
-    gst_rtsp_server_set_service(server_, service);
-    g_free(service);
 
-    gst_rtsp_server_attach(server_, StreamMatrix::MainContext());
+    if (RtspServer::server_container_[port_] == nullptr) {
+        server_ = gst_rtsp_server_new();
+        gst_rtsp_server_set_session_pool(server_, rtsp_session_pool_);
+
+        gchar *service = g_strdup_printf("%d", port);
+        gst_rtsp_server_set_service(server_, service);
+        g_free(service);
+
+        server_source_ = gst_rtsp_server_create_source(server_, nullptr, nullptr);
+        server_source_id_ = g_source_attach(server_source_, StreamMatrix::MainContext());
+        g_assert(server_source_id_ != 0);
+
+        RtspServer::server_container_[port_] = this;
+
+    } else {
+        RtspServer *ep = RtspServer::server_container_[port_];
+        server_ = (GstRTSPServer *)g_object_ref(ep->GetGstRtspServer());
+        server_source_ = (GSource *)g_source_ref(ep->GetGSource());
+    }
+
+
+    // server_source_id_ = gst_rtsp_server_attach(server_, StreamMatrix::MainContext());
+    // printf("-------------- rtsp source id: %d\n", server_source_id_);
 }
 bool RtspServer::StartLaunch(const std::string &path,
                              const std::string &launch,
@@ -289,6 +318,7 @@ void RtspServer::StopLaunch()
 
 void RtspServer::Terminate()
 {
+
     // dynamicly unlink
     if (!app()->VideoEncoding().empty() &&
         video_output_joint().upstream_joint != nullptr) {

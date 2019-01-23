@@ -16,15 +16,17 @@ RtspTestServer::RtspTestServer(const std::string &id, StreamMatrix *instance)
 
 bool RtspTestServer::Initialize(Promise *promise)
 {
-    if (server_ == nullptr) {
-        server_ = new RtspServer(this, "default_server");
-    }
     const json &j = promise->data();
 
     port_ = j["port"];
     path_ = j["path"];
     launch_ = j["launch"];
-    server_->Prepare(port_);
+
+    // server_ = RtspServer::GetServer(port_);
+    if (server_ == nullptr) {
+        server_ = new RtspServer(this, "default_server");
+        server_->Prepare(port_);
+    }
 
     return true;
 }

@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 const chai = require('chai');
 let assert = chai.assert;
 
@@ -27,7 +27,7 @@ describe('StreamMatrix', function () {
 
     afterEach(async () => {
         await stream_matrix.terminate();
-        console.log("=========================================")
+        console.log("=========================================");
     });
 
     describe('#interface', function () {
@@ -49,8 +49,17 @@ describe('StreamMatrix', function () {
         afterEach(async () => {
             await rtsp_test_server.stop();
             await rtsp_test_server.terminate();
-            port++;
         });
+        // it.only(`analyzer`, async () => {
+
+        //     let rtsp_test_server2 = new RtspTestServer(stream_matrix, "app1", port, "/test2", {
+        //         video: "h264",
+        //         audio: "pcma"
+        //     });
+        //     await rtsp_test_server2.initialize();
+        //     await rtsp_test_server2.startup();
+        //     await sleep(30000000);
+        // });
         it(`analyzer`, async () => {
             rtsp_analyzer = new RtspAnalyzer(stream_matrix,
                 "app1",
@@ -97,7 +106,6 @@ describe('StreamMatrix', function () {
         afterEach(async () => {
             await rtsp_test_server.stop();
             await rtsp_test_server.terminate();
-            port++;
         });
 
         it(`create livestream`, async () => {
@@ -130,10 +138,10 @@ describe('StreamMatrix', function () {
                 await livestream.stop();
                 await livestream.terminate();
             });
-            it(`add rtsp audience`, async () => {
-                port++;
+            it.only(`add rtsp audience`, async () => {
+                // port++;
                 await livestream.add_audience("endpoint0", { type: "rtsp", port: port, path: "/test_server" });
-                // await sleep(30000);
+                await sleep(3000000);
 
                 rtsp_analyzer = new RtspAnalyzer(stream_matrix,
                     "app2",
@@ -200,7 +208,7 @@ describe('StreamMatrix', function () {
             await multipoints.terminate();
             multipoints = null;
         });
-        it.only(`members`, async () => {
+        it(`members`, async () => {
             await multipoints.add_member("endpoint1", "test_room", { type: "webrtc", signal_bridge: "http://172.16.64.58:9001/", role: "offer", connection_id: "1" });
 
 

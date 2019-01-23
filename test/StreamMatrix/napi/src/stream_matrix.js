@@ -25,7 +25,9 @@ class StreamMatrix {
             self.stream_matrix_.Terminate((code, data) => {
                 self.stream_matrix_.delete();
                 self.stream_matrix_ = null;
-                global.gc();
+                if (process.env.NODE_ENV === 'dev') {
+                    global.gc();
+                }
                 Module.release();
 
                 if (code == 0) { resolve(data); }

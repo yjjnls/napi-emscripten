@@ -1,4 +1,3 @@
-const assert = require('assert');
 const EventEmitter = require('events').EventEmitter;
 var Promise = require('bluebird');
 
@@ -23,8 +22,7 @@ class IApp extends EventEmitter {
         let self = this;
         return new Promise((resolve, reject) => {
             self.owner_.stream_matrix_.StartUp(self.id_, (code, data) => {
-                if (code == 0) { resolve(data); }
-                else { reject(data); }
+                if (code == 0) { resolve(data); } else { reject(data); }
             });
         });
     }
@@ -33,8 +31,7 @@ class IApp extends EventEmitter {
         let self = this;
         return new Promise((resolve, reject) => {
             self.owner_.stream_matrix_.Stop(self.id_, (code, data) => {
-                if (code == 0) { resolve(data); }
-                else { reject(data); }
+                if (code == 0) { resolve(data); } else { reject(data); }
             });
         });
     }
@@ -44,8 +41,7 @@ class IApp extends EventEmitter {
         let self = this;
         return new Promise((resolve, reject) => {
             self.owner_.stream_matrix_.Destroy(self.id_, (code, data) => {
-                if (code == 0) { resolve(data); }
-                else { reject(data); }
+                if (code == 0) { resolve(data); } else { reject(data); }
             });
         });
     }
@@ -56,4 +52,4 @@ class IApp extends EventEmitter {
 
 module.exports = {
     IApp
-}
+};

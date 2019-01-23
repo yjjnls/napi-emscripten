@@ -86,14 +86,16 @@ void StreamMatrix::main_loop(Promise *promise)
     g_main_context_pop_thread_default(StreamMatrix::main_context_);
 
     g_main_loop_unref(StreamMatrix::main_loop_);
+    StreamMatrix::main_loop_ = nullptr;
+
+    g_main_context_unref(StreamMatrix::main_context_);
+    StreamMatrix::main_context_ = nullptr;
 
     // gst_deinit();
-    StreamMatrix::main_loop_ = nullptr;
-    StreamMatrix::main_context_ = nullptr;
     terminate_promise_->resolve();
     delete terminate_promise_;
     terminate_promise_ = nullptr;
-    GST_INFO("[StreamMatrix] termiante done!");
+    GST_INFO("[StreamMatrix] terminate done!");
 }
 
 void StreamMatrix::cleanup()
