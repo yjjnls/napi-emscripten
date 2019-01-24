@@ -30,14 +30,38 @@ RtspServer::RtspServer(IApp *app, const std::string &id)
 RtspServer::~RtspServer()
 {
     if (server_source_) {
-        // g_source_remove(server_source_id_);
         g_source_unref(server_source_);
-        server_source_ = nullptr;
+        // server_source_ = nullptr;
     }
     if (server_) {
         g_object_unref(server_);
+        GST_DEBUG("[%s] {%s} (port:%d path:%s) GstRTSPServer decrease ref_count: %d.",
+                  uname().c_str(),
+                  app()->uname().c_str(),
+                  port_,
+                  path_.c_str(),
+                  GST_OBJECT_REFCOUNT(server_));
+
+        if (GST_OBJECT_REFCOUNT(server_) == 1) {
+            RtspServer::server_container_.erase(port_);
+            g_source_destroy(server_source_);
+            GST_DEBUG("[%s] {%s} (port:%d path:%s) GstRTSPServer decrease ref_count: %d.",
+                      uname().c_str(),
+                      app()->uname().c_str(),
+                      port_,
+                      path_.c_str(),
+                      GST_OBJECT_REFCOUNT(server_));
+            GST_INFO("[%s] {%s} (port:%d path:%s) GstRTSPServer really destroyed!",
+                     uname().c_str(),
+                     app()->uname().c_str(),
+                     port_,
+                     path_.c_str());
+        }
+
         server_ = nullptr;
     }
+    server_source_ = nullptr;
+
     if (rtsp_session_pool_) {
         g_object_unref(rtsp_session_pool_);
         rtsp_session_pool_ = nullptr;
@@ -61,23 +85,51 @@ void RtspServer::Prepare(int port)
     port_ = port;
 
     if (RtspServer::server_container_[port_] == nullptr) {
+        // gst_rtsp_server_new increase the ref_count of server_ to 1
         server_ = gst_rtsp_server_new();
+        GST_DEBUG("[%s] {%s} (port:%d path:%s) GstRTSPServer created, ref_count: %d.",
+                  uname().c_str(),
+                  app()->uname().c_str(),
+                  port_,
+                  path_.c_str(),
+                  GST_OBJECT_REFCOUNT(server_));
+
         gst_rtsp_server_set_session_pool(server_, rtsp_session_pool_);
 
         gchar *service = g_strdup_printf("%d", port);
         gst_rtsp_server_set_service(server_, service);
         g_free(service);
-
+        // this will increase the ref_count of server_, when the source released, the ref_count of server_ will decrease
         server_source_ = gst_rtsp_server_create_source(server_, nullptr, nullptr);
         server_source_id_ = g_source_attach(server_source_, StreamMatrix::MainContext());
         g_assert(server_source_id_ != 0);
 
         RtspServer::server_container_[port_] = this;
+        GST_DEBUG("[%s] {%s} (port:%d path:%s) GstRTSPServer increase ref_count: %d.",
+                  uname().c_str(),
+                  app()->uname().c_str(),
+                  port_,
+                  path_.c_str(),
+                  GST_OBJECT_REFCOUNT(server_));
 
     } else {
         RtspServer *ep = RtspServer::server_container_[port_];
-        server_ = (GstRTSPServer *)g_object_ref(ep->GetGstRtspServer());
+
+        // increase ref_count of server_ and server_source_
+        server_ = ep->GetGstRtspServer();
         server_source_ = (GSource *)g_source_ref(ep->GetGSource());
+        // server_source_ = ep->GetGSource();
+        GST_INFO("[%s] {%s} (port:%d path:%s) GstRTSPServer is shared.",
+                 uname().c_str(),
+                 app()->uname().c_str(),
+                 port_,
+                 path_.c_str());
+        GST_DEBUG("[%s] {%s} (port:%d path:%s) GstRTSPServer increase ref_count: %d.",
+                  uname().c_str(),
+                  app()->uname().c_str(),
+                  port_,
+                  path_.c_str(),
+                  GST_OBJECT_REFCOUNT(server_));
     }
 
 

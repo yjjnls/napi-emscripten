@@ -75,11 +75,10 @@ class RtspTestServer extends IApp {
     async initialize() {
         let self = this;
         let launch = source_bin_description(this.video_codec_, this.audio_codec_);
-        console.log(launch)
+        console.log(launch);
         return new Promise((resolve, reject) => {
             self.stream_matrix().CreateRtspTestServer(self.id_, self.port_, self.path_, launch, (code, data) => {
-                if (code == 0) { resolve(data); }
-                else { reject(data); }
+                if (code == 0) { resolve(data); } else { reject(data); }
             });
         });
     }
@@ -87,4 +86,4 @@ class RtspTestServer extends IApp {
 
 module.exports = {
     RtspTestServer
-}
+};

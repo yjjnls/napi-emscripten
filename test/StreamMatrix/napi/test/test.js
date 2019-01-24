@@ -50,16 +50,13 @@ describe('StreamMatrix', function () {
             await rtsp_test_server.stop();
             await rtsp_test_server.terminate();
         });
-        // it.only(`analyzer`, async () => {
-
-        //     let rtsp_test_server2 = new RtspTestServer(stream_matrix, "app1", port, "/test2", {
-        //         video: "h264",
-        //         audio: "pcma"
-        //     });
-        //     await rtsp_test_server2.initialize();
-        //     await rtsp_test_server2.startup();
-        //     await sleep(30000000);
+        // it.only(`test1`, async () => {
+        //     await sleep(1000);
         // });
+        // it.only(`test2`, async () => {
+        //     await sleep(1000);
+        // });
+
         it(`analyzer`, async () => {
             rtsp_analyzer = new RtspAnalyzer(stream_matrix,
                 "app1",
@@ -141,7 +138,6 @@ describe('StreamMatrix', function () {
             it.only(`add rtsp audience`, async () => {
                 // port++;
                 await livestream.add_audience("endpoint0", { type: "rtsp", port: port, path: "/test_server" });
-                await sleep(3000000);
 
                 rtsp_analyzer = new RtspAnalyzer(stream_matrix,
                     "app2",
@@ -157,12 +153,6 @@ describe('StreamMatrix', function () {
                     return rtsp_analyzer.analyze_done();
                 }, 100, 10000);
                 await rtsp_analyzer.stop();
-                // console.log("------------------------------------------")
-                // await rtsp_analyzer.startup();
-                // await utils.poll(() => {
-                //     return rtsp_analyzer.analyze_done();
-                // }, 100, 10000);
-                // await rtsp_analyzer.stop();
 
                 await rtsp_analyzer.terminate();
 
