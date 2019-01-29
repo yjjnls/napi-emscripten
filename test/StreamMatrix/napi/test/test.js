@@ -37,6 +37,67 @@ describe('StreamMatrix', function () {
         });
     });
     describe('#rtsp_test_server', function () {
+        it(`test1`, async () => {
+            rtsp_test_server = new RtspTestServer(stream_matrix, "app0", port, "/test", {
+                video: "h264",
+                audio: "pcma"
+            });
+            await rtsp_test_server.initialize();
+            await rtsp_test_server.startup();
+            await rtsp_test_server.stop();
+            await rtsp_test_server.terminate();
+        });
+        it(`test2`, async () => {
+            rtsp_test_server = new RtspTestServer(stream_matrix, "app0", port, "/test", {
+                video: "h264",
+                audio: "pcma"
+            });
+            await rtsp_test_server.initialize();
+            await rtsp_test_server.startup();
+            await rtsp_test_server.terminate();
+        });
+        it(`test3`, async () => {
+            rtsp_test_server = new RtspTestServer(stream_matrix, "app0", port, "/test", {
+                video: "h264",
+                audio: "pcma"
+            });
+            await rtsp_test_server.initialize();
+            await rtsp_test_server.startup();
+            await rtsp_test_server.startup();
+            await rtsp_test_server.terminate();
+        });
+        it(`test4`, async () => {
+            rtsp_test_server = new RtspTestServer(stream_matrix, "app0", port, "/test", {
+                video: "h264",
+                audio: "pcma"
+            });
+            await rtsp_test_server.initialize();
+            await rtsp_test_server.startup();
+            await rtsp_test_server.stop();
+            await rtsp_test_server.stop();
+            await rtsp_test_server.terminate();
+        });
+        it(`test5`, async () => {
+            rtsp_test_server = new RtspTestServer(stream_matrix, "app0", port, "/test", {
+                video: "h264",
+                audio: "pcma"
+            });
+            await rtsp_test_server.initialize();
+            await rtsp_test_server.startup();
+            await rtsp_test_server.stop();
+            await rtsp_test_server.terminate();
+
+            rtsp_test_server = new RtspTestServer(stream_matrix, "app0", port, "/test", {
+                video: "h264",
+                audio: "pcma"
+            });
+            await rtsp_test_server.initialize();
+            await rtsp_test_server.startup();
+            await rtsp_test_server.stop();
+            await rtsp_test_server.terminate();
+        });
+    });
+    describe('#rtsp_analyzer', function () {
         beforeEach(async () => {
             rtsp_test_server = new RtspTestServer(stream_matrix, "app0", port, "/test", {
                 video: "h264",
@@ -135,7 +196,7 @@ describe('StreamMatrix', function () {
                 await livestream.stop();
                 await livestream.terminate();
             });
-            it.only(`add rtsp audience`, async () => {
+            it(`add rtsp audience`, async () => {
                 // port++;
                 await livestream.add_audience("endpoint0", { type: "rtsp", port: port, path: "/test_server" });
 
@@ -160,7 +221,7 @@ describe('StreamMatrix', function () {
             });
             it(`add webrtc audience`, async () => {
                 await livestream.add_audience("endpoint1", { type: "webrtc", signal_bridge: "http://172.16.64.58:9001/", role: "offer", connection_id: "1" });
-
+                await sleep(300000);
                 webrtc_analyzer = new WebrtcAnalyzer(stream_matrix, "app2", { video: "h264", audio: "pcma", signal_bridge: "http://172.16.64.58:9001/", role: "answer", connection_id: "1" });
                 await webrtc_analyzer.initialize();
 

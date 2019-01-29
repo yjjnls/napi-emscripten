@@ -57,8 +57,7 @@ class LiveStream extends IApp {
                 self.option_.video.codec,
                 self.option_.audio.codec,
                 (code, data) => {
-                    if (code == 0) { resolve(data); }
-                    else { reject(data); }
+                    if (code == 0) { resolve(data); } else { reject(data); }
                 });
         });
     }
@@ -75,13 +74,15 @@ class LiveStream extends IApp {
                         if (code == 0) {
                             self.audiences_.push({ "type": option.type, "id": id });
                             resolve(data);
-                        }
-                        else { reject(data); }
+                        } else { reject(data); }
                     });
             });
         } else if (option.type == "webrtc") {
             let webrtc = new WebRTC(option.signal_bridge, option.connection_id, id, this, option.role);
             webrtc.connect();
+            await utils.poll(() => {
+                return webrtc.room_opened_;
+            }, 100, 10000, 'webrtc open room timeout!');
 
             self.audiences_.push({ "type": option.type, "id": id, "webrtc": webrtc });
 
@@ -89,10 +90,9 @@ class LiveStream extends IApp {
                 self.stream_matrix().AddWebrtcAudience(self.id_, id, option.role, (code, data) => {
                     if (code == 0) {
                         resolve(data);
-                    }
-                    else {
+                    } else {
                         webrtc.close();
-                        self.audiences_.pop()
+                        self.audiences_.pop();
                         reject(data);
                     }
                 });
@@ -129,8 +129,7 @@ class LiveStream extends IApp {
 
         return new Promise((resolve, reject) => {
             self.stream_matrix().RemoveAudience(self.id_, id, (code, data) => {
-                if (code == 0) { resolve(data); }
-                else { reject(data); }
+                if (code == 0) { resolve(data); } else { reject(data); }
             });
         });
     }
@@ -138,4 +137,4 @@ class LiveStream extends IApp {
 
 module.exports = {
     LiveStream
-}
+};

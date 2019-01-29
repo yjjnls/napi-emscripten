@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 const socket = require('socket.io-client');
 const uuid = require('uuid');
 var Promise = require('bluebird');
@@ -20,6 +20,7 @@ class WebRTC {
         this.remote_user_set = false;
         this.send_data = [];
         this.negoated = false;
+        this.room_opened_ = (role == 'answer') ? true : false;
 
         this.join_msg = {
             "sessionid": String(this.connection_id_),
@@ -123,7 +124,7 @@ class WebRTC {
                 }
             },
             "sender": this.id_
-        }
+        };
         this.open_msg2 = {
             "remoteUserId": "",
             "message": {
@@ -162,7 +163,7 @@ class WebRTC {
                 }
             },
             "sender": this.id_
-        }
+        };
 
         this.sdp_msgs_ = null;
         this.ice_msgs_ = [];
@@ -207,7 +208,7 @@ class WebRTC {
                 }
             },
             "sender": this.id_
-        }
+        };
         if (this.negoated)
             this.io.emit(this.socketMessageEvent, json_data);
         else
@@ -219,7 +220,7 @@ class WebRTC {
             "remoteUserId": this.remote_user_id_,
             "message": JSON.parse(data.toString('utf8')),
             "sender": this.id_
-        }
+        };
         if (this.negoated)
             this.io.emit(this.socketMessageEvent, json_data);
         else
@@ -230,8 +231,7 @@ class WebRTC {
         let self = this;
         return new Promise((resolve, reject) => {
             self.owner_.stream_matrix().SetRemoteDescription(self.owner_.id_, self.endpoint_name_, data.type, data.sdp, (code, data) => {
-                if (code == 0) { resolve(); }
-                else { reject(); }
+                if (code == 0) { resolve(); } else { reject(); }
             });
         });
     }
@@ -240,8 +240,7 @@ class WebRTC {
         let self = this;
         return new Promise((resolve, reject) => {
             self.owner_.stream_matrix().SetRemoteCandidate(self.owner_.id_, self.endpoint_name_, data.candidate, data.sdpMLineIndex, (code, data) => {
-                if (code == 0) { resolve(); }
-                else { reject(); }
+                if (code == 0) { resolve(); } else { reject(); }
             });
         });
 
@@ -255,10 +254,10 @@ class WebRTC {
             if (self.role_ == "answer") {
                 io.emit('join-room', self.join_msg);
                 io.emit(self.socketMessageEvent, self.join_msg1);
-            }
-            else {
+            } else {
                 io.emit('extra-data-updated', {});
                 io.emit('open-room', self.join_msg);
+                self.room_opened_ = true;
             }
 
             io.on(self.socketMessageEvent, (data) => {
@@ -291,7 +290,7 @@ class WebRTC {
                     self.ice_msgs_.forEach((msg) => {
                         msg.remoteUserId = self.remote_user_id_;
                         self.io.emit(self.socketMessageEvent, msg);
-                    })
+                    });
                     self.ice_msgs_ = [];
                 }
                 // answer send sdp&ice
@@ -305,7 +304,7 @@ class WebRTC {
                     self.ice_msgs_.forEach((msg) => {
                         msg.remoteUserId = self.remote_user_id_;
                         self.io.emit(self.socketMessageEvent, msg);
-                    })
+                    });
                     self.ice_msgs_ = [];
                 }
                 if (self.negoated && msg.hasOwnProperty('sdp')) {
@@ -351,7 +350,7 @@ class WebRTC {
                     "userLeft": true
                 },
                 "sender": this.id_
-            }
+            };
             this.io.emit(this.socketMessageEvent, data);
             this.io.close();
             this.io = null;
