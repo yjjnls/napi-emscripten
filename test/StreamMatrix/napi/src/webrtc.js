@@ -315,6 +315,7 @@ class WebRTC {
                 }
                 // another peer closed
                 if (data.message.hasOwnProperty('userLeft')) {
+                    console.log("------ another peer closed ------")
                     if (data.message.userLeft) {
                         self.close();
                     }
@@ -323,7 +324,8 @@ class WebRTC {
         });
         io.on('disconnect', (reason) => {
             console.log('webrtc socket.io disconnect: ' + reason);
-            self.close();
+            if (!this.closed)
+                self.close();
         });
         io.on('leave', (reason) => {
             console.log(reason);
@@ -343,7 +345,8 @@ class WebRTC {
     }
 
     close() {
-        if (this.io) {
+        if (!this.closed && this.io) {
+            this.closed = true;
             let data = {
                 "remoteUserId": this.remote_user_id_,
                 "message": {
@@ -354,12 +357,8 @@ class WebRTC {
             this.io.emit(this.socketMessageEvent, data);
             this.io.close();
             this.io = null;
+            this.owner_.emit('webrtc-peer-closed', this.endpoint_name_);
         }
-        if (!this.closed) {
-            this.closed = true;
-            // this.owner_.emit('webrtc-peer-closed', this.endpoint_name_);
-        }
-
     }
 }
 

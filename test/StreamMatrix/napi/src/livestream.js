@@ -43,9 +43,10 @@ class LiveStream extends IApp {
                 }
             }
         });
-        // this.on(`webrtc-peer-closed`, async (id) => {
-        //     await self.remove_audience(id);
-        // })
+        this.on(`webrtc-peer-closed`, async (name) => {
+            await self.remove_audience(name);
+            this.emit('webrtc-peer-disconnected', name);
+        });
 
         this.audiences_ = [];
     }
@@ -123,9 +124,12 @@ class LiveStream extends IApp {
         }
 
         if (this.audiences_[pos].type == 'webrtc') {
-            this.audiences_[pos].webrtc.close();
+            let webrtc = this.audiences_[pos].webrtc;
+            this.audiences_.splice(pos, 1);
+            webrtc.close()
+        } else {
+            this.audiences_.splice(pos, 1);
         }
-        this.audiences_.splice(pos, 1);
 
         return new Promise((resolve, reject) => {
             self.stream_matrix().RemoveAudience(self.id_, id, (code, data) => {
