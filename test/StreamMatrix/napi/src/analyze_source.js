@@ -38,4 +38,4 @@ let option = {
 
 module.exports = {
     option
-}
+};

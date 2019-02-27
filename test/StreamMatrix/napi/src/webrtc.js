@@ -315,7 +315,7 @@ class WebRTC {
                 }
                 // another peer closed
                 if (data.message.hasOwnProperty('userLeft')) {
-                    console.log("------ another peer closed ------")
+                    console.log("------ another peer closed ------");
                     if (data.message.userLeft) {
                         self.close();
                     }

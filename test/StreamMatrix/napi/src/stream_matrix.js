@@ -13,8 +13,7 @@ class StreamMatrix {
         let self = this;
         return new Promise((resolve, reject) => {
             self.stream_matrix_.Initialize((code, data) => {
-                if (code == 0) { resolve(data); }
-                else { reject(data); }
+                if (code == 0) { resolve(data); } else { reject(data); }
             });
         });
     }
@@ -30,8 +29,7 @@ class StreamMatrix {
                 }
                 Module.release();
 
-                if (code == 0) { resolve(data); }
-                else { reject(data); }
+                if (code == 0) { resolve(data); } else { reject(data); }
             });
         });
     }
@@ -40,8 +38,7 @@ class StreamMatrix {
         let self = this;
         return new Promise((resolve, reject) => {
             self.stream_matrix_.version((code, data) => {
-                if (code == 0) { resolve(JSON.parse(data).version); }
-                else { reject(data); }
+                if (code == 0) { resolve(JSON.parse(data).version); } else { reject(data); }
             });
         });
     }
@@ -58,12 +55,11 @@ class StreamMatrix {
                 if (app) {
                     app.emit(m.topic, meta, data);
                 } else {
-                    console.log("=================error")
+                    console.log("=================error");
                 }
 
             }, (code, data) => {
-                if (code == 0) { resolve(data); }
-                else { reject(data); }
+                if (code == 0) { resolve(data); } else { reject(data); }
             });
         });
     }

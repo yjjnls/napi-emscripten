@@ -126,7 +126,7 @@ class LiveStream extends IApp {
         if (this.audiences_[pos].type == 'webrtc') {
             let webrtc = this.audiences_[pos].webrtc;
             this.audiences_.splice(pos, 1);
-            webrtc.close()
+            webrtc.close();
         } else {
             this.audiences_.splice(pos, 1);
         }

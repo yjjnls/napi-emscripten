@@ -31,7 +31,7 @@ class MultiPoints extends IApp {
                         break;
                     }
                 }
-            })
+            });
         });
 
         this.members_ = {};
@@ -43,8 +43,7 @@ class MultiPoints extends IApp {
                 self.option_.video.codec,
                 self.option_.audio.codec,
                 (code, data) => {
-                    if (code == 0) { resolve(data); }
-                    else { reject(data); }
+                    if (code == 0) { resolve(data); } else { reject(data); }
                 });
         });
     }
@@ -57,17 +56,16 @@ class MultiPoints extends IApp {
             let webrtc = new WebRTC(option.signal_bridge, option.connection_id, id, this, option.role);
             webrtc.connect();
             if (!self.members_[room_id])
-                self.members_[room_id] = []
+                self.members_[room_id] = [];
             self.members_[room_id].push({ "type": option.type, "id": id, "webrtc": webrtc });
 
             return new Promise((resolve, reject) => {
                 self.stream_matrix().AddMember(self.id_, id, option.role, (code, data) => {
                     if (code == 0) {
                         resolve(data);
-                    }
-                    else {
+                    } else {
                         webrtc.close();
-                        self.members_[room_id].pop()
+                        self.members_[room_id].pop();
                         reject(data);
                     }
                 });
@@ -107,8 +105,7 @@ class MultiPoints extends IApp {
 
         return new Promise((resolve, reject) => {
             self.stream_matrix().RemoveMember(self.id_, id, (code, data) => {
-                if (code == 0) { resolve(data); }
-                else { reject(data); }
+                if (code == 0) { resolve(data); } else { reject(data); }
             });
         });
     }
@@ -129,8 +126,7 @@ class MultiPoints extends IApp {
 
         return new Promise((resolve, reject) => {
             self.stream_matrix().SetSpeaker(self.id_, id, (code, data) => {
-                if (code == 0) { resolve(data); }
-                else { reject(data); }
+                if (code == 0) { resolve(data); } else { reject(data); }
             });
         });
     }
@@ -138,4 +134,4 @@ class MultiPoints extends IApp {
 
 module.exports = {
     MultiPoints
-}
+};

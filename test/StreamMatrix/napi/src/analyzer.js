@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 var IApp = require('./app.js').IApp;
 const CodecMap = require('./codec_map.js').TABLE;
@@ -81,9 +81,9 @@ class Analyzer extends IApp {
         let ocr = utils.parseTime(result);
         // console.log(ocr)
         let ms = obj["stream-time"] / 1000000;
-        console.log(`ocr: ${ocr} ms:${ms}`)
+        console.log(`ocr: ${ocr} ms:${ms}`);
         let diff = ms - ocr;
-        console.log(this.pre_image_data_ - diff)
+        console.log(this.pre_image_data_ - diff);
         if (this.pre_image_data_ != 0) {
             if (Math.abs(this.pre_image_data_ - diff) < 5)
                 this.image_passed_++;
@@ -117,8 +117,7 @@ class RtspAnalyzer extends Analyzer {
         let self = this;
         return new Promise((resolve, reject) => {
             self.stream_matrix().CreateRtspAnalyzer(self.id_, self.launch_, (code, data) => {
-                if (code == 0) { resolve(data); }
-                else { reject(data); }
+                if (code == 0) { resolve(data); } else { reject(data); }
             });
         });
     }
@@ -142,7 +141,7 @@ class WebrtcAnalyzer extends Analyzer {
             // + ` webrtc. ! ${CodecMap[audio.codec].depay} ! ${CodecMap[audio.codec].dec} ! audioconvert ! audioresample `
             // + `! spectrum name=audio bands=${audio.bands} threshold=${audio.threshold} post-messages=TRUE message-phase=TRUE message-magnitude=TRUE `
             // + `! fakesink sync=false `
-            + `rtph264pay config-interval=-1 name=pay0 ! queue ! application/x-rtp,media=video,encoding-name=H264,payload=96 ! webrtc.  rtppcmapay name=pay1 ! queue ! application/x-rtp,media=audio,encoding-name=PCMA,payload=8 ! webrtc.`
+            + `rtph264pay config-interval=-1 name=pay0 ! queue ! application/x-rtp,media=video,encoding-name=H264,payload=96 ! webrtc.  rtppcmapay name=pay1 ! queue ! application/x-rtp,media=audio,encoding-name=PCMA,payload=8 ! webrtc.`;
         // + ` )`;
 
         let self = this;
@@ -168,8 +167,7 @@ class WebrtcAnalyzer extends Analyzer {
                 self.role_,
                 self.launch_,
                 (code, data) => {
-                    if (code == 0) { resolve(data); }
-                    else { reject(data); }
+                    if (code == 0) { resolve(data); } else { reject(data); }
                 });
         });
     }
@@ -177,4 +175,4 @@ class WebrtcAnalyzer extends Analyzer {
 module.exports = {
     RtspAnalyzer,
     WebrtcAnalyzer
-}
+};
