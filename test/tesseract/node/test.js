@@ -7,6 +7,8 @@ Module.onRuntimeInitialized = function () {
     api.Init("fs" + tessdata, "eng");
 
     let filename = require('path').resolve(__dirname, '../cosmic.png');
+    console.log(filename);
+    Module.test_file('fs' + filename);
     let image = Module.pixRead('fs' + filename);
     api.SetImage(image);
 

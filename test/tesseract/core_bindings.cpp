@@ -2,6 +2,7 @@
 #include <leptonica/allheaders.h>
 #include <list>
 #include <emscripten/bind.h>
+#include <errno.h>
 #ifdef USE_NODEFS
 #include <emscripten/emscripten.h>
 #endif
@@ -58,6 +59,18 @@ void onload()
     });
 #endif
 }
+void test_file(const std::string &filename)
+{
+    errno = 0;
+    FILE *fp = NULL;
+    fp = fopen(filename.c_str(), "rb");
+    if (fp) {
+        printf("Open file OK!\n");
+    } else {
+        printf("Error %d \n", errno);
+        printf("The function fopen failed due to : [%s]\n", (char *)strerror(errno));
+    }
+}
 
 }  // namespace binding_utils
 
@@ -76,6 +89,7 @@ EMSCRIPTEN_BINDINGS(binding_utils)
     function("pixDestroy", select_overload<void(intptr_t)>(&binding_utils::wrapper_pixDestroy));
     function("version", select_overload<std::string()>(&binding_utils::version));
     function("onload", select_overload<void()>(&binding_utils::onload));
+    function("test_file", select_overload<void(const std::string &)>(&binding_utils::test_file));
 
     constant("PSM_OSD_ONLY", PageSegMode::PSM_OSD_ONLY);
 }

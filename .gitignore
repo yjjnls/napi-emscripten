@@ -5,3 +5,4 @@ build
 *binding.cc
 *core_binding.js
 .vscode
+*.data
