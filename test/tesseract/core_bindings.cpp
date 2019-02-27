@@ -2,6 +2,9 @@
 #include <leptonica/allheaders.h>
 #include <list>
 #include <emscripten/bind.h>
+#ifdef USE_NODEFS
+#include <emscripten/emscripten.h>
+#endif
 
 using namespace emscripten;
 using namespace tesseract;
@@ -42,6 +45,19 @@ void wrapper_pixDestroy(intptr_t image)
 {
     pixDestroy(reinterpret_cast<Pix **>(&image));
 }
+std::string version()
+{
+    return tesseract::TessBaseAPI::Version();
+}
+void onload()
+{
+#ifdef USE_NODEFS
+    EM_ASM({
+        FS.mkdir("/fs");
+        FS.mount(NODEFS, {root : '/'}, "/fs");
+    });
+#endif
+}
 
 }  // namespace binding_utils
 
@@ -58,6 +74,8 @@ EMSCRIPTEN_BINDINGS(binding_utils)
     function("pixRead", select_overload<intptr_t(const std::string &)>(&binding_utils::wrapper_pixRead));
     function("pixReadMemBmp", select_overload<intptr_t(intptr_t, size_t)>(&binding_utils::wrapper_pixRead2));
     function("pixDestroy", select_overload<void(intptr_t)>(&binding_utils::wrapper_pixDestroy));
+    function("version", select_overload<std::string()>(&binding_utils::version));
+    function("onload", select_overload<void()>(&binding_utils::onload));
 
     constant("PSM_OSD_ONLY", PageSegMode::PSM_OSD_ONLY);
 }
