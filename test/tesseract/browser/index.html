@@ -9,7 +9,9 @@
 <body>
     <video id="video" width="320" height="240" autoplay playsinline></video><br>
     <input type="button" value="OCR" onclick="OCR()" />&emsp;<div id="ocr_results"></div><br>
+    <div id="node_ocr_results"></div><br>
     <canvas id="local_video"></canvas>
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
     <script>
         var Module = {
             onRuntimeInitialized: function () {
@@ -86,11 +88,26 @@
             let result = api.GetUTF8Text();
             result = result.slice(0, 11);
             console.log(result);
-            document.getElementById("ocr_results").innerText = new Date()+': '+result
+            document.getElementById("ocr_results").innerText = new Date() + ': ' + result
             api.End();
             // Module.pixDestroy(image);
             api.delete();
             api = null;
+
+            let req_data = [canvas.width, canvas.height, imgbin.join(",")]
+            $.ajax(
+                {
+                    type: 'POST',
+                    url: "http://192.168.199.128:8089",
+                    async: true,
+                    traditional: true,
+                    data: req_data.join('&'),
+                    success: function (data) { 
+                        console.log("================")
+                        console.log(data)
+            document.getElementById("node_ocr_results").innerText = new Date() + ': ' + result+' (node)'
+                    }
+                })
         }
 
 
