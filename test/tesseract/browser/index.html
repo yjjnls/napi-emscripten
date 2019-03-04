@@ -5,33 +5,122 @@
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
     <meta content="utf-8" http-equiv="encoding">
 </head>
-<script>
-    var Module = {
-        onRuntimeInitialized: function () {
-            Module.onload();
-            console.log("-----------------start-------------")
+
+<body>
+    <video id="video" width="320" height="240" autoplay playsinline></video><br>
+    <input type="button" value="OCR" onclick="OCR()" />&emsp;<div id="ocr_results"></div><br>
+    <canvas id="local_video"></canvas>
+    <script>
+        var Module = {
+            onRuntimeInitialized: function () {
+                Module.onload();
+                if (navigator.mediaDevices) {
+                    console.log("getUserMedia supported.");
+                    navigator.mediaDevices
+                        .getUserMedia({ audio: false, video: true })
+                        .then(function (stream) {
+                            let video = document.getElementById("video");
+                            video.srcObject = stream;
+                            video.play();
+                        })
+                        .catch(err => {
+                            console.log("----error-----");
+                            console.log(err.message);
+                        });
+                }
+            }
+        }
+        function desaturate(image) {
+            var width, height;
+            if (image.data) {
+                var src = image.data,
+                    width = image.width,
+                    height = image.height;
+                var dst = new Uint8Array(width * height);
+                var srcLength = src.length | 0, srcLength_16 = (srcLength - 16) | 0;
+
+                for (var i = 0, j = 0; i <= srcLength_16; i += 16, j += 4) {
+                    // convert to grayscale 4 pixels at a time; eveything with alpha gets put in front of 50% gray
+                    dst[j] = (((src[i] * 77 + src[i + 1] * 151 + src[i + 2] * 28) * src[i + 3]) + ((255 - src[i + 3]) << 15) + 32768) >> 16
+                    dst[j + 1] = (((src[i + 4] * 77 + src[i + 5] * 151 + src[i + 6] * 28) * src[i + 7]) + ((255 - src[i + 7]) << 15) + 32768) >> 16
+                    dst[j + 2] = (((src[i + 8] * 77 + src[i + 9] * 151 + src[i + 10] * 28) * src[i + 11]) + ((255 - src[i + 11]) << 15) + 32768) >> 16
+                    dst[j + 3] = (((src[i + 12] * 77 + src[i + 13] * 151 + src[i + 14] * 28) * src[i + 15]) + ((255 - src[i + 15]) << 15) + 32768) >> 16
+                }
+                for (; i < srcLength; i += 4, ++j) //finish up
+                    dst[j] = (((src[i] * 77 + src[i + 1] * 151 + src[i + 2] * 28) * src[i + 3]) + ((255 - src[i + 3]) << 15) + 32768) >> 16
+                image = dst;
+            } else { throw 'Invalid ImageData' }
+            return image
+        }
+        function createBMP(canvas) {
+            var context = canvas.getContext("2d");
+            var width = canvas.width;
+            var height = canvas.height;
+            var imageData = context.getImageData(0, 0, width, height);
+            var imgbin = desaturate(imageData)
+
+            return imgbin;
+        }
+        function OCR() {
+            let video = document.getElementById("video");
+            let canvas = document.getElementById("local_video");
+            canvas.height = video.height;
+            canvas.width = video.width;
+            console.log(canvas.height)
+            console.log(canvas.width)
+            let ctx = canvas.getContext("2d");
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
             let api = new Module.TessBaseAPI();
             console.log(Module.version());
             api.Init("data/tessdata", "eng");
+            api.SetVariable("tessedit_char_whitelist", "0123456789:.");
 
-
-            let filename = "data/cosmic.png";
-            Module.test_file(filename);
-            let image = Module.pixRead(filename);
-            api.SetImage(image);
+            let imgbin = createBMP(canvas);
+            let dataPtr = Module._malloc(canvas.width * canvas.height);
+            let dataHeap = new Uint8Array(Module.HEAPU8.buffer, dataPtr, canvas.width * canvas.height);
+            dataHeap.set(new Uint8Array(imgbin));
+            api.SetImage(dataPtr, canvas.width, canvas.height, 1, canvas.width);
 
             let result = api.GetUTF8Text();
-
+            result = result.slice(0, 11);
             console.log(result);
-
+            document.getElementById("ocr_results").innerText = new Date()+': '+result
             api.End();
-            Module.pixDestroy(image);
-
+            // Module.pixDestroy(image);
             api.delete();
             api = null;
         }
-    };
-</script>
-<script src="build/tesseract.js"></script>
+
+
+        // var Module = {
+        //     onRuntimeInitialized: function () {
+        //         Module.onload();
+        //         console.log("-----------------start-------------")
+        //         let api = new Module.TessBaseAPI();
+        //         console.log(Module.version());
+        //         api.Init("data/tessdata", "eng");
+
+
+        //         let filename = "data/cosmic.png";
+        //         Module.test_file(filename);
+        //         let image = Module.pixRead(filename);
+        //         api.SetImage(image);
+
+        //         let result = api.GetUTF8Text();
+
+        //         console.log(result);
+
+        //         api.End();
+        //         Module.pixDestroy(image);
+
+        //         api.delete();
+        //         api = null;
+        //     }
+        // };
+    </script>
+    <script src="build/tesseract.js"></script>
+</body>
 
 </html>

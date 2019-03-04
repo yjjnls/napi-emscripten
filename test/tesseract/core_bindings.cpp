@@ -23,6 +23,10 @@ void SetImage(tesseract::TessBaseAPI &obj, intptr_t pix)
 {
     obj.SetImage(reinterpret_cast<Pix *>(pix));
 }
+void SetImage2(tesseract::TessBaseAPI &obj, intptr_t data, int width, int height, int bytes_per_pixel, int bytes_per_line)
+{
+    obj.SetImage(reinterpret_cast<unsigned char *>(data), width, height, bytes_per_pixel, bytes_per_line);
+}
 std::string GetUTF8Text(tesseract::TessBaseAPI &obj)
 {
     char *outText = obj.GetUTF8Text();
@@ -81,6 +85,7 @@ EMSCRIPTEN_BINDINGS(binding_utils)
         .function("Init", select_overload<int(tesseract::TessBaseAPI &, const std::string &, const std::string &)>(&binding_utils::Init))
         .function("SetVariable", select_overload<bool(tesseract::TessBaseAPI &, const std::string &, const std::string &)>(&binding_utils::SetVariable))
         .function("SetImage", select_overload<void(tesseract::TessBaseAPI &, intptr_t)>(&binding_utils::SetImage))
+        .function("SetImage", select_overload<void(tesseract::TessBaseAPI &, intptr_t, int, int, int, int)>(&binding_utils::SetImage2))
         .function("GetUTF8Text", select_overload<std::string(tesseract::TessBaseAPI &)>(&binding_utils::GetUTF8Text))
         .function("End", select_overload<void()>(&::tesseract::TessBaseAPI::End));
 
