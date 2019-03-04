@@ -102,10 +102,10 @@
                     async: true,
                     traditional: true,
                     data: req_data.join('&'),
-                    success: function (data) { 
+                    success: function (data) {
                         console.log("================")
                         console.log(data)
-            document.getElementById("node_ocr_results").innerText = new Date() + ': ' + result+' (node)'
+                        document.getElementById("node_ocr_results").innerText = new Date() + ': ' + result + ' (node)'
                     }
                 })
         }
