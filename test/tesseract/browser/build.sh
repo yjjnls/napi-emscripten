@@ -10,7 +10,16 @@ if [ ! -d data/tessdata ]; then
 fi
 cp -f ../../cosmic.png data
 
-emcc ../../core_bindings.cpp -s WASM=1 --bind -std=c++11 -o tesseract.js -I /root/Desktop/test/package/include -L /root/Desktop/test/package/lib /root/Desktop/test/package/lib/libtesseract.so /root/Desktop/test/package/lib/libleptonica.so /root/Desktop/test/package/lib/libpng.so /root/Desktop/test/package/lib/libjpeg.so /root/Desktop/test/package/lib/libtiff.so /root/Desktop/test/package/lib/libz.so --no-heap-copy -s ALLOW_MEMORY_GROWTH=1 -s BINARYEN_TRAP_MODE='clamp' -s DEMANGLE_SUPPORT=1 --preload-file data
+emcc ../../core_bindings.cpp -s WASM=1 --bind -std=c++11 -o tesseract.js \
+-I /root/Desktop/test/package/include \
+/root/Desktop/test/package/lib/libtesseract.so \
+/root/Desktop/test/package/lib/libleptonica.so \
+/root/Desktop/test/package/lib/libpng.so \
+/root/Desktop/test/package/lib/libjpeg.so \
+/root/Desktop/test/package/lib/libtiff.so \
+/root/Desktop/test/package/lib/libz.so \
+--no-heap-copy -s ALLOW_MEMORY_GROWTH=1 -s BINARYEN_TRAP_MODE='clamp' -s DEMANGLE_SUPPORT=1 \
+--preload-file data
 
 cd -
 cp -f build/tesseract.data .
