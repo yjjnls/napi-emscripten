@@ -51,13 +51,13 @@ class MultiPoints extends IApp {
     async add_member(id, room_id, option) {
         let self = this;
         if (option.type == "rtsp") {
-
+            return;
         } else if (option.type == "webrtc") {
             let webrtc = new WebRTC(option.signal_bridge, option.connection_id, id, this, option.role);
             webrtc.connect();
-            if (!self.members_[room_id])
-                self.members_[room_id] = [];
-            self.members_[room_id].push({ "type": option.type, "id": id, "webrtc": webrtc });
+            if (!this.members_[room_id])
+                this.members_[room_id] = [];
+            this.members_[room_id].push({ "type": option.type, "id": id, "webrtc": webrtc });
 
             return new Promise((resolve, reject) => {
                 self.stream_matrix().AddMember(self.id_, id, option.role, (code, data) => {
@@ -71,7 +71,7 @@ class MultiPoints extends IApp {
                 });
             });
         } else if (option.type == "hls") {
-
+            return;
         } else {
             return new Promise((resolve, reject) => {
                 reject("multipoints add_member: unknown member type!");
